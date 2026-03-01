@@ -1,16 +1,8 @@
 from django.conf import settings
 from django.urls import path, include
-from django.http import HttpResponse
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-
-def health_live(request):
-    return HttpResponse("OK", status=200)
-
-
-def health_ready(request):
-    return HttpResponse("OK", status=200)
-
+from apps.core.views import health_live, health_ready
 
 urlpatterns = [
     path("health/live", health_live),
