@@ -1,40 +1,54 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-02-28 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-01 -->
 
 # tests
 
 ## Purpose
-pytest 기반 테스트 스위트. `apps/` 디렉토리 구조를 미러링하며, 모델 단위 테스트와 API 통합 테스트를 포함한다.
+pytest 기반 테스트 스위트. apps/ 구조를 미러링하여 도메인별 테스트 디렉토리 구성. 팩토리, 공통 fixture, JSON:API 헬퍼 제공.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `__init__.py` | 패키지 초기화 |
-| `conftest.py` | pytest 공통 fixture (인증 유저, API 클라이언트 등) |
+| `conftest.py` | 공통 fixture — `auth_user`, `mock_authenticated`, `mock_unauthenticated`, `mock_auth_unavailable`, `jsonapi_headers`, `jsonapi_payload()`, `block_outbound_http` (respx autouse) |
+| `factories.py` | factory-boy 팩토리 — `MemberFactory`, `PostFactory`, `CommentFactory` (faker ko_KR 로케일) |
 
 ## Subdirectories
 
 | Directory | Purpose |
 |-----------|---------|
-| `auth_service/` | AuthServiceClient 테스트 (see `auth_service/AGENTS.md`) |
-| `comments/` | Comment 모델 및 API 테스트 (see `comments/AGENTS.md`) |
+| `auth_service/` | 인증 서비스 클라이언트 테스트 (see `auth_service/AGENTS.md`) |
+| `comments/` | 댓글 모델 + API 테스트 (see `comments/AGENTS.md`) |
 | `core/` | CrudActionsMixin 테스트 (see `core/AGENTS.md`) |
-| `members/` | Member 모델 및 API 테스트 (see `members/AGENTS.md`) |
-| `posts/` | Post 모델 및 API 테스트 (see `posts/AGENTS.md`) |
+| `members/` | 회원 모델 + API 테스트 (see `members/AGENTS.md`) |
+| `posts/` | 게시글 모델 + API 테스트 (see `posts/AGENTS.md`) |
 
 ## For AI Agents
 
 ### Working In This Directory
-- 테스트 실행: `pytest` (루트에서)
-- settings: `config.settings.test`
-- 테스트 파일 네이밍: `test_*.py`
-- 새 앱 테스트 추가 시: `tests/{app_name}/` 디렉토리 생성 + `__init__.py` 추가
-- JSON:API 형식으로 요청/응답 테스트 (`TEST_REQUEST_DEFAULT_FORMAT = "vnd.api+json"`)
+- `block_outbound_http` fixture가 autouse — 모든 테스트에서 실제 HTTP 호출 차단 (respx)
+- 인증 필요 테스트: `mock_authenticated` fixture 사용
+- JSON:API 요청: `jsonapi_headers` + `jsonapi_payload(attributes, resource_type)` 사용
+- 팩토리: faker ko_KR 로케일 — 한국어 이름/문장 생성
+- 실행: `pytest` (루트) 또는 `make test`, 커버리지: `make test-cov`
+- 설정: `config.settings.test` (LocMemCache, 스로틀링 비활성화, Celery eager)
 
 ### Testing Requirements
-- 모델 테스트: `test_models.py` — 유효성 검증, 비즈니스 로직, QuerySet 메서드
-- API 테스트: `test_api.py` — 엔드포인트 CRUD, 권한, 필터링
-- `conftest.py`의 공통 fixture 활용
+- 커버리지 최소 80% (`pyproject.toml` fail_under)
+- 마커: `@pytest.mark.slow` (느린 테스트 표시)
+- DB 테스트: `@pytest.mark.django_db` 필수
+
+### Common Patterns
+- API 테스트 패턴: `APIClient()` → `cookies["session_web"] = "test-token"` → 요청
+- 모델 테스트 패턴: `Model.objects.create(...)` → assert
+- 인증 시나리오: `mock_authenticated`(인증됨), `mock_unauthenticated`(미인증), `mock_enterprise`(기업회원), `mock_auth_unavailable`(서비스 장애)
+
+## Dependencies
+
+### External
+- pytest + pytest-django — 테스트 프레임워크
+- factory-boy + faker — 테스트 데이터 생성
+- respx — httpx 모킹
+- freezegun — 시간 모킹
 
 <!-- MANUAL: -->

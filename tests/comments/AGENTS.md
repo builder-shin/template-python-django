@@ -1,24 +1,22 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-02-28 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-01 -->
 
-# tests/comments
+# comments
 
 ## Purpose
-Comment 도메인 테스트. 모델 유효성 검증 및 API 엔드포인트 통합 테스트.
+Comment 모델 유효성 및 API 엔드포인트 테스트.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `__init__.py` | 패키지 초기화 |
-| `test_models.py` | Comment 모델 테스트 — 유효성 검증, 대댓글 규칙, QuerySet |
-| `test_api.py` | Comments API 테스트 — CRUD, 권한, include, JSON:API 형식 |
+| `test_models.py` | Comment 모델 테스트 — 생성, 대댓글 유효성(같은 post 내), reply_count |
+| `test_api.py` | Comments API 테스트 — CRUD, include=post, 권한(본인 댓글만 수정/삭제) |
 
 ## For AI Agents
 
 ### Working In This Directory
-- 대댓글 테스트: parent가 다른 post에 속할 때 ValidationError 확인
-- API 테스트: JSON:API 형식 request body (`{ "data": { "type": "comments", "attributes": {...} } }`)
-- conftest.py의 인증 fixture 활용
+- Comment는 Post 의존 — 테스트 시 PostFactory로 post 먼저 생성
+- 대댓글 테스트: parent가 다른 post의 댓글이면 ValidationError
 
 <!-- MANUAL: -->
