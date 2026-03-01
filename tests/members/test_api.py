@@ -7,11 +7,11 @@ from apps.members.models import Member
 @pytest.mark.django_db
 class TestMembersAPI:
     def test_index_with_auth(self, mock_authenticated, jsonapi_headers):
-        Member.objects.create(user_id=mock_authenticated.id, nickname="Me")
+        Member.objects.create(user_id=str(mock_authenticated.id), nickname="Me")
         Member.objects.create(user_id="other-user", nickname="Other")
 
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         response = client.get("/api/v1/members", **jsonapi_headers)
         assert response.status_code == 200
         data = response.json()
@@ -25,7 +25,7 @@ class TestMembersAPI:
 
     def test_create_valid(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         payload = {
             "data": {
                 "type": "members",
@@ -39,21 +39,21 @@ class TestMembersAPI:
         assert response.status_code == 201
         data = response.json()
         assert data["data"]["attributes"]["nickname"] == "New Member"
-        assert data["data"]["attributes"]["user_id"] == mock_authenticated.id
+        assert data["data"]["attributes"]["user_id"] == str(mock_authenticated.id)
 
     def test_show_existing(self, mock_authenticated, jsonapi_headers):
-        member = Member.objects.create(user_id=mock_authenticated.id, nickname="Show Me")
+        member = Member.objects.create(user_id=str(mock_authenticated.id), nickname="Show Me")
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         response = client.get(f"/api/v1/members/{member.id}", **jsonapi_headers)
         assert response.status_code == 200
         data = response.json()
         assert data["data"]["attributes"]["nickname"] == "Show Me"
 
     def test_update_own(self, mock_authenticated, jsonapi_headers):
-        member = Member.objects.create(user_id=mock_authenticated.id, nickname="Old Nick")
+        member = Member.objects.create(user_id=str(mock_authenticated.id), nickname="Old Nick")
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         payload = {
             "data": {
                 "type": "members",
@@ -69,7 +69,7 @@ class TestMembersAPI:
     def test_update_forbidden_other_user(self, mock_authenticated, jsonapi_headers):
         member = Member.objects.create(user_id="other-user", nickname="Other")
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         payload = {
             "data": {
                 "type": "members",
@@ -81,9 +81,9 @@ class TestMembersAPI:
         assert response.status_code == 403
 
     def test_destroy_own(self, mock_authenticated, jsonapi_headers):
-        member = Member.objects.create(user_id=mock_authenticated.id, nickname="Delete Me")
+        member = Member.objects.create(user_id=str(mock_authenticated.id), nickname="Delete Me")
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         response = client.delete(f"/api/v1/members/{member.id}", **jsonapi_headers)
         assert response.status_code == 204
         assert not Member.objects.filter(id=member.id).exists()
@@ -91,14 +91,14 @@ class TestMembersAPI:
     def test_destroy_forbidden_other_user(self, mock_authenticated, jsonapi_headers):
         member = Member.objects.create(user_id="other-user", nickname="Other")
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         response = client.delete(f"/api/v1/members/{member.id}", **jsonapi_headers)
         assert response.status_code == 403
 
     def test_me_action(self, mock_authenticated, jsonapi_headers):
-        Member.objects.create(user_id=mock_authenticated.id, nickname="My Profile")
+        Member.objects.create(user_id=str(mock_authenticated.id), nickname="My Profile")
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         response = client.get("/api/v1/members/me", **jsonapi_headers)
         assert response.status_code == 200
         data = response.json()
@@ -106,6 +106,6 @@ class TestMembersAPI:
 
     def test_me_action_not_found(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         response = client.get("/api/v1/members/me", **jsonapi_headers)
         assert response.status_code == 404

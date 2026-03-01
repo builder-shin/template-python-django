@@ -33,7 +33,7 @@ class TestNotFound:
 class TestCrudActionsAPI:
     def test_list_returns_jsonapi_format(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         response = client.get("/api/v1/posts", **jsonapi_headers)
         assert response.status_code == 200
         data = response.json()
@@ -46,7 +46,7 @@ class TestCrudActionsAPI:
 
     def test_create_returns_201(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         payload = {
             "data": {
                 "type": "posts",
@@ -72,18 +72,18 @@ class TestCrudActionsAPI:
         from apps.posts.models import Post
 
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         post = Post.objects.create(
             title="Show Test",
             content="Content",
-            user_id=mock_authenticated.id,
+            user_id=str(mock_authenticated.id),
         )
         response = client.get(f"/api/v1/posts/{post.id}", **jsonapi_headers)
         assert response.status_code == 200
 
     def test_show_404(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         response = client.get("/api/v1/posts/99999", **jsonapi_headers)
         assert response.status_code == 404
         data = response.json()
@@ -93,11 +93,11 @@ class TestCrudActionsAPI:
         from apps.posts.models import Post
 
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         post = Post.objects.create(
             title="Update Test",
             content="Content",
-            user_id=mock_authenticated.id,
+            user_id=str(mock_authenticated.id),
         )
         payload = {
             "data": {
@@ -122,18 +122,18 @@ class TestCrudActionsAPI:
         from apps.posts.models import Post
 
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         post = Post.objects.create(
             title="Delete Test",
             content="Content",
-            user_id=mock_authenticated.id,
+            user_id=str(mock_authenticated.id),
         )
         response = client.delete(f"/api/v1/posts/{post.id}", **jsonapi_headers)
         assert response.status_code == 204
 
     def test_new_action(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         response = client.get("/api/v1/posts/new", **jsonapi_headers)
         assert response.status_code == 200
         data = response.json()
@@ -143,7 +143,7 @@ class TestCrudActionsAPI:
         from apps.posts.models import Post
 
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         post = Post.objects.create(
             title="Other User",
             content="Content",
@@ -168,7 +168,7 @@ class TestCrudActionsAPI:
         from apps.posts.models import Post
 
         client = APIClient()
-        client.cookies["session_web"] = "test-token"
+        client.force_authenticate(user=mock_authenticated)
         post = Post.objects.create(
             title="Other User Delete",
             content="Content",

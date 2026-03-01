@@ -15,8 +15,10 @@ ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").sp
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",
+    "django.contrib.sessions",
     # Third-party
     "rest_framework",
+    "rest_framework.authtoken",
     "rest_framework_json_api",
     "django_filters",
     "corsheaders",
@@ -25,7 +27,6 @@ INSTALLED_APPS = [
     "drf_spectacular",
     # Local apps
     "apps.core.apps.CoreConfig",
-    "apps.auth_service.apps.AuthServiceConfig",
     "apps.email_service.apps.EmailServiceConfig",
     "apps.members.apps.MembersConfig",
     "apps.posts.apps.PostsConfig",
@@ -38,6 +39,8 @@ MIDDLEWARE = [
     "csp.middleware.CSPMiddleware",
     "apps.core.middleware.allow2ban.Allow2BanMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
     "apps.core.middleware.current_user.CurrentUserMiddleware",
     "apps.core.middleware.structured_logging.StructuredLoggingMiddleware",
 ]
@@ -100,10 +103,7 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "None"
 SESSION_COOKIE_SECURE = False  # Override in production
 
-# Auth Service
-AUTH_SERVICE_URL = os.environ.get("AUTH_SERVICE_URL", "http://localhost:3001")
-AUTH_SESSION_CACHE_TTL = int(os.environ.get("AUTH_SESSION_CACHE_TTL", "300"))
-AUTH_REQUEST_TIMEOUT = int(os.environ.get("AUTH_REQUEST_TIMEOUT", "5"))
+AUTH_USER_MODEL = "auth.User"
 
 # IP Blocklist
 BLOCKED_IPS = [ip.strip() for ip in os.environ.get("BLOCKED_IPS", "").split(",") if ip.strip()]
@@ -129,7 +129,8 @@ REST_FRAMEWORK = {
         "rest_framework.filters.SearchFilter",
     ),
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "apps.core.authentication.CookieSessionAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.TokenAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": [],
     "DEFAULT_THROTTLE_CLASSES": [

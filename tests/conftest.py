@@ -1,11 +1,6 @@
 import pytest
-import uuid
-from unittest.mock import patch
-
-import respx
-
-from apps.auth_service.models import AuthUser
-from apps.auth_service.client import AuthServiceClient, ServiceUnavailableError
+from django.contrib.auth.models import User
+from rest_framework.test import APIClient
 
 
 @pytest.fixture(autouse=True)
@@ -14,55 +9,45 @@ def block_outbound_http():
     Block all real HTTP calls in tests, equivalent to Rails WebMock.disable_net_connect!
     Any unmocked httpx request will raise an error instead of making a real network call.
     """
-    with respx.mock:
+    try:
+        import respx
+        with respx.mock:
+            yield
+    except ImportError:
         yield
 
 
 @pytest.fixture
-def auth_user():
-    return AuthUser(
-        id=str(uuid.uuid4()),
+def auth_user(db):
+    return User.objects.create_user(
+        username="testuser",
         email="test@example.com",
-        name="Test User",
-        workspace_id=str(uuid.uuid4()),
-        workspace_kind="personal",
-        workspace_role="owner",
-        member_status="active",
+        password="testpass123",
     )
 
 
 @pytest.fixture
-def enterprise_user(auth_user):
-    auth_user.workspace_kind = "enterprise"
+def mock_authenticated(auth_user):
+    """Provides an authenticated user. Use with api_client fixture or force_authenticate."""
     return auth_user
 
 
 @pytest.fixture
-def mock_authenticated(auth_user):
-    with patch.object(AuthServiceClient, "verify_session", return_value=auth_user):
-        yield auth_user
-
-
-@pytest.fixture
-def mock_enterprise(enterprise_user):
-    with patch.object(AuthServiceClient, "verify_session", return_value=enterprise_user):
-        yield enterprise_user
-
-
-@pytest.fixture
 def mock_unauthenticated():
-    with patch.object(AuthServiceClient, "verify_session", return_value=None):
-        yield
+    """Marker fixture for unauthenticated tests - no user is provided."""
+    pass
 
 
 @pytest.fixture
-def mock_auth_unavailable():
-    with patch.object(
-        AuthServiceClient,
-        "verify_session",
-        side_effect=ServiceUnavailableError("인증 서비스에 연결할 수 없습니다."),
-    ):
-        yield
+def api_client():
+    return APIClient()
+
+
+@pytest.fixture
+def authenticated_client(api_client, auth_user):
+    """Pre-authenticated API client."""
+    api_client.force_authenticate(user=auth_user)
+    return api_client
 
 
 @pytest.fixture

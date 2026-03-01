@@ -4,14 +4,13 @@
 # apps
 
 ## Purpose
-Django 애플리케이션 모듈 컨테이너. 도메인(members, posts, comments), 인프라(core, auth_service, email_service)로 구분된 6개 앱을 포함.
+Django 애플리케이션 모듈 컨테이너. 도메인(members, posts, comments), 인프라(core, email_service)로 구분된 5개 앱을 포함.
 
 ## Subdirectories
 
 | Directory | Purpose |
 |-----------|---------|
 | `core/` | 공통 기반 — 인증, 예외, 필터, 미들웨어, Mixin, 관리 명령어 (see `core/AGENTS.md`) |
-| `auth_service/` | 외부 인증 서비스 연동 클라이언트 (see `auth_service/AGENTS.md`) |
 | `email_service/` | SendGrid 이메일 발송 서비스 (see `email_service/AGENTS.md`) |
 | `members/` | 회원 프로필 도메인 (see `members/AGENTS.md`) |
 | `posts/` | 게시글 도메인 (see `posts/AGENTS.md`) |
@@ -28,7 +27,7 @@ Django 애플리케이션 모듈 컨테이너. 도메인(members, posts, comment
 
 ### Common Patterns
 - 각 앱은 독립적 도메인 — 앱 간 참조는 ForeignKey 또는 user_id(문자열)로
-- `user_id`는 CharField (외부 인증 서비스의 UUID)
+- `user_id`는 CharField (Django User의 ID를 문자열로 저장)
 - 모든 모델에 `created_at`, `updated_at` 자동 필드
 
 <!-- MANUAL: -->

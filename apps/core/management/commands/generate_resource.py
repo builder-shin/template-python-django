@@ -409,13 +409,13 @@ def _gen_test_api_py(
         if ft in FIELD_TEST_DEFAULTS:
             create_kwargs_parts.append(f"{fn}={FIELD_TEST_DEFAULTS[ft]}")
     if user_scoped:
-        create_kwargs_parts.append(f"user_id=mock_authenticated.id")
+        create_kwargs_parts.append(f"user_id=str(mock_authenticated.id)")
     create_kwargs_str = ", ".join(create_kwargs_parts)
 
     lines.append(f"        {singular_pascal}.objects.create({create_kwargs_str})")
     lines.append("")
     lines.append(f"        client = APIClient()")
-    lines.append(f'        client.cookies["session_web"] = "test-token"')
+    lines.append(f"        client.force_authenticate(user=mock_authenticated)")
     lines.append(f'        response = client.get("/api/v1/{resource_name}", **jsonapi_headers)')
     lines.append(f"        assert response.status_code == 200")
     lines.append(f"        data = response.json()")
@@ -447,7 +447,7 @@ def _gen_test_api_py(
     attrs_inner = ", ".join(f'"{k}": {v}' for k, v in payload_attrs.items())
 
     lines.append(f"        client = APIClient()")
-    lines.append(f'        client.cookies["session_web"] = "test-token"')
+    lines.append(f"        client.force_authenticate(user=mock_authenticated)")
     lines.append(f'        payload = jsonapi_payload({{{attrs_inner}}}, "{resource_name}")')
     lines.append(f"        response = client.post(")
     lines.append(f'            "/api/v1/{resource_name}",')

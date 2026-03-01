@@ -7,24 +7,8 @@ from apps.core.utils import get_client_ip
 
 class IsAuthenticated(BasePermission):
     def has_permission(self, request, view):
-        if not request.user or not hasattr(request.user, "id") or request.user.id is None:
+        if not request.user or not request.user.is_authenticated:
             raise NotAuthenticated("로그인 후 이용해주세요.")
-        return True
-
-
-class IsEnterprise(BasePermission):
-    def has_permission(self, request, view):
-        IsAuthenticated().has_permission(request, view)
-        if not request.user.is_enterprise():
-            raise PermissionDenied("기업 회원만 이용 가능합니다.")
-        return True
-
-
-class IsPersonal(BasePermission):
-    def has_permission(self, request, view):
-        IsAuthenticated().has_permission(request, view)
-        if not request.user.is_personal():
-            raise PermissionDenied("개인 회원만 이용 가능합니다.")
         return True
 
 

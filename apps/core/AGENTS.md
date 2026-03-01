@@ -10,12 +10,12 @@
 
 | File | Description |
 |------|-------------|
-| `authentication.py` | `CookieSessionAuthentication` — session_web 쿠키로 외부 인증 서비스 검증 |
+| `authentication.py` | 인증 설정 안내 — DRF 내장 SessionAuthentication + TokenAuthentication 사용 |
 | `exceptions.py` | `JsonApiError`, `NotFound`, 통합 예외 핸들러 (JSON:API 포맷, 한국어 메시지) |
 | `filters.py` | `create_ransack_filterset()` — Ransack 스타일 동적 필터셋 생성기, `AllowedIncludesFilter`, `EnumChoiceFilter` |
 | `serializers.py` | `ApplicationSerializer` — 모든 시리얼라이저의 베이스 클래스 |
 | `pagination.py` | `JsonApiPageNumberPagination` — page[number]/page[size] + total-count 메타 |
-| `permissions.py` | `IsAuthenticated`, `IsEnterprise`, `IsPersonal`, `IPBlocklistPermission` |
+| `permissions.py` | `IsAuthenticated`, `IPBlocklistPermission` |
 | `throttles.py` | `AuthRateThrottle` — 인증 엔드포인트 전용 (10/min) |
 | `views.py` | `ApiViewSet` — 인증 포함 기본 ViewSet (JSON:API ModelViewSet 상속) |
 
@@ -45,9 +45,6 @@
 - Ransack 필터 predicate: `_eq`, `_not_eq`, `_in`, `_not_in`, `_cont`, `_not_cont`, `_start`, `_end`, `_lt`, `_lte`, `_gt`, `_gte`, `_null`, `_not_null`, `_matches`
 
 ## Dependencies
-
-### Internal
-- `apps.auth_service.client` — `CookieSessionAuthentication`에서 사용
 
 ### External
 - rest_framework — DRF 기반

@@ -132,8 +132,8 @@ docker-compose up
 │   ├── core/                  # 핵심 인프라
 │   │   ├── middleware/        # 미들웨어 (인증, 로깅, Allow2Ban)
 │   │   ├── mixins/            # CrudActions 등 공통 믹스인
-│   │   ├── management/        # 커스텀 관리 명령어 (FDW, seed, generate_resource)
-│   │   ├── authentication.py  # 쿠키 세션 인증
+│   │   ├── management/        # 커스텀 관리 명령어 (seed, generate_resource)
+│   │   ├── authentication.py  # 인증 설정 (Django 내장 Session + Token)
 │   │   ├── exceptions.py      # JSON:API 에러 핸들러
 │   │   ├── filters.py         # Ransack 스타일 필터
 │   │   ├── pagination.py      # JSON:API 페이지네이션
@@ -141,7 +141,6 @@ docker-compose up
 │   │   ├── serializers.py     # 베이스 시리얼라이저
 │   │   ├── throttles.py       # 요청 제한
 │   │   └── views.py           # API 베이스 뷰셋
-│   ├── auth_service/          # 외부 인증 서비스 연동
 │   ├── email_service/         # SendGrid 이메일 서비스
 │   ├── members/               # 회원 리소스
 │   ├── posts/                 # 게시글 리소스
@@ -191,13 +190,11 @@ docker-compose up
 
 ### 인증
 
-쿠키 기반 인증으로 외부 Auth 서비스와 연동합니다.
+Django 내장 인증 시스템을 사용합니다 (SessionAuthentication + TokenAuthentication).
 
 ```python
 # views.py에서 권한 클래스 설정
 permission_classes = [IsAuthenticated]     # 인증 필수
-permission_classes = [IsEnterprise]        # 기업회원만
-permission_classes = [IsPersonal]          # 개인회원만
 ```
 
 ### CrudActions 믹스인
