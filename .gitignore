@@ -42,6 +42,9 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# docs
+docs
+
 # Claude Code
 .claude/
 .omc/
