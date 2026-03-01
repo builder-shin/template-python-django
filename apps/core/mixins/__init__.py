@@ -1,3 +1,4 @@
-from .crud_actions import CrudActionsMixin, HookableSerializerMixin
+from .crud_actions import HookableSerializerMixin
+from .owned_resource import OwnedResourceMixin
 
-__all__ = ["CrudActionsMixin", "HookableSerializerMixin"]
+__all__ = ["HookableSerializerMixin", "OwnedResourceMixin"]
