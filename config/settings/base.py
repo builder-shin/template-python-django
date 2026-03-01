@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "django_celery_beat",
     "storages",
     "drf_spectacular",
+    "django_structlog",
     # Local apps
     "apps.core.apps.CoreConfig",
     "apps.email_service.apps.EmailServiceConfig",
@@ -41,8 +42,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "apps.core.middleware.current_user.CurrentUserMiddleware",
-    "apps.core.middleware.structured_logging.StructuredLoggingMiddleware",
+    "django_structlog.middlewares.RequestMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -251,5 +251,12 @@ LOGGING = {
             "handlers": ["console"],
             "level": "INFO",
         },
+        "django_structlog": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
     },
 }
+
+# Structured Logging (django-structlog)
+DJANGO_STRUCTLOG_COMMAND_LOGGING_ENABLED = False
