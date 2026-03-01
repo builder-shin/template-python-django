@@ -21,7 +21,7 @@ Python Django 5 기반 JSON:API 백엔드 템플릿 프로젝트입니다.
 ## 빠른 시작
 
 ```bash
-make setup    # 프로젝트 초기 설정 (venv, 의존성, DB, pre-commit)
+make setup    # 프로젝트 초기 설정 (uv, 의존성, DB, pre-commit)
 make dev      # 개발 서버 실행 (http://localhost:4000)
 ```
 
@@ -30,7 +30,7 @@ make dev      # 개발 서버 실행 (http://localhost:4000)
 | 명령어 | 설명 |
 |--------|------|
 | `make help` | 사용 가능한 명령어 목록 표시 |
-| `make setup` | 프로젝트 초기 설정 (venv, 의존성, DB, pre-commit) |
+| `make setup` | 프로젝트 초기 설정 (uv, 의존성, DB, pre-commit) |
 | `make dev` | 개발 서버 실행 (포트 4000, Celery eager mode) |
 | `make server` | Docker Compose 전체 스택 실행 |
 | `make shell` | Django 쉘 (모델 자동 import) |
@@ -159,10 +159,8 @@ docker-compose up
 │   └── conftest.py            # 테스트 픽스처
 ├── scripts/
 │   └── setup.sh               # 프로젝트 초기 설정 스크립트
-├── requirements/              # pip 의존성
-│   ├── base.txt               # 프로덕션 의존성
-│   ├── dev.txt                # 개발 의존성
-│   └── test.txt               # 테스트 의존성
+├── pyproject.toml             # 의존성 및 도구 설정 (uv)
+├── uv.lock                    # uv 락파일 (재현 가능한 빌드)
 ├── .github/
 │   └── workflows/ci.yml       # GitHub Actions CI
 ├── Dockerfile                 # Docker 빌드 설정
@@ -170,7 +168,6 @@ docker-compose up
 ├── Makefile                   # 개발 명령어 통합
 ├── Procfile.dev               # 멀티 프로세스 개발 실행
 ├── gunicorn.conf.py           # Gunicorn 서버 설정
-├── pyproject.toml             # Python 프로젝트 메타데이터
 ├── manage.py                  # Django 관리 스크립트
 ├── .pre-commit-config.yaml    # pre-commit 훅 설정
 └── .env.example               # 환경 변수 템플릿

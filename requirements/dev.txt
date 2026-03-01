@@ -1,8 +1,0 @@
--r base.txt
-django-debug-toolbar>=4.4,<5.0
-ipython>=8.0
-ruff>=0.5
-pre-commit>=4.0
-honcho>=2.0
-django-extensions>=3.2
-inflect>=7.0
