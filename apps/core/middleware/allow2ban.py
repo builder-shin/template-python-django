@@ -3,6 +3,8 @@ import logging
 from django.core.cache import cache
 from django.http import JsonResponse
 
+from apps.core.utils import get_client_ip
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,11 +41,11 @@ class Allow2BanMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        ip = self._get_client_ip(request)
+        ip = get_client_ip(request)
 
         # Check if IP is banned
         if cache.get(f"{self.CACHE_PREFIX_BAN}{ip}"):
-            logger.warning(f"Blocked banned IP: {ip}")
+            logger.warning("Blocked banned IP: %s", ip)
             return JsonResponse(
                 {
                     "errors": [
@@ -77,12 +79,6 @@ class Allow2BanMiddleware:
             cache.set(f"{self.CACHE_PREFIX_BAN}{ip}", True, self.BAN_TIME)
             cache.delete(cache_key)
             logger.warning(
-                f"Auto-banned IP {ip} for {self.BAN_TIME}s "
-                f"after {count} suspicious requests"
+                "Auto-banned IP %s for %ds after %d suspicious requests",
+                ip, self.BAN_TIME, count,
             )
-
-    def _get_client_ip(self, request):
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        if x_forwarded_for:
-            return x_forwarded_for.split(",")[0].strip()
-        return request.META.get("REMOTE_ADDR", "")

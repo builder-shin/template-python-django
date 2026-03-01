@@ -2,6 +2,8 @@ from rest_framework.permissions import BasePermission
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from django.conf import settings
 
+from apps.core.utils import get_client_ip
+
 
 class IsAuthenticated(BasePermission):
     def has_permission(self, request, view):
@@ -37,13 +39,7 @@ class IPBlocklistPermission(BasePermission):
         blocked_ips = getattr(settings, "BLOCKED_IPS", [])
         if not blocked_ips:
             return True
-        client_ip = self._get_client_ip(request)
+        client_ip = get_client_ip(request)
         if client_ip in blocked_ips:
             raise PermissionDenied("접근이 차단되었습니다.")
         return True
-
-    def _get_client_ip(self, request):
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        if x_forwarded_for:
-            return x_forwarded_for.split(",")[0].strip()
-        return request.META.get("REMOTE_ADDR")

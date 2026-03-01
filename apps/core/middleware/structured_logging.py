@@ -2,6 +2,8 @@ import json
 import logging
 import time
 
+from apps.core.utils import get_client_ip
+
 logger = logging.getLogger("api")
 
 
@@ -22,7 +24,7 @@ class StructuredLoggingMiddleware:
             "path": request.path,
             "status": response.status_code,
             "duration": round(duration, 2),
-            "remote_ip": self._get_client_ip(request),
+            "remote_ip": get_client_ip(request),
             "user_id": getattr(request.user, "id", None) if hasattr(request, "user") else None,
             "request_id": request.META.get("HTTP_X_REQUEST_ID", ""),
             "params": params,
@@ -34,7 +36,7 @@ class StructuredLoggingMiddleware:
         params = {}
         for key, value in request.GET.items():
             params[key] = "[FILTERED]" if key.lower() in self.FILTERED_PARAMS else value
-        if request.method in ("POST", "PUT", "PATCH"):
+        if request.method in ("POST", "PUT", "PATCH") and "json" in (request.content_type or ""):
             try:
                 body = json.loads(request.body) if request.body else {}
                 if isinstance(body, dict):
@@ -53,9 +55,3 @@ class StructuredLoggingMiddleware:
             else:
                 filtered[key] = value
         return filtered
-
-    def _get_client_ip(self, request):
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        if x_forwarded_for:
-            return x_forwarded_for.split(",")[0].strip()
-        return request.META.get("REMOTE_ADDR")

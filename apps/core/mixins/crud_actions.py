@@ -1,12 +1,17 @@
 import json as _json
+import logging
 
 from django.core.exceptions import ValidationError
+from django.db import models
+from django.db.models import ProtectedError
 
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.core.exceptions import JsonApiError, NotFound
+
+logger = logging.getLogger(__name__)
 
 
 class CrudActionsMixin:
@@ -96,7 +101,10 @@ class CrudActionsMixin:
         try:
             instance.delete()
             success = True
+        except ProtectedError:
+            raise JsonApiError("DeleteFailed", "연관된 데이터가 있어 삭제할 수 없습니다.", 409)
         except Exception:
+            logger.exception("Unexpected error deleting %s(pk=%s)", type(instance).__name__, instance.pk)
             success = False
 
         self.destroy_after_save(instance, success)
@@ -139,6 +147,7 @@ class CrudActionsMixin:
             raw_body = _json.loads(request._request.body)
             flat_data = raw_body.get("data", {}).get("attributes", {})
         except Exception:
+            logger.warning("Failed to parse raw body in upsert for %s", type(instance).__name__)
             flat_data = {}
 
         serializer = self.get_serializer(instance, data=flat_data, partial=True)
@@ -168,6 +177,7 @@ class CrudActionsMixin:
                 422,
             )
         except Exception:
+            logger.exception("Unexpected error in upsert save for %s(pk=%s)", type(instance).__name__, instance.pk)
             success = False
 
         self.upsert_after_save(instance, success, created)
@@ -181,43 +191,43 @@ class CrudActionsMixin:
 
     # ==================== Lifecycle Hooks ====================
 
-    def create_after_init(self, instance):
+    def create_after_init(self, instance: models.Model) -> None:
         pass
 
-    def create_after_save(self, instance, success):
+    def create_after_save(self, instance: models.Model, success: bool) -> None:
         pass
 
-    def update_after_init(self, instance):
+    def update_after_init(self, instance: models.Model) -> None:
         pass
 
-    def update_after_assign(self, instance):
+    def update_after_assign(self, instance: models.Model) -> None:
         pass
 
-    def update_after_save(self, instance, success):
+    def update_after_save(self, instance: models.Model, success: bool) -> None:
         pass
 
-    def destroy_after_init(self, instance):
+    def destroy_after_init(self, instance: models.Model) -> None:
         pass
 
-    def destroy_after_save(self, instance, success):
+    def destroy_after_save(self, instance: models.Model, success: bool) -> None:
         pass
 
-    def show_after_init(self, instance):
+    def show_after_init(self, instance: models.Model) -> None:
         pass
 
-    def new_after_init(self, instance):
+    def new_after_init(self, instance: models.Model) -> None:
         pass
 
-    def upsert_find_params(self):
+    def upsert_find_params(self) -> dict | None:
         return None
 
-    def upsert_after_init(self, instance):
+    def upsert_after_init(self, instance: models.Model) -> None:
         pass
 
-    def upsert_after_assign(self, instance):
+    def upsert_after_assign(self, instance: models.Model) -> None:
         pass
 
-    def upsert_after_save(self, instance, success, created):
+    def upsert_after_save(self, instance: models.Model, success: bool, created: bool) -> None:
         pass
 
     # ==================== Overrides ====================
