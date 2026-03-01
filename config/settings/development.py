@@ -6,6 +6,7 @@ DEBUG = True
 INSTALLED_APPS += [  # noqa: F405
     "django.contrib.staticfiles",
     "debug_toolbar",
+    "django_extensions",
 ]
 
 STATIC_URL = "/static/"

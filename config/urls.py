@@ -15,6 +15,7 @@ def health_ready(request):
 urlpatterns = [
     path("health/live", health_live),
     path("health/ready", health_ready),
+    # API v1 endpoints
     path("api/v1/", include("apps.members.urls")),
     path("api/v1/", include("apps.posts.urls")),
     path("api/v1/", include("apps.comments.urls")),

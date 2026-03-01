@@ -18,51 +18,89 @@ Python Django 5 기반 JSON:API 백엔드 템플릿 프로젝트입니다.
 - PostgreSQL
 - Redis (Celery / 캐시용)
 
-## 설정 및 실행
-
-### 1. 가상환경 생성 및 의존성 설치
+## 빠른 시작
 
 ```bash
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements/dev.txt
-```
-
-### 2. 환경 변수 설정
-
-```bash
-cp .env.example .env
-# .env 파일을 열어 값을 채워넣으세요
-```
-
-### 3. 데이터베이스 설정
-
-```bash
-python manage.py migrate
-```
-
-### 4. 서버 실행
-
-```bash
-python manage.py runserver 0.0.0.0:4000
-# http://localhost:4000 에서 실행됩니다
+make setup    # 프로젝트 초기 설정 (venv, 의존성, DB, pre-commit)
+make dev      # 개발 서버 실행 (http://localhost:4000)
 ```
 
 ## 개발 명령어
 
 | 명령어 | 설명 |
 |--------|------|
-| `python manage.py runserver 0.0.0.0:4000` | 개발 서버 실행 (포트 4000) |
-| `python manage.py shell` | Django 쉘 |
-| `pytest` | 테스트 실행 |
-| `ruff check .` | 코드 린트 |
-| `black .` | 코드 포맷팅 |
-| `python manage.py migrate` | 마이그레이션 실행 |
-| `python manage.py migrate <app> <migration>` | 특정 마이그레이션으로 롤백 |
-| `python manage.py flush` | 데이터베이스 초기화 |
-| `celery -A config worker -l info` | Celery 워커 실행 |
-| `celery -A config beat -l info` | Celery Beat 스케줄러 실행 |
-| `python manage.py setup_fdw` | FDW 설정 (Auth DB 연동) |
+| `make help` | 사용 가능한 명령어 목록 표시 |
+| `make setup` | 프로젝트 초기 설정 (venv, 의존성, DB, pre-commit) |
+| `make dev` | 개발 서버 실행 (포트 4000, Celery eager mode) |
+| `make server` | Docker Compose 전체 스택 실행 |
+| `make shell` | Django 쉘 (모델 자동 import) |
+| `make test` | 테스트 실행 |
+| `make test-cov` | 커버리지 포함 테스트 실행 |
+| `make lint` | 코드 린트 (Ruff) |
+| `make format` | 코드 포맷팅 (Ruff fix + format) |
+| `make migrate` | 마이그레이션 실행 |
+| `make makemigrations` | 마이그레이션 파일 생성 |
+| `make seed` | 개발용 샘플 데이터 생성 |
+| `make generate` | 새 리소스 생성 (아래 참조) |
+| `make clean` | 캐시, pyc, __pycache__ 정리 |
+| `make worker` | Celery 워커 실행 (비동기 태스크 테스트용) |
+| `make beat` | Celery Beat 스케줄러 실행 |
+| `make dev-all` | 전체 개발 스택 실행 (web + celery worker + beat) |
+| `make pre-commit` | 전체 파일에 pre-commit 실행 |
+| `make docker-up` | Docker Compose 백그라운드 실행 |
+| `make docker-down` | Docker Compose 중지 |
+
+## 새 리소스 추가 (코드 생성기)
+
+`generate_resource` 명령으로 새 API 리소스의 모든 파일을 자동 생성할 수 있습니다:
+
+```bash
+# 기본 사용법 (리소스명은 복수형 snake_case)
+make generate name=products fields="name:CharField price:IntegerField status:IntegerChoices"
+
+# user_id 자동 설정 (소유권 기반 접근 제어 포함)
+python manage.py generate_resource order_items \
+  --fields "name:CharField quantity:IntegerField" \
+  --user-scoped
+```
+
+### 지원 필드 타입
+
+| 타입 | Django 필드 | 기본 옵션 |
+|------|------------|----------|
+| `CharField` | `CharField` | `max_length=255` |
+| `TextField` | `TextField` | `blank=True, default=""` |
+| `IntegerField` | `IntegerField` | `default=0` |
+| `BooleanField` | `BooleanField` | `default=False` |
+| `DateTimeField` | `DateTimeField` | `null=True, blank=True` |
+| `DateField` | `DateField` | `null=True, blank=True` |
+| `DecimalField` | `DecimalField` | `max_digits=10, decimal_places=2` |
+| `FloatField` | `FloatField` | `default=0.0` |
+| `IntegerChoices` | `IntegerField` + `Status` class | `choices=Status.choices, default=0` |
+
+### 생성되는 파일
+
+```
+apps/<name>/
+├── __init__.py
+├── apps.py              # AppConfig
+├── models.py            # Model + QuerySet
+├── views.py             # ViewSet (CrudActionsMixin)
+├── serializers.py       # Serializer (HookableSerializerMixin)
+├── filters.py           # Ransack 스타일 필터
+├── urls.py              # URL 라우팅
+└── migrations/
+    └── __init__.py
+
+tests/<name>/
+├── __init__.py
+├── test_models.py       # 모델 테스트
+└── test_api.py          # API 테스트
+```
+
+생성 후 `config/settings/base.py`와 `config/urls.py`에 자동 등록됩니다.
+
+> **참고**: v1은 스칼라 필드만 지원합니다. ForeignKey 등 관계 필드는 수동으로 추가하세요 (참고: `apps/comments/`).
 
 ## Docker
 
@@ -81,6 +119,8 @@ docker run -p 4000:4000 --env-file .env template-python-django
 ### Docker Compose (전체 스택)
 
 ```bash
+make server
+# 또는
 docker-compose up
 # PostgreSQL, Redis, Web, Celery Worker, Celery Beat 모두 실행
 ```
@@ -90,9 +130,9 @@ docker-compose up
 ```
 ├── apps/
 │   ├── core/                  # 핵심 인프라
-│   │   ├── middleware/        # 미들웨어 (인증, 로깅)
+│   │   ├── middleware/        # 미들웨어 (인증, 로깅, Allow2Ban)
 │   │   ├── mixins/            # CrudActions 등 공통 믹스인
-│   │   ├── management/        # 커스텀 관리 명령어 (FDW)
+│   │   ├── management/        # 커스텀 관리 명령어 (FDW, seed, generate_resource)
 │   │   ├── authentication.py  # 쿠키 세션 인증
 │   │   ├── exceptions.py      # JSON:API 에러 핸들러
 │   │   ├── filters.py         # Ransack 스타일 필터
@@ -103,12 +143,9 @@ docker-compose up
 │   │   └── views.py           # API 베이스 뷰셋
 │   ├── auth_service/          # 외부 인증 서비스 연동
 │   ├── email_service/         # SendGrid 이메일 서비스
-│   └── examples/              # 예제 리소스 (참고용)
-│       ├── models.py          # Example 모델
-│       ├── serializers.py     # Example 시리얼라이저
-│       ├── views.py           # Example 뷰셋
-│       ├── filters.py         # Example 필터
-│       └── urls.py            # Example URL 라우팅
+│   ├── members/               # 회원 리소스
+│   ├── posts/                 # 게시글 리소스
+│   └── comments/              # 댓글 리소스
 ├── config/
 │   ├── settings/              # 환경별 설정
 │   │   ├── base.py            # 공통 설정
@@ -119,15 +156,24 @@ docker-compose up
 │   ├── urls.py                # 루트 URL 설정
 │   └── wsgi.py                # WSGI 애플리케이션
 ├── tests/                     # pytest 테스트
+│   ├── factories.py           # factory-boy 팩토리 정의
+│   └── conftest.py            # 테스트 픽스처
+├── scripts/
+│   └── setup.sh               # 프로젝트 초기 설정 스크립트
 ├── requirements/              # pip 의존성
 │   ├── base.txt               # 프로덕션 의존성
 │   ├── dev.txt                # 개발 의존성
 │   └── test.txt               # 테스트 의존성
+├── .github/
+│   └── workflows/ci.yml       # GitHub Actions CI
 ├── Dockerfile                 # Docker 빌드 설정
 ├── docker-compose.yml         # Docker Compose 설정
+├── Makefile                   # 개발 명령어 통합
+├── Procfile.dev               # 멀티 프로세스 개발 실행
 ├── gunicorn.conf.py           # Gunicorn 서버 설정
 ├── pyproject.toml             # Python 프로젝트 메타데이터
 ├── manage.py                  # Django 관리 스크립트
+├── .pre-commit-config.yaml    # pre-commit 훅 설정
 └── .env.example               # 환경 변수 템플릿
 ```
 
@@ -160,8 +206,8 @@ permission_classes = [IsPersonal]          # 개인회원만
 
 ```python
 class MyViewSet(CrudActionsMixin, ApiViewSet):
-    model_class = MyModel
     serializer_class = MySerializer
+    filterset_class = MyFilterSet
 
     def create_after_init(self, instance):
         instance.user_id = self.request.user.id
@@ -175,20 +221,62 @@ class MyViewSet(CrudActionsMixin, ApiViewSet):
 
 ```bash
 # 전체 테스트
-pytest
-
-# 특정 파일 테스트
-pytest tests/examples/test_api.py
-
-# 특정 테스트
-pytest tests/examples/test_api.py::TestExamplesAPI::test_list_examples
+make test
 
 # 커버리지 포함
-pytest --cov=apps
+make test-cov
+
+# 특정 파일 테스트
+pytest tests/posts/test_api.py
+
+# 특정 테스트
+pytest tests/posts/test_api.py::TestPostsAPI::test_list_posts
 ```
+
+### 테스트 팩토리
+
+`tests/factories.py`에 factory-boy 팩토리가 정의되어 있습니다:
+
+```python
+from tests.factories import PostFactory, MemberFactory, CommentFactory
+
+post = PostFactory()  # 기본 Post 생성
+post = PostFactory(title="커스텀 제목", status=1)  # 커스텀 속성
+posts = PostFactory.create_batch(5)  # 5개 일괄 생성
+```
+
+## 코드 품질
+
+### Pre-commit 훅
+
+커밋 시 자동으로 Ruff (lint + format)가 실행됩니다:
+
+```bash
+# 수동 실행
+make pre-commit
+
+# 설치 (make setup에서 자동 실행)
+pre-commit install
+```
+
+### 린트 & 포맷팅
+
+```bash
+make lint     # Ruff 린트
+make format   # Ruff fix + format
+```
+
+## CI/CD
+
+GitHub Actions가 push/PR 시 자동으로 실행됩니다:
+
+- **Lint**: Ruff check + format 검증
+- **Test**: PostgreSQL 16 + Redis 7 환경에서 pytest 실행 (커버리지 포함)
+
+워크플로우 설정: `.github/workflows/ci.yml`
 
 ## 주의사항
 
 - 이 템플릿은 기본적인 설정을 포함하고 있으며, 실제 사용 시에는 프로젝트에 맞게 설정을 수정해야 합니다.
 - 환경 변수 설정은 `.env` 파일을 사용하여 관리합니다.
-- `apps/examples/`는 참고용 예제입니다. 실제 프로젝트에서는 이를 기반으로 새 앱을 생성하세요.
+- `generate_resource`로 생성된 코드는 스칼라 필드만 지원합니다. 관계 필드(ForeignKey 등)는 `apps/comments/`를 참고하여 수동으로 추가하세요.
