@@ -1,49 +1,40 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-02-28 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-01 -->
 
 # comments
 
 ## Purpose
-댓글 도메인 API. 게시글에 대한 댓글 CRUD 및 대댓글(self-referential FK) 기능을 제공한다.
+댓글 도메인. Post에 대한 댓글 및 대댓글(self-referential) 지원. Post와 N:1 관계.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `apps.py` | Django 앱 설정 (`CommentsConfig`) |
-| `models.py` | `Comment` 모델 — Post FK, self-referential `parent` FK, `CommentQuerySet` |
-| `serializers.py` | `CommentSerializer` — JSON:API 직렬화, `ResourceRelatedField`로 관계 해결 |
-| `views.py` | `CommentsViewSet` — CRUD, `?include=post` 지원, 소유자 권한 검사 |
-| `filters.py` | `CommentFilter` — Ransack 스타일 필터셋 |
-| `urls.py` | URL 라우팅 (`/comments`, trailing_slash=False) |
-
-## Subdirectories
-
-| Directory | Purpose |
-|-----------|---------|
-| `migrations/` | Django DB 마이그레이션 |
+| `models.py` | `Comment` 모델 — post(FK), content, user_id, parent(self FK) + `CommentQuerySet` |
+| `views.py` | `CommentsViewSet` — CRUD + `?include=post` 지원 |
+| `serializers.py` | `CommentSerializer` — ResourceRelatedField(post, parent), author_name, is_reply, reply_count |
+| `filters.py` | `CommentFilter` — Ransack 필터셋 (content, user_id, post, parent, created_at, updated_at) |
+| `urls.py` | `/api/v1/comments` 라우팅 (trailing_slash=False) |
 
 ## For AI Agents
 
 ### Working In This Directory
-- `parent` FK는 self-referential (대댓글 지원) — null이면 루트 댓글
-- 유효성 검증: 대댓글의 parent는 같은 post에 속해야 함
-- `?include=post`로 댓글과 함께 게시글 sideload 가능
-- `user_id`는 create 시 자동 설정 (인증된 유저)
+- `parent` FK로 대댓글 구현 — 같은 post 내에서만 허용 (`clean()` 검증)
+- `allowed_includes = ["post"]` — `?include=post` 지원
+- `included_serializers`: post → PostSerializer (JSON:API include 관계)
+- `ResourceRelatedField`로 관계 필드 처리 — `is_valid()` 시 자동 resolve
+- `create_after_init`: user_id 자동 설정
+- `update/destroy_after_init`: 본인 댓글만 수정/삭제 가능
 
-### API Endpoints
-| Method | Path | Action |
-|--------|------|--------|
-| GET | `/api/v1/comments` | 댓글 목록 |
-| POST | `/api/v1/comments` | 댓글 생성 |
-| GET | `/api/v1/comments/:id` | 댓글 조회 |
-| PATCH | `/api/v1/comments/:id` | 댓글 수정 (본인만) |
-| DELETE | `/api/v1/comments/:id` | 댓글 삭제 (본인만) |
+### Testing Requirements
+- `tests/comments/test_models.py` — 모델 생성, 대댓글 유효성
+- `tests/comments/test_api.py` — API CRUD, include, 권한
 
 ## Dependencies
 
 ### Internal
-- `apps.posts` — Post 모델 ForeignKey
-- `apps.core` — ApiViewSet, CrudActionsMixin, permissions, filters
+- `apps.posts.models.Post` — ForeignKey 관계
+- `apps.posts.serializers.PostSerializer` — included_serializers
+- `apps.core.mixins.crud_actions` — CrudActionsMixin + HookableSerializerMixin
 
 <!-- MANUAL: -->

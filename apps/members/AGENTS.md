@@ -1,49 +1,40 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-02-28 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-01 -->
 
 # members
 
 ## Purpose
-회원 프로필 도메인 API. 사용자 프로필 CRUD 및 상태(활성/정지/탈퇴) 관리를 제공한다.
+회원 프로필 도메인. 외부 인증 서비스의 user_id와 연결되는 프로필 정보(닉네임, 자기소개, 아바타) 관리.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `apps.py` | Django 앱 설정 (`MembersConfig`) |
-| `models.py` | `Member` 모델 — 상태(active/suspended/withdrawn), `MemberQuerySet` |
-| `serializers.py` | `MemberSerializer` — JSON:API 직렬화, 한국어 status_label |
-| `views.py` | `MembersViewSet` — CRUD + `me` 커스텀 액션, 소유자 권한 검사 |
-| `filters.py` | `MemberFilter` — Ransack 스타일 필터셋 |
-| `urls.py` | URL 라우팅 (`/members`, trailing_slash=False) |
-
-## Subdirectories
-
-| Directory | Purpose |
-|-----------|---------|
-| `migrations/` | Django DB 마이그레이션 |
+| `models.py` | `Member` 모델 — Status(active/suspended/withdrawn), nickname, bio, avatar_url + `MemberQuerySet` |
+| `views.py` | `MembersViewSet` — CRUD + `/me` 커스텀 액션 (본인 프로필 조회) |
+| `serializers.py` | `MemberSerializer` — status_label(한국어), display_name 포함 |
+| `filters.py` | `MemberFilter` — Ransack 필터셋 (nickname, status, user_id, created_at, updated_at) |
+| `urls.py` | `/api/v1/members` 라우팅 (trailing_slash=False) |
 
 ## For AI Agents
 
 ### Working In This Directory
-- `user_id`는 unique CharField — 외부 인증 서비스 ID (한 유저당 한 프로필)
-- Member 상태: `ACTIVE(0)`, `SUSPENDED(1)`, `WITHDRAWN(2)` (IntegerChoices)
-- `get_index_scope()`는 전체 목록 반환 (posts와 다름 — 공개 프로필)
-- nickname은 strip 처리, 2~50자
+- `user_id`는 CharField (외부 인증 서비스 UUID) — Django auth.User와 무관
+- Status: 0=active(활성), 1=suspended(정지), 2=withdrawn(탈퇴)
+- `create_after_init`: user_id를 request.user.id에서 자동 설정
+- `update_after_init`, `destroy_after_init`: 본인 확인 (user_id 비교)
+- `me` 액션: user_id로 프로필 조회
+- nickname은 save() 시 strip() 처리, full_clean() 자동 호출
 
-### API Endpoints
-| Method | Path | Action |
-|--------|------|--------|
-| GET | `/api/v1/members` | 회원 목록 |
-| POST | `/api/v1/members` | 프로필 생성 (user_id 자동 설정) |
-| GET | `/api/v1/members/:id` | 프로필 조회 |
-| PATCH | `/api/v1/members/:id` | 프로필 수정 (본인만) |
-| DELETE | `/api/v1/members/:id` | 프로필 삭제 (본인만) |
-| GET | `/api/v1/members/me` | 내 프로필 조회 |
+### Testing Requirements
+- `tests/members/test_models.py` — 모델 생성, 상태 변경, 유효성
+- `tests/members/test_api.py` — API CRUD, 인증, 권한 테스트
 
 ## Dependencies
 
 ### Internal
-- `apps.core` — ApiViewSet, CrudActionsMixin, permissions, filters
+- `apps.core.mixins.crud_actions` — CrudActionsMixin + HookableSerializerMixin
+- `apps.core.views.ApiViewSet` — 인증 포함 기본 ViewSet
+- `apps.core.filters` — Ransack 필터셋 생성
 
 <!-- MANUAL: -->
