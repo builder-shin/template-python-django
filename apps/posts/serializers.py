@@ -1,8 +1,9 @@
-from rest_framework_json_api import serializers
 from django.utils import timezone
-from apps.core.mixins.crud_actions import HookableSerializerMixin
-from .models import Post
+from rest_framework_json_api import serializers
 
+from apps.core.mixins.crud_actions import HookableSerializerMixin
+
+from .models import Post
 
 STATUS_LABELS_KO = {
     Post.Status.DRAFT: "초안",
@@ -71,12 +72,18 @@ class PostSerializer(HookableSerializerMixin, serializers.ModelSerializer):
             data["links"]["public_url"] = f"/posts/{instance.pk}"
 
         request = self.context.get("request")
-        if request and hasattr(request, "user") and request.user:
-            if str(getattr(request.user, "id", None)) == str(instance.user_id):
-                data["edit_url"] = f"/api/v1/posts/{instance.pk}"
+        if (
+            request
+            and hasattr(request, "user")
+            and request.user
+            and str(getattr(request.user, "id", None)) == str(instance.user_id)
+        ):
+            data["edit_url"] = f"/api/v1/posts/{instance.pk}"
 
-        data.setdefault("meta", {}).update({
-            "copyright": f"{timezone.now().year} Template Inc.",
-        })
+        data.setdefault("meta", {}).update(
+            {
+                "copyright": f"{timezone.now().year} Template Inc.",
+            }
+        )
 
         return data

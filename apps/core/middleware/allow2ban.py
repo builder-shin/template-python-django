@@ -85,5 +85,7 @@ class Allow2BanMiddleware:
             cache.delete(cache_key)
             logger.warning(
                 "Auto-banned IP %s for %ds after %d suspicious requests",
-                ip, self.BAN_TIME, count,
+                ip,
+                self.BAN_TIME,
+                count,
             )

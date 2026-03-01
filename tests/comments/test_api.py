@@ -1,8 +1,8 @@
 import pytest
 from rest_framework.test import APIClient
 
-from apps.posts.models import Post
 from apps.comments.models import Comment
+from apps.posts.models import Post
 
 
 @pytest.mark.django_db
@@ -38,11 +38,7 @@ class TestCommentsAPI:
                 "attributes": {
                     "content": "Great post!",
                 },
-                "relationships": {
-                    "post": {
-                        "data": {"type": "posts", "id": str(post.id)}
-                    }
-                },
+                "relationships": {"post": {"data": {"type": "posts", "id": str(post.id)}}},
             }
         }
         response = client.post("/api/v1/comments", data=payload, format="vnd.api+json", **jsonapi_headers)
@@ -63,12 +59,8 @@ class TestCommentsAPI:
                     "content": "Reply!",
                 },
                 "relationships": {
-                    "post": {
-                        "data": {"type": "posts", "id": str(post.id)}
-                    },
-                    "parent": {
-                        "data": {"type": "comments", "id": str(parent.id)}
-                    },
+                    "post": {"data": {"type": "posts", "id": str(post.id)}},
+                    "parent": {"data": {"type": "comments", "id": str(parent.id)}},
                 },
             }
         }
@@ -97,7 +89,9 @@ class TestCommentsAPI:
                 "attributes": {"content": "Updated Content"},
             }
         }
-        response = client.patch(f"/api/v1/comments/{comment.id}", data=payload, format="vnd.api+json", **jsonapi_headers)
+        response = client.patch(
+            f"/api/v1/comments/{comment.id}", data=payload, format="vnd.api+json", **jsonapi_headers
+        )
         assert response.status_code == 200
         comment.refresh_from_db()
         assert comment.content == "Updated Content"
@@ -114,7 +108,9 @@ class TestCommentsAPI:
                 "attributes": {"content": "Hacked"},
             }
         }
-        response = client.patch(f"/api/v1/comments/{comment.id}", data=payload, format="vnd.api+json", **jsonapi_headers)
+        response = client.patch(
+            f"/api/v1/comments/{comment.id}", data=payload, format="vnd.api+json", **jsonapi_headers
+        )
         assert response.status_code == 403
 
     def test_destroy_own(self, mock_authenticated, jsonapi_headers):

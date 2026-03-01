@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from django.conf import settings
 
@@ -26,7 +25,7 @@ class SendGridEmailService:
         to: str,
         subject: str,
         template_id: str,
-        dynamic_data: Optional[dict] = None,
+        dynamic_data: dict | None = None,
     ) -> dict:
         if not cls.enabled():
             logger.warning("SendGrid is not configured. Skipping email send.")
@@ -86,7 +85,7 @@ class SendGridEmailService:
 
         try:
             from sendgrid import SendGridAPIClient
-            from sendgrid.helpers.mail import Mail, Personalization, Email
+            from sendgrid.helpers.mail import Email, Mail, Personalization
         except ImportError as e:
             logger.error(f"sendgrid package not available: {e}")
             return {"success": False, "total": total, "sent": 0, "failed": total}
@@ -117,14 +116,10 @@ class SendGridEmailService:
                 response = sg.send(mail)
                 if response.status_code in (200, 201, 202):
                     sent += len(batch)
-                    logger.info(
-                        f"Batch sent: {len(batch)} recipients, status: {response.status_code}"
-                    )
+                    logger.info(f"Batch sent: {len(batch)} recipients, status: {response.status_code}")
                 else:
                     failed += len(batch)
-                    logger.error(
-                        f"Batch failed: {len(batch)} recipients, status: {response.status_code}"
-                    )
+                    logger.error(f"Batch failed: {len(batch)} recipients, status: {response.status_code}")
             except Exception as e:
                 failed += len(batch)
                 logger.error(f"Batch send error ({len(batch)} recipients): {e}")

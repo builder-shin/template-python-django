@@ -14,8 +14,10 @@ class AllowedIncludesFilter:
             return queryset
 
         requested = [inc.strip() for inc in include_param.split(",") if inc.strip()]
+
         def _is_include_allowed(inc, allowed_list):
-            """Check if include path is allowed. Supports nested paths (e.g. user.consents passes if user is allowed)."""
+            # Check if include path is allowed.
+            # Supports nested paths (e.g. user.consents passes if user is allowed).
             if inc in allowed_list:
                 return True
             # Nested path: check if top-level is allowed

@@ -54,7 +54,7 @@ class TestMemberQuerySet:
         assert Member.objects.by_user("u1").count() == 1
 
     def test_recent(self):
-        m1 = Member.objects.create(user_id="u1", nickname="First")
+        Member.objects.create(user_id="u1", nickname="First")
         m2 = Member.objects.create(user_id="u2", nickname="Second")
         results = list(Member.objects.recent())
         assert results[0].pk == m2.pk

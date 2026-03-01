@@ -1,4 +1,4 @@
-from .base import *  # noqa: F401,F403
+from .base import *  # noqa: F403
 
 DEBUG = True
 
@@ -25,5 +25,5 @@ CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 
 # Debug-level logging in development (matches Rails development.rb)
-LOGGING["loggers"]["django"]["level"] = "DEBUG"
-LOGGING["loggers"]["api"]["level"] = "DEBUG"
+LOGGING["loggers"]["django"]["level"] = "DEBUG"  # noqa: F405
+LOGGING["loggers"]["api"]["level"] = "DEBUG"  # noqa: F405

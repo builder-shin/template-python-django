@@ -1,13 +1,13 @@
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.core.views import ApiViewSet
-from apps.core.mixins.owned_resource import OwnedResourceMixin
 from apps.core.exceptions import JsonApiError
+from apps.core.mixins.owned_resource import OwnedResourceMixin
+from apps.core.views import ApiViewSet
 
+from .filters import MemberFilter
 from .models import Member
 from .serializers import MemberSerializer
-from .filters import MemberFilter
 
 
 class MembersViewSet(OwnedResourceMixin, ApiViewSet):
@@ -25,7 +25,7 @@ class MembersViewSet(OwnedResourceMixin, ApiViewSet):
     def me(self, request, *args, **kwargs):
         try:
             member = Member.objects.get(user_id=request.user.id)
-        except Member.DoesNotExist:
-            raise JsonApiError("NotFound", "프로필이 존재하지 않습니다.", 404)
+        except Member.DoesNotExist as err:
+            raise JsonApiError("NotFound", "프로필이 존재하지 않습니다.", 404) from err
         serializer = self.get_serializer(member)
         return Response(serializer.data)

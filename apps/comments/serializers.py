@@ -1,7 +1,9 @@
 from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import ResourceRelatedField
+
 from apps.core.mixins.crud_actions import HookableSerializerMixin
 from apps.posts.models import Post
+
 from .models import Comment
 
 

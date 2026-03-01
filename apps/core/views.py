@@ -1,22 +1,22 @@
 import json as _json
 import logging
 
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import connection, models
 from django.db.models import ProtectedError
-from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework_json_api.filters import QueryParameterValidationFilter, OrderingFilter
 from rest_framework_json_api.django_filters import DjangoFilterBackend
+from rest_framework_json_api.filters import OrderingFilter, QueryParameterValidationFilter
 from rest_framework_json_api.views import ModelViewSet
 
 from apps.core.exceptions import JsonApiError, NotFound
 from apps.core.filters import AllowedIncludesFilter
-from rest_framework.permissions import IsAuthenticated
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +54,7 @@ class ApiViewSet(ModelViewSet):
     and full CRUD lifecycle hooks.
     Equivalent to Rails ApiController + CrudActions concern.
     """
+
     permission_classes = [IsAuthenticated]
     filter_backends = [
         QueryParameterValidationFilter,
@@ -127,8 +128,8 @@ class ApiViewSet(ModelViewSet):
         try:
             instance.delete()
             success = True
-        except ProtectedError:
-            raise JsonApiError("DeleteFailed", "연관된 데이터가 있어 삭제할 수 없습니다.", 409)
+        except ProtectedError as err:
+            raise JsonApiError("DeleteFailed", "연관된 데이터가 있어 삭제할 수 없습니다.", 409) from err
         except Exception:
             logger.exception("Unexpected error deleting %s(pk=%s)", type(instance).__name__, instance.pk)
             success = False
@@ -194,7 +195,7 @@ class ApiViewSet(ModelViewSet):
             success = True
         except ValidationError as e:
             self.upsert_after_save(instance, False, created)
-            raise JsonApiError(
+            raise JsonApiError(  # noqa: B904 (re-raised with context via `e` in message)
                 "ValidationFailed",
                 "; ".join(
                     f"{field}: {', '.join(messages)}" if field != "__all__" else ", ".join(messages)
@@ -265,7 +266,7 @@ class ApiViewSet(ModelViewSet):
         filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
         try:
             obj = queryset.get(**filter_kwargs)
-        except queryset.model.DoesNotExist:
-            raise NotFound()
+        except queryset.model.DoesNotExist as err:
+            raise NotFound() from err
         self.check_object_permissions(self.request, obj)
         return obj

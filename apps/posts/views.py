@@ -1,14 +1,14 @@
+from django.db.models import Count
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.db.models import Count
 
-from apps.core.views import ApiViewSet
-from apps.core.mixins.owned_resource import OwnedResourceMixin
 from apps.core.exceptions import JsonApiError
+from apps.core.mixins.owned_resource import OwnedResourceMixin
+from apps.core.views import ApiViewSet
 
+from .filters import PostFilter
 from .models import Post
 from .serializers import PostSerializer
-from .filters import PostFilter
 
 
 class PostsViewSet(OwnedResourceMixin, ApiViewSet):
@@ -43,6 +43,7 @@ class PostsViewSet(OwnedResourceMixin, ApiViewSet):
 
     def upsert_find_params(self):
         import json as _json
+
         try:
             raw = self.request._request.body
             body = _json.loads(raw)

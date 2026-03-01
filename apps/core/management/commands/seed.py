@@ -12,10 +12,10 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        from tests.factories import MemberFactory, PostFactory, CommentFactory
         from apps.comments.models import Comment
-        from apps.posts.models import Post
         from apps.members.models import Member
+        from apps.posts.models import Post
+        from tests.factories import CommentFactory, MemberFactory, PostFactory
 
         if options["flush"]:
             self.stdout.write(">>> 기존 데이터 삭제...")

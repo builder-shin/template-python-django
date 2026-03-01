@@ -11,6 +11,7 @@ def block_outbound_http():
     """
     try:
         import respx
+
         with respx.mock:
             yield
     except ImportError:
@@ -35,7 +36,6 @@ def mock_authenticated(auth_user):
 @pytest.fixture
 def mock_unauthenticated():
     """Marker fixture for unauthenticated tests - no user is provided."""
-    pass
 
 
 @pytest.fixture

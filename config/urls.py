@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.urls import path, include
+from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.core.views import health_live, health_ready
@@ -18,6 +18,7 @@ urlpatterns = [
 if settings.DEBUG:
     try:
         import debug_toolbar
+
         urlpatterns += [path("__debug__/", include(debug_toolbar.urls))]
     except ImportError:
         pass

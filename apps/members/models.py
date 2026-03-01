@@ -1,5 +1,5 @@
+from django.core.validators import MaxLengthValidator, MinLengthValidator
 from django.db import models
-from django.core.validators import MinLengthValidator, MaxLengthValidator
 
 
 class MemberQuerySet(models.QuerySet):
@@ -52,7 +52,7 @@ class Member(models.Model):
         if self.nickname:
             self.nickname = self.nickname.strip()
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs):  # noqa: DJ012
         if self.nickname:
             self.nickname = self.nickname.strip()
         if not kwargs.get("update_fields"):

@@ -1,4 +1,4 @@
-from .base import *  # noqa: F401,F403
+from .base import *  # noqa: F403
 
 DEBUG = False
 
@@ -24,6 +24,7 @@ CELERY_TASK_EAGER_PROPAGATES = True
 # Disable Sentry in tests
 try:
     import sentry_sdk
+
     sentry_sdk.init(dsn=None)
 except ImportError:
     pass

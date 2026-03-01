@@ -15,11 +15,11 @@ class HookableSerializerMixin:
 
     def create(self, validated_data):
         view = self.context.get("view")
-        ModelClass = self.Meta.model
+        ModelClass = self.Meta.model  # noqa: N806
 
         m2m_fields = {}
         info = self.Meta.model._meta
-        for field_name, value in list(validated_data.items()):
+        for field_name, _value in list(validated_data.items()):
             if field_name in [f.name for f in info.many_to_many]:
                 m2m_fields[field_name] = validated_data.pop(field_name)
 
@@ -50,7 +50,7 @@ class HookableSerializerMixin:
 
         m2m_fields = {}
         info = self.Meta.model._meta
-        for field_name, value in list(validated_data.items()):
+        for field_name, _value in list(validated_data.items()):
             if field_name in [f.name for f in info.many_to_many]:
                 m2m_fields[field_name] = validated_data.pop(field_name)
 

@@ -1,7 +1,8 @@
 from rest_framework_json_api import serializers
-from apps.core.mixins.crud_actions import HookableSerializerMixin
-from .models import Member
 
+from apps.core.mixins.crud_actions import HookableSerializerMixin
+
+from .models import Member
 
 STATUS_LABELS_KO = {
     Member.Status.ACTIVE: "활성",

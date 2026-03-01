@@ -76,7 +76,9 @@ class TestPostModel:
 class TestPostQuerySet:
     def test_published_only(self):
         Post.objects.create(title="Draft", content="c", user_id="u1", status=Post.Status.DRAFT)
-        Post.objects.create(title="Published", content="c", user_id="u1", status=Post.Status.PUBLISHED, published_at=timezone.now())
+        Post.objects.create(
+            title="Published", content="c", user_id="u1", status=Post.Status.PUBLISHED, published_at=timezone.now()
+        )
         assert Post.objects.published_only().count() == 1
 
     def test_by_user(self):
@@ -91,15 +93,31 @@ class TestPostQuerySet:
 
     def test_statistics(self):
         Post.objects.create(title="D1", content="c", user_id="u1", status=Post.Status.DRAFT)
-        Post.objects.create(title="P1", content="c", user_id="u1", status=Post.Status.PUBLISHED, published_at=timezone.now())
+        Post.objects.create(
+            title="P1", content="c", user_id="u1", status=Post.Status.PUBLISHED, published_at=timezone.now()
+        )
         stats = Post.objects.statistics()
         assert stats["total"] == 2
         assert stats["published"] == 1
         assert stats["draft"] == 1
 
     def test_most_popular(self):
-        Post.objects.create(title="Popular", content="c", user_id="u1", status=Post.Status.PUBLISHED, published_at=timezone.now(), view_count=100)
-        Post.objects.create(title="Less", content="c", user_id="u1", status=Post.Status.PUBLISHED, published_at=timezone.now(), view_count=10)
+        Post.objects.create(
+            title="Popular",
+            content="c",
+            user_id="u1",
+            status=Post.Status.PUBLISHED,
+            published_at=timezone.now(),
+            view_count=100,
+        )
+        Post.objects.create(
+            title="Less",
+            content="c",
+            user_id="u1",
+            status=Post.Status.PUBLISHED,
+            published_at=timezone.now(),
+            view_count=10,
+        )
         results = Post.objects.most_popular(limit=1)
         assert len(results) == 1
         assert results[0].title == "Popular"

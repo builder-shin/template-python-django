@@ -34,11 +34,13 @@ def json_api_exception_handler(exc, context):
     """
     if isinstance(exc, JsonApiError):
         response = Response(
-            [{
-                "status": str(exc.status_code),
-                "title": exc.title,
-                "detail": exc.detail,
-            }],
+            [
+                {
+                    "status": str(exc.status_code),
+                    "title": exc.title,
+                    "detail": exc.detail,
+                }
+            ],
             status=exc.status_code,
         )
         response.exception = True
@@ -46,11 +48,13 @@ def json_api_exception_handler(exc, context):
 
     if isinstance(exc, NotAuthenticated):
         response = Response(
-            [{
-                "status": "401",
-                "title": "Unauthorized",
-                "detail": "로그인 후 이용해주세요.",
-            }],
+            [
+                {
+                    "status": "401",
+                    "title": "Unauthorized",
+                    "detail": "로그인 후 이용해주세요.",
+                }
+            ],
             status=401,
         )
         response.exception = True
@@ -58,11 +62,13 @@ def json_api_exception_handler(exc, context):
 
     if isinstance(exc, PermissionDenied):
         response = Response(
-            [{
-                "status": "403",
-                "title": "Forbidden",
-                "detail": str(exc.detail),
-            }],
+            [
+                {
+                    "status": "403",
+                    "title": "Forbidden",
+                    "detail": str(exc.detail),
+                }
+            ],
             status=403,
         )
         response.exception = True
@@ -70,11 +76,13 @@ def json_api_exception_handler(exc, context):
 
     if isinstance(exc, Throttled):
         response = Response(
-            [{
-                "status": "429",
-                "title": "Too Many Requests",
-                "detail": "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.",
-            }],
+            [
+                {
+                    "status": "429",
+                    "title": "Too Many Requests",
+                    "detail": "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.",
+                }
+            ],
             status=429,
         )
         response.exception = True

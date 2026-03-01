@@ -1,7 +1,7 @@
 import pytest
 
-from apps.posts.models import Post
 from apps.comments.models import Comment
+from apps.posts.models import Post
 
 
 @pytest.mark.django_db
@@ -60,7 +60,7 @@ class TestCommentQuerySet:
 
     def test_recent(self):
         post = Post.objects.create(title="Post", content="c", user_id="u1")
-        c1 = Comment.objects.create(post=post, content="First", user_id="u2")
+        Comment.objects.create(post=post, content="First", user_id="u2")
         c2 = Comment.objects.create(post=post, content="Second", user_id="u3")
         results = list(Comment.objects.recent())
         assert results[0].pk == c2.pk

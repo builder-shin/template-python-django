@@ -1,11 +1,11 @@
 from django.db.models import Count
 
-from apps.core.views import ApiViewSet
 from apps.core.mixins.owned_resource import OwnedResourceMixin
+from apps.core.views import ApiViewSet
 
+from .filters import CommentFilter
 from .models import Comment
 from .serializers import CommentSerializer
-from .filters import CommentFilter
 
 
 class CommentsViewSet(OwnedResourceMixin, ApiViewSet):

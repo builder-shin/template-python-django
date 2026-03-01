@@ -1,6 +1,6 @@
-from django.db import models
 from django.core.exceptions import ValidationError
-from django.core.validators import MinLengthValidator, MaxLengthValidator
+from django.core.validators import MaxLengthValidator, MinLengthValidator
+from django.db import models
 from django.db.models import Avg, F
 from django.db.models.functions import Lower
 from django.utils import timezone
@@ -34,15 +34,11 @@ class PostQuerySet(models.QuerySet):
         return self.filter(view_count__gte=min_views)
 
     def created_between(self, start_date, end_date):
-        from datetime import datetime, time as dt_time
-        if hasattr(start_date, 'date'):
-            start = start_date
-        else:
-            start = datetime.combine(start_date, dt_time.min)
-        if hasattr(end_date, 'date'):
-            end = end_date
-        else:
-            end = datetime.combine(end_date, dt_time.max)
+        from datetime import datetime
+        from datetime import time as dt_time
+
+        start = start_date if hasattr(start_date, "date") else datetime.combine(start_date, dt_time.min)
+        end = end_date if hasattr(end_date, "date") else datetime.combine(end_date, dt_time.max)
         return self.filter(created_at__range=(start, end))
 
     def today_count(self):
@@ -93,7 +89,8 @@ class Post(models.Model):
         ]
         constraints = [
             models.UniqueConstraint(
-                Lower("title"), "user_id",
+                Lower("title"),
+                "user_id",
                 name="unique_post_title_per_user",
             ),
         ]
@@ -111,7 +108,7 @@ class Post(models.Model):
         if errors:
             raise ValidationError(errors)
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs):  # noqa: DJ012
         self._strip_title()
         self._set_published_at_if_published()
         if not kwargs.get("update_fields"):

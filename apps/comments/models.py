@@ -1,6 +1,6 @@
-from django.db import models
 from django.core.exceptions import ValidationError
-from django.core.validators import MinLengthValidator, MaxLengthValidator
+from django.core.validators import MaxLengthValidator, MinLengthValidator
+from django.db import models
 
 
 class CommentQuerySet(models.QuerySet):
@@ -56,7 +56,7 @@ class Comment(models.Model):
         if errors:
             raise ValidationError(errors)
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs):  # noqa: DJ012
         if not kwargs.get("update_fields"):
             self.full_clean()
         super().save(*args, **kwargs)

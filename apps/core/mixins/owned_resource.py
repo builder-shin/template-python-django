@@ -6,6 +6,7 @@ class OwnedResourceMixin:
     user_id 기반 소유권 검증을 제공하는 Mixin.
     resource_name을 오버라이드하여 에러 메시지를 커스터마이즈.
     """
+
     owner_field: str = "user_id"
     resource_label: str = "리소스"
 

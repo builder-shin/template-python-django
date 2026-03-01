@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -118,9 +119,7 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.FormParser",
         "rest_framework.parsers.MultiPartParser",
     ),
-    "DEFAULT_RENDERER_CLASSES": (
-        "rest_framework_json_api.renderers.JSONRenderer",
-    ),
+    "DEFAULT_RENDERER_CLASSES": ("rest_framework_json_api.renderers.JSONRenderer",),
     "DEFAULT_METADATA_CLASS": "rest_framework_json_api.metadata.JSONAPIMetadata",
     "DEFAULT_FILTER_BACKENDS": (
         "rest_framework_json_api.filters.QueryParameterValidationFilter",
@@ -143,9 +142,7 @@ REST_FRAMEWORK = {
         "auth": "10/min",
     },
     "SEARCH_PARAM": "filter[search]",
-    "TEST_REQUEST_RENDERER_CLASSES": (
-        "rest_framework_json_api.renderers.JSONRenderer",
-    ),
+    "TEST_REQUEST_RENDERER_CLASSES": ("rest_framework_json_api.renderers.JSONRenderer",),
     "TEST_REQUEST_DEFAULT_FORMAT": "vnd.api+json",
 }
 
