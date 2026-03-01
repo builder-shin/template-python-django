@@ -1,30 +1,17 @@
-from rest_framework_json_api.filters import QueryParameterValidationFilter, OrderingFilter
-from rest_framework_json_api.django_filters import DjangoFilterBackend
-from rest_framework.filters import SearchFilter
 from django.db.models import Count
 
 from apps.core.views import ApiViewSet
-from apps.core.mixins.crud_actions import CrudActionsMixin
-from apps.core.permissions import IsAuthenticated
-from apps.core.filters import AllowedIncludesFilter
-from apps.core.exceptions import JsonApiError
+from apps.core.mixins.owned_resource import OwnedResourceMixin
 
 from .models import Comment
 from .serializers import CommentSerializer
 from .filters import CommentFilter
 
 
-class CommentsViewSet(CrudActionsMixin, ApiViewSet):
+class CommentsViewSet(OwnedResourceMixin, ApiViewSet):
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticated]
     filterset_class = CommentFilter
-    filter_backends = [
-        QueryParameterValidationFilter,
-        OrderingFilter,
-        DjangoFilterBackend,
-        SearchFilter,
-        AllowedIncludesFilter,
-    ]
+    resource_label = "댓글"
 
     @property
     def allowed_includes(self):
@@ -42,14 +29,3 @@ class CommentsViewSet(CrudActionsMixin, ApiViewSet):
 
     def get_index_scope(self):
         return Comment.objects.all()
-
-    def create_after_init(self, instance):
-        instance.user_id = self.request.user.id
-
-    def update_after_init(self, instance):
-        if instance.user_id != self.request.user.id:
-            raise JsonApiError("Forbidden", "본인의 댓글만 수정할 수 있습니다.", 403)
-
-    def destroy_after_init(self, instance):
-        if instance.user_id != self.request.user.id:
-            raise JsonApiError("Forbidden", "본인의 댓글만 삭제할 수 있습니다.", 403)
