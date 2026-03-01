@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-03-01 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-02 -->
 
 # settings
 
@@ -19,7 +19,7 @@
 
 ### Working In This Directory
 - 새 앱 등록: `base.py`의 `INSTALLED_APPS` → `# Local apps` 주석 아래에 추가
-- 미들웨어 순서 중요: CORS → Security → CSP → Allow2Ban → Common → CurrentUser → StructuredLogging
+- 미들웨어 순서 중요: CORS → Security → CSP → Allow2Ban → Common → Session → Auth → django-structlog RequestMiddleware
 - `REST_FRAMEWORK` 설정이 JSON:API 전용으로 구성됨 — 파서/렌더러/필터 변경 시 주의
 - 환경변수 기본값은 로컬 개발용 (localhost, 기본 포트)
 - Sentry는 production/staging에서만 활성화 (`SENTRY_ENABLED_ENVIRONMENTS`)
@@ -27,7 +27,7 @@
 - `APPEND_SLASH = False` — trailing slash 없음
 
 ### Key Configuration
-- **인증**: `CookieSessionAuthentication` (session_web 쿠키)
+- **인증**: DRF 내장 `SessionAuthentication` + `TokenAuthentication`
 - **페이지네이션**: `JsonApiPageNumberPagination` (기본 25, 최대 100)
 - **스로틀링**: anon 300/5min, user 300/5min, auth 10/min
 - **검색**: `filter[search]` 파라미터
@@ -42,10 +42,11 @@
 ## Dependencies
 
 ### Internal
-- `apps.core.authentication.CookieSessionAuthentication` — DRF 인증 백엔드
+- DRF 내장 `SessionAuthentication` + `TokenAuthentication` — 인증 백엔드
 - `apps.core.exceptions.json_api_exception_handler` — 예외 핸들러
 - `apps.core.pagination.JsonApiPageNumberPagination` — 페이지네이션
-- `apps.core.middleware.*` — 커스텀 미들웨어 3종
+- `apps.core.middleware.allow2ban` — IP 자동 차단 미들웨어
+- `django_structlog` — 구조화 로깅 미들웨어 (패키지)
 
 ### External
 - python-dotenv — `.env` 파일 로딩

@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-03-01 | Updated: 2026-03-01 -->
+<!-- Generated: 2026-03-01 | Updated: 2026-03-02 -->
 
 # scripts
 
@@ -10,7 +10,7 @@
 
 | File | Description |
 |------|-------------|
-| `setup.sh` | 프로젝트 초기 설정 — venv 생성, 의존성 설치, DB 마이그레이션, pre-commit 설정 |
+| `setup.sh` | 프로젝트 초기 설정 — uv 설치 확인, 의존성 설치(uv sync), DB 마이그레이션, pre-commit 설정 |
 
 ## For AI Agents
 
