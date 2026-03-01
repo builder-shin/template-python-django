@@ -1,4 +1,5 @@
 import django_filters
+from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 
 
@@ -68,7 +69,7 @@ def create_ransack_filterset(model_class, filter_attributes):
     for attr in filter_attributes:
         try:
             field = model_class._meta.get_field(attr)
-        except Exception:
+        except FieldDoesNotExist:
             continue
 
         is_enum = (

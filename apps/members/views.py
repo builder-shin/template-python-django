@@ -17,7 +17,6 @@ from .filters import MemberFilter
 
 class MembersViewSet(CrudActionsMixin, ApiViewSet):
     serializer_class = MemberSerializer
-    # permission_classes = [IsAuthenticated]
     filterset_class = MemberFilter
     filter_backends = [
         QueryParameterValidationFilter,

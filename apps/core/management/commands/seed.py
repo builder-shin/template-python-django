@@ -34,7 +34,7 @@ class Command(BaseCommand):
             batch = PostFactory.create_batch(
                 4,
                 user_id=member.user_id,
-                status=i % 3,  # draft(0), published(1), archived(2) 순환
+                status=Post.Status(i % len(Post.Status)),
             )
             posts.extend(batch)
         self.stdout.write(f"  Post {len(posts)}개 생성")

@@ -4,6 +4,19 @@ _thread_locals = threading.local()
 
 
 class CurrentUserMiddleware:
+    """
+    Thread-local middleware that stores the current user for access outside request/view context.
+
+    Timing: user is set to None before request processing. After get_response() completes
+    (i.e., after DRF authentication runs), request.user is stored in thread-local.
+    The thread-local is always cleaned up in the finally block to prevent stale data
+    on reused threads (e.g., Gunicorn gthread workers).
+
+    Limitation: Current.get_user() returns None during request processing (middleware/view execution)
+    because the user is only captured after get_response() returns. Use request.user directly
+    within views and middleware instead.
+    """
+
     def __init__(self, get_response):
         self.get_response = get_response
 
