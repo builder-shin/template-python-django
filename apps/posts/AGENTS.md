@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-03-01 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-02 -->
 
 # posts
 
@@ -36,6 +36,7 @@
 
 ### Internal
 - `apps.comments` — `comments` 역참조 관계 (ForeignKey)
-- `apps.core.mixins.crud_actions` — CrudActionsMixin + HookableSerializerMixin
+- `apps.core.views.ApiViewSet` — CRUD 라이프사이클 훅 내장 ViewSet
+- `apps.core.mixins` — HookableSerializerMixin + OwnedResourceMixin
 
 <!-- MANUAL: -->

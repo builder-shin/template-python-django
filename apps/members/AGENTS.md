@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-03-01 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-02 -->
 
 # members
 
@@ -33,8 +33,8 @@
 ## Dependencies
 
 ### Internal
-- `apps.core.mixins.crud_actions` — CrudActionsMixin + HookableSerializerMixin
-- `apps.core.views.ApiViewSet` — 인증 포함 기본 ViewSet
+- `apps.core.views.ApiViewSet` — CRUD 라이프사이클 훅 내장 ViewSet
+- `apps.core.mixins` — HookableSerializerMixin + OwnedResourceMixin
 - `django_filters` — 표준 필터 프레임워크
 
 <!-- MANUAL: -->
