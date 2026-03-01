@@ -1,40 +1,52 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-02-28 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-01 -->
 
 # config
 
 ## Purpose
-Django 프로젝트 설정 모듈. WSGI/ASGI 진입점, URL 라우팅, Celery 설정, 환경별 settings를 포함한다.
+Django 프로젝트 설정, URL 라우팅, WSGI/ASGI 진입점, Celery 설정을 담당하는 프로젝트 구성 패키지.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `__init__.py` | 패키지 초기화 |
-| `urls.py` | 루트 URL 라우팅 — health 체크, API v1 엔드포인트, Swagger UI |
-| `wsgi.py` | WSGI 애플리케이션 진입점 (Gunicorn용) |
-| `asgi.py` | ASGI 애플리케이션 진입점 |
-| `celery.py` | Celery 앱 설정 및 autodiscover |
+| `urls.py` | URL 라우팅 — health check, API v1 엔드포인트, Swagger UI, debug toolbar |
+| `celery.py` | Celery 앱 초기화 (autodiscover_tasks, Django settings 연동) |
+| `wsgi.py` | WSGI 진입점 (gunicorn 사용) |
+| `asgi.py` | ASGI 진입점 (비동기 지원) |
+| `__init__.py` | Celery app import (`from .celery import app as celery_app`) |
 
 ## Subdirectories
 
 | Directory | Purpose |
 |-----------|---------|
-| `settings/` | 환경별 Django 설정 (see `settings/AGENTS.md`) |
+| `settings/` | 환경별 분리된 Django 설정 (see `settings/AGENTS.md`) |
 
 ## For AI Agents
 
 ### Working In This Directory
-- 새 앱의 URL 추가 시 `urls.py`의 `urlpatterns`에 `path("api/v1/", include("apps.xxx.urls"))` 형태로 추가
-- Health check 엔드포인트: `GET /health/live`, `GET /health/ready`
-- Swagger: `GET /api-docs/`, Schema: `GET /api/schema/`
-- `APPEND_SLASH = False` — URL 끝에 슬래시 없음
+- URL 추가 시 `urlpatterns`에 `path("api/v1/", include("apps.<name>.urls"))` 형태로 등록
+- `# API v1 endpoints` 주석 아래에 새 앱 URL 등록 (generate_resource 명령어가 자동 등록)
+- Health check 엔드포인트: `/health/live`, `/health/ready` (인증 불필요)
+- Swagger UI: `/api-docs/`, Schema: `/api/schema/`
 
-### API Endpoints
-| Path | App |
-|------|-----|
-| `api/v1/posts` | apps.posts |
-| `api/v1/comments` | apps.comments |
-| `api/v1/members` | apps.members |
+### Testing Requirements
+- URL 라우팅은 통합 테스트에서 검증
+- Celery 태스크는 테스트 시 `CELERY_TASK_ALWAYS_EAGER=True`로 동기 실행
+
+### Common Patterns
+- DEBUG 모드에서만 django-debug-toolbar URL 등록
+- Celery autodiscover로 앱 내 tasks.py 자동 탐지
+
+## Dependencies
+
+### Internal
+- `apps/members/urls` — Members API 엔드포인트
+- `apps/posts/urls` — Posts API 엔드포인트
+- `apps/comments/urls` — Comments API 엔드포인트
+
+### External
+- drf-spectacular — OpenAPI 스키마 생성
+- debug_toolbar — 디버그 툴바 (개발 환경)
 
 <!-- MANUAL: -->
