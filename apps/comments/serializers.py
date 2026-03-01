@@ -38,7 +38,7 @@ class CommentSerializer(HookableSerializerMixin, serializers.ModelSerializer):
         return obj.is_reply()
 
     def get_reply_count(self, obj):
-        return obj.reply_count()
+        return getattr(obj, "_reply_count", obj.reply_count())
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

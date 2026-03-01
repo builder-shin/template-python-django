@@ -1,4 +1,5 @@
 from rest_framework_json_api import serializers
+from django.utils import timezone
 from apps.core.mixins.crud_actions import HookableSerializerMixin
 from .models import Post
 
@@ -56,7 +57,7 @@ class PostSerializer(HookableSerializerMixin, serializers.ModelSerializer):
         return obj.publishable()
 
     def get_comment_count(self, obj):
-        return obj.comment_count()
+        return getattr(obj, "_comment_count", obj.comment_count())
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -75,7 +76,7 @@ class PostSerializer(HookableSerializerMixin, serializers.ModelSerializer):
                 data["edit_url"] = f"/api/v1/posts/{instance.pk}"
 
         data.setdefault("meta", {}).update({
-            "copyright": "2026 Template Inc.",
+            "copyright": f"{timezone.now().year} Template Inc.",
         })
 
         return data

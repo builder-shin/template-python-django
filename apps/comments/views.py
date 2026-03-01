@@ -1,6 +1,7 @@
 from rest_framework_json_api.filters import QueryParameterValidationFilter, OrderingFilter
 from rest_framework_json_api.django_filters import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
+from django.db.models import Count
 
 from apps.core.views import ApiViewSet
 from apps.core.mixins.crud_actions import CrudActionsMixin
@@ -37,7 +38,7 @@ class CommentsViewSet(CrudActionsMixin, ApiViewSet):
     }
 
     def get_queryset(self):
-        return Comment.objects.all()
+        return Comment.objects.annotate(_reply_count=Count("replies"))
 
     def get_index_scope(self):
         return Comment.objects.all()
