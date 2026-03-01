@@ -3,6 +3,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 from django.db import connection
+from psycopg import sql
 
 logger = logging.getLogger(__name__)
 
@@ -52,14 +53,19 @@ class Command(BaseCommand):
 
                 cursor.execute("DROP SERVER IF EXISTS auth_server CASCADE;")
                 cursor.execute(
-                    f"CREATE SERVER auth_server FOREIGN DATA WRAPPER postgres_fdw "
-                    f"OPTIONS (host '{config['host']}', port '{config['port']}', dbname '{config['dbname']}');"
+                    sql.SQL("CREATE SERVER auth_server FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host {host}, port {port}, dbname {dbname});").format(
+                        host=sql.Literal(config['host']),
+                        port=sql.Literal(config['port']),
+                        dbname=sql.Literal(config['dbname']),
+                    )
                 )
 
                 cursor.execute(
-                    f"CREATE USER MAPPING IF NOT EXISTS FOR {local_user} "
-                    f"SERVER auth_server "
-                    f"OPTIONS (user '{config['user']}', password '{config['password']}');"
+                    sql.SQL("CREATE USER MAPPING IF NOT EXISTS FOR {local_user} SERVER auth_server OPTIONS (user {user}, password {password});").format(
+                        local_user=sql.Identifier(local_user),
+                        user=sql.Literal(config['user']),
+                        password=sql.Literal(config['password']),
+                    )
                 )
 
                 foreign_tables = {
@@ -106,11 +112,16 @@ class Command(BaseCommand):
                 }
 
                 for table_name, columns in foreign_tables.items():
-                    cursor.execute(f"DROP FOREIGN TABLE IF EXISTS auth.{table_name};")
-                    cursor.execute(
-                        f"CREATE FOREIGN TABLE auth.{table_name} ({columns}) "
-                        f"SERVER auth_server OPTIONS (schema_name 'public', table_name '{table_name}');"
-                    )
+                    cursor.execute(sql.SQL("DROP FOREIGN TABLE IF EXISTS {schema}.{table};").format(
+                        schema=sql.Identifier("auth"),
+                        table=sql.Identifier(table_name),
+                    ))
+                    cursor.execute(sql.SQL("CREATE FOREIGN TABLE {schema}.{table} ({columns}) SERVER auth_server OPTIONS (schema_name 'public', table_name {table_name});").format(
+                        schema=sql.Identifier("auth"),
+                        table=sql.Identifier(table_name),
+                        columns=sql.SQL(columns),
+                        table_name=sql.Literal(table_name),
+                    ))
 
             self.stdout.write(self.style.SUCCESS("FDW setup complete."))
 
@@ -139,7 +150,10 @@ class Command(BaseCommand):
             with connection.cursor() as cursor:
                 tables = ["users", "user_consents", "workspaces", "workspace_members"]
                 for table in tables:
-                    cursor.execute(f"SELECT COUNT(*) FROM auth.{table};")
+                    cursor.execute(sql.SQL("SELECT COUNT(*) FROM {schema}.{table};").format(
+                        schema=sql.Identifier("auth"),
+                        table=sql.Identifier(table),
+                    ))
                     count = cursor.fetchone()[0]
                     self.stdout.write(f"  auth.{table}: {count} rows")
             self.stdout.write(self.style.SUCCESS("FDW test passed."))
