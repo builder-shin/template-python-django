@@ -187,16 +187,9 @@ def _gen_views_py(
     lines = []
 
     # Imports
-    lines.append("from rest_framework_json_api.filters import QueryParameterValidationFilter, OrderingFilter")
-    lines.append("from rest_framework_json_api.django_filters import DjangoFilterBackend")
-    lines.append("from rest_framework.filters import SearchFilter")
-    lines.append("")
-    lines.append("from apps.core.views import ApiViewSet")
-    lines.append("from apps.core.mixins.crud_actions import CrudActionsMixin")
-    lines.append("from apps.core.permissions import IsAuthenticated")
-    lines.append("from apps.core.filters import AllowedIncludesFilter")
     if user_scoped:
-        lines.append("from apps.core.exceptions import JsonApiError")
+        lines.append("from apps.core.mixins.owned_resource import OwnedResourceMixin")
+    lines.append("from apps.core.views import ApiViewSet")
     lines.append("")
     lines.append(f"from .models import {singular_pascal}")
     lines.append(f"from .serializers import {singular_pascal}Serializer")
@@ -205,17 +198,14 @@ def _gen_views_py(
     lines.append("")
 
     # ViewSet 클래스
-    lines.append(f"class {plural_pascal}ViewSet(CrudActionsMixin, ApiViewSet):")
+    if user_scoped:
+        lines.append(f"class {plural_pascal}ViewSet(OwnedResourceMixin, ApiViewSet):")
+    else:
+        lines.append(f"class {plural_pascal}ViewSet(ApiViewSet):")
     lines.append(f"    serializer_class = {singular_pascal}Serializer")
-    lines.append(f"    permission_classes = [IsAuthenticated]")
     lines.append(f"    filterset_class = {singular_pascal}FilterSet")
-    lines.append(f"    filter_backends = [")
-    lines.append(f"        QueryParameterValidationFilter,")
-    lines.append(f"        OrderingFilter,")
-    lines.append(f"        DjangoFilterBackend,")
-    lines.append(f"        SearchFilter,")
-    lines.append(f"        AllowedIncludesFilter,")
-    lines.append(f"    ]")
+    if user_scoped:
+        lines.append(f'    resource_label = "리소스"')
     lines.append("")
 
     # allowed_includes
@@ -240,20 +230,6 @@ def _gen_views_py(
     else:
         lines.append(f"    def get_index_scope(self):")
         lines.append(f"        return {singular_pascal}.objects.all()")
-    lines.append("")
-
-    # Lifecycle hooks (user-scoped)
-    if user_scoped:
-        lines.append(f"    def create_after_init(self, instance):")
-        lines.append(f"        instance.user_id = self.request.user.id")
-        lines.append("")
-        lines.append(f"    def update_after_init(self, instance):")
-        lines.append(f"        if instance.user_id != self.request.user.id:")
-        lines.append(f'            raise JsonApiError("Forbidden", "본인의 리소스만 수정할 수 있습니다.", 403)')
-        lines.append("")
-        lines.append(f"    def destroy_after_init(self, instance):")
-        lines.append(f"        if instance.user_id != self.request.user.id:")
-        lines.append(f'            raise JsonApiError("Forbidden", "본인의 리소스만 삭제할 수 있습니다.", 403)')
 
     return "\n".join(lines) + "\n"
 
