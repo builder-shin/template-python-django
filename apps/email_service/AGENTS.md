@@ -1,33 +1,28 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-02-28 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-01 -->
 
 # email_service
 
 ## Purpose
-SendGrid 기반 이메일 발송 서비스. 템플릿 이메일 개별/배치 발송 기능을 제공한다.
+SendGrid 기반 이메일 발송 서비스. 템플릿 이메일 단건/배치 발송 지원.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `apps.py` | Django 앱 설정 (`EmailServiceConfig`) |
-| `sendgrid_service.py` | `SendGridEmailService` — 템플릿 이메일 발송, 배치 발송 (max 1000/call) |
+| `sendgrid_service.py` | `SendGridEmailService` — 단건 `send_template_email()` + 배치 `send_batch_template_emails()` (최대 1000건/API 호출) |
+| `apps.py` | Django AppConfig |
 
 ## For AI Agents
 
 ### Working In This Directory
-- SendGrid 미설정 시 graceful skip (warning 로그만 출력)
-- 설정 필요: `settings.SENDGRID_API_KEY`, `settings.SENDGRID_FROM_EMAIL`
-- 배치 발송은 1000건씩 Personalization으로 분할
-- `sendgrid` 패키지는 함수 내 lazy import (미설치 시 에러 방지)
+- `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL` 환경변수 필수
+- `enabled()` 체크로 미설정 시 graceful skip
+- 배치 발송: 1000건 단위 Personalization 분할
+- 응답: `{ "success": bool, "status_code": int }` (단건), `{ "success": bool, "total": int, "sent": int, "failed": int }` (배치)
 
 ### Testing Requirements
-- SendGrid API를 mock하여 테스트
-- `enabled()` 메서드로 설정 유무 확인 후 분기
-
-## Dependencies
-
-### External
-- `sendgrid` — SendGrid Python SDK
+- SendGrid 미설정 시 자동 스킵 로직 확인
+- Mock 사용하여 외부 API 호출 차단
 
 <!-- MANUAL: -->

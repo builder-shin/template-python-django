@@ -1,32 +1,31 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-02-28 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-01 -->
 
 # commands
 
 ## Purpose
-Django management 커맨드 구현. `python manage.py <command>` 형태로 실행되는 커스텀 커맨드를 포함한다.
+Django 커스텀 관리 명령어. 코드 생성, 시드 데이터, FDW 설정 제공.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `__init__.py` | 패키지 초기화 |
-| `setup_fdw.py` | `setup_fdw` — PostgreSQL Foreign Data Wrapper 설정 (인증 서비스 DB 크로스 접근) |
+| `generate_resource.py` | 리소스 스캐폴드 생성기 — 모델/뷰/시리얼라이저/필터/URL/테스트를 한번에 생성하고 settings/urls에 자동 등록 |
+| `seed.py` | 개발용 샘플 데이터 생성 — Member 10개, Post 20개, Comment 30개 (factory-boy 사용) |
+| `setup_fdw.py` | PostgreSQL Foreign Data Wrapper 설정 — 인증 서비스 DB 크로스 액세스 (users, workspaces 등) |
 
 ## For AI Agents
 
 ### Working In This Directory
-- `setup_fdw` 커맨드: `--setup` (기본), `--teardown`, `--test`, `--refresh` 옵션
-- FDW 대상 테이블: `auth.users`, `auth.user_consents`, `auth.workspaces`, `auth.workspace_members`
-- 환경변수: `AUTH_DB_HOST`, `AUTH_DB_PORT`, `AUTH_DB_NAME`, `AUTH_DB_USER`, `AUTH_DB_PASSWORD`
-- 새 커맨드 추가 시 이 디렉토리에 `BaseCommand` 상속 클래스 파일 생성
+- `generate_resource` 사용법: `python manage.py generate_resource <복수형_snake> --fields "name:CharField content:TextField" --user-scoped`
+- 지원 필드 타입: CharField, TextField, IntegerField, BooleanField, DateTimeField, DateField, DecimalField, FloatField, IntegerChoices
+- `--user-scoped`: user_id 필드 및 소유권 검증 훅 자동 추가
+- `--model-name`: inflect 단수화 결과 오버라이드
+- `seed` 명령어: `--flush` 옵션으로 기존 데이터 삭제 후 생성
+- `setup_fdw`: 인증 서비스 PostgreSQL DB에 대한 FDW 설정 (`--teardown`, `--test`, `--refresh`)
 
-### Usage
-```bash
-python manage.py setup_fdw          # FDW 설정
-python manage.py setup_fdw --test   # 연결 테스트
-python manage.py setup_fdw --teardown  # FDW 제거
-python manage.py setup_fdw --refresh   # 재설정
-```
+### Testing Requirements
+- generate_resource는 통합 테스트로 검증 (실제 파일 생성 확인)
+- seed는 factories.py 의존
 
 <!-- MANUAL: -->

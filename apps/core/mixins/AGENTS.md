@@ -1,41 +1,33 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-02-28 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-01 -->
 
 # mixins
 
 ## Purpose
-ViewSet 및 Serializer 믹스인. Rails CrudActions concern을 Django DRF에 이식한 핵심 패턴.
+ViewSet과 Serializer에서 사용하는 CRUD 라이프사이클 훅 Mixin. Rails CrudActions concern을 Django에 이식.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `__init__.py` | 패키지 초기화 |
-| `crud_actions.py` | `CrudActionsMixin` + `HookableSerializerMixin` — 라이프사이클 훅 기반 CRUD |
+| `crud_actions.py` | `CrudActionsMixin` (ViewSet용) + `HookableSerializerMixin` (Serializer용) |
 
 ## For AI Agents
 
 ### Working In This Directory
-- **CrudActionsMixin** (ViewSet용): list, retrieve, create, update, destroy, new, upsert + 라이프사이클 훅
-- **HookableSerializerMixin** (Serializer용): CrudActionsMixin의 훅과 연동하는 create/update 오버라이드
-- 두 믹스인은 반드시 함께 사용 — Serializer에 HookableSerializerMixin 없으면 훅 미작동
+- **CrudActionsMixin**: list, retrieve, create, update, partial_update, destroy, new, upsert 액션 제공
+- **HookableSerializerMixin**: 반드시 CrudActionsMixin과 함께 사용 — create/update 시 라이프사이클 훅 호출
+- 라이프사이클 훅 순서:
+  - Create: `create_after_init(instance)` → `save()` → `create_after_save(instance, success)`
+  - Update: `update_after_init(instance)` → `update_after_assign(instance)` → `save()` → `update_after_save(instance, success)`
+  - Destroy: `destroy_after_init(instance)` → `delete()` → `destroy_after_save(instance, success)`
+  - Upsert: `upsert_after_init` → `upsert_after_assign` → `save()` → `upsert_after_save(instance, success, created)`
+- 훅에서 중단하려면 `raise JsonApiError(...)` — Response 직접 반환 금지
+- `get_object()` 오버라이드: DRF 기본 대신 `NotFound()` (JSON:API 포맷) 발생
+- `get_index_scope()`: 리스트 조회 시 기본 쿼리셋 커스터마이징
+- `allowed_includes` 프로퍼티: JSON:API `?include=` 허용 경로 목록
 
-### Lifecycle Hooks
-| Hook | 호출 시점 | 호출 위치 |
-|------|----------|----------|
-| `create_after_init(instance)` | 모델 인스턴스 생성 후, save 전 | HookableSerializerMixin |
-| `create_after_save(instance, success)` | save 후 | HookableSerializerMixin |
-| `update_after_init(instance)` | 기존 인스턴스 조회 후 | CrudActionsMixin.update() |
-| `update_after_assign(instance)` | 필드 할당 후, save 전 | HookableSerializerMixin |
-| `update_after_save(instance, success)` | save 후 | HookableSerializerMixin |
-| `destroy_after_init(instance)` | 삭제 대상 조회 후 | CrudActionsMixin.destroy() |
-| `destroy_after_save(instance, success)` | delete 후 | CrudActionsMixin.destroy() |
-| `show_after_init(instance)` | 조회 인스턴스 로드 후 | CrudActionsMixin.retrieve() |
-| `upsert_find_params()` | upsert 조회 키 결정 | CrudActionsMixin.upsert() |
-
-### Common Patterns
-- 훅에서 권한 검사: `raise JsonApiError("Forbidden", "...", 403)`
-- create_after_init에서 `instance.user_id = self.request.user.id` 패턴
-- `get_object()` 오버라이드: DRF 기본 대신 `NotFound` (JSON:API 형식) raise
+### Testing Requirements
+- `tests/core/test_crud_actions.py`에서 Mixin 동작 테스트
 
 <!-- MANUAL: -->
