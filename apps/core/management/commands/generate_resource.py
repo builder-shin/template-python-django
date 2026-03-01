@@ -300,21 +300,41 @@ def _gen_filters_py(
     user_scoped: bool,
 ) -> str:
     lines = []
-    lines.append("from apps.core.filters import create_ransack_filterset")
+    lines.append("import django_filters")
+    lines.append("")
     lines.append(f"from .models import {singular_pascal}")
     lines.append("")
+    lines.append("")
+    lines.append(f"class {singular_pascal}FilterSet(django_filters.FilterSet):")
+    lines.append(f"    class Meta:")
+    lines.append(f"        model = {singular_pascal}")
+    lines.append(f"        fields = {{")
 
-    filter_fields = [fn for fn, _ in fields]
-    filter_fields.extend(["created_at", "updated_at"])
+    # Map field types to appropriate lookups
+    FIELD_LOOKUPS = {
+        "CharField": '["exact", "icontains", "istartswith", "iendswith"]',
+        "TextField": '["exact", "icontains"]',
+        "IntegerField": '["exact", "in", "gt", "gte", "lt", "lte"]',
+        "BooleanField": '["exact"]',
+        "DateTimeField": '["exact", "gt", "gte", "lt", "lte"]',
+        "DateField": '["exact", "gt", "gte", "lt", "lte"]',
+        "DecimalField": '["exact", "gt", "gte", "lt", "lte"]',
+        "FloatField": '["exact", "gt", "gte", "lt", "lte"]',
+        "IntegerChoices": '["exact", "in"]',
+    }
+
+    for fname, ftype in fields:
+        lookups = FIELD_LOOKUPS.get(ftype, '["exact"]')
+        lines.append(f'            "{fname}": {lookups},')
+
+    # Add timestamp fields
+    lines.append(f'            "created_at": ["exact", "gt", "gte", "lt", "lte"],')
+    lines.append(f'            "updated_at": ["exact", "gt", "gte", "lt", "lte"],')
+
     if user_scoped:
-        filter_fields.append("user_id")
+        lines.append(f'            "user_id": ["exact", "in"],')
 
-    fields_str = "[" + ", ".join(f'"{f}"' for f in filter_fields) + "]"
-
-    lines.append(f"{singular_pascal}FilterSet = create_ransack_filterset(")
-    lines.append(f"    {singular_pascal},")
-    lines.append(f"    {fields_str},")
-    lines.append(f")")
+    lines.append(f"        }}")
 
     return "\n".join(lines) + "\n"
 

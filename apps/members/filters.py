@@ -1,7 +1,15 @@
-from apps.core.filters import create_ransack_filterset
+import django_filters
+
 from .models import Member
 
-MemberFilter = create_ransack_filterset(
-    Member,
-    ["nickname", "status", "user_id", "created_at", "updated_at"],
-)
+
+class MemberFilter(django_filters.FilterSet):
+    class Meta:
+        model = Member
+        fields = {
+            "nickname": ["exact", "icontains", "istartswith", "iendswith"],
+            "status": ["exact", "in"],
+            "user_id": ["exact", "in"],
+            "created_at": ["exact", "gt", "gte", "lt", "lte"],
+            "updated_at": ["exact", "gt", "gte", "lt", "lte"],
+        }

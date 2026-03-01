@@ -12,7 +12,7 @@
 |------|-------------|
 | `authentication.py` | 인증 설정 안내 — DRF 내장 SessionAuthentication + TokenAuthentication 사용 |
 | `exceptions.py` | `JsonApiError`, `NotFound`, 통합 예외 핸들러 (JSON:API 포맷, 한국어 메시지) |
-| `filters.py` | `create_ransack_filterset()` — Ransack 스타일 동적 필터셋 생성기, `AllowedIncludesFilter`, `EnumChoiceFilter` |
+| `filters.py` | `AllowedIncludesFilter` — JSON:API `?include=` 경로 화이트리스트 필터 백엔드 |
 | `serializers.py` | `ApplicationSerializer` — 모든 시리얼라이저의 베이스 클래스 |
 | `pagination.py` | `JsonApiPageNumberPagination` — page[number]/page[size] + total-count 메타 |
 | `permissions.py` | `IsAuthenticated`, `IPBlocklistPermission` |
@@ -33,7 +33,7 @@
 - 이 앱은 다른 모든 앱의 기반 — 변경 시 전체 영향 분석 필수
 - `JsonApiError(title, detail, status_code)`로 예외 발생 — 한국어 detail 필수
 - 새 퍼미션 추가 시 `BasePermission` 상속, `has_permission()` 오버라이드
-- Ransack 필터 확장 시 `create_ransack_filterset()`에 predicate 추가
+- 필터 확장 시 각 앱의 `FilterSet.Meta.fields`에 lookup 추가
 
 ### Testing Requirements
 - `tests/core/` 에서 CrudActionsMixin 등 통합 테스트
@@ -42,7 +42,7 @@
 ### Common Patterns
 - 예외는 항상 `JsonApiError` 또는 DRF 내장 예외 사용 — 직접 Response 반환 금지
 - `ApiViewSet` → `IsAuthenticated` 기본 적용
-- Ransack 필터 predicate: `_eq`, `_not_eq`, `_in`, `_not_in`, `_cont`, `_not_cont`, `_start`, `_end`, `_lt`, `_lte`, `_gt`, `_gte`, `_null`, `_not_null`, `_matches`
+- django-filter lookups: `exact`, `icontains`, `istartswith`, `iendswith`, `in`, `gt`, `gte`, `lt`, `lte`, `isnull`
 
 ## Dependencies
 

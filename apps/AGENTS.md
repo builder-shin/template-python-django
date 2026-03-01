@@ -23,7 +23,7 @@ Django 애플리케이션 모듈 컨테이너. 도메인(members, posts, comment
 - 앱 구조 패턴: `models.py`, `views.py`, `serializers.py`, `filters.py`, `urls.py`, `apps.py`
 - 모든 ViewSet은 `CrudActionsMixin + ApiViewSet` 상속
 - 모든 Serializer는 `HookableSerializerMixin + serializers.ModelSerializer` 상속
-- 필터는 `create_ransack_filterset()` 사용
+- 필터는 표준 `django_filters.FilterSet` 클래스 사용
 
 ### Common Patterns
 - 각 앱은 독립적 도메인 — 앱 간 참조는 ForeignKey 또는 user_id(문자열)로

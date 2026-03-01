@@ -13,7 +13,7 @@
 | `models.py` | `Comment` 모델 — post(FK), content, user_id, parent(self FK) + `CommentQuerySet` |
 | `views.py` | `CommentsViewSet` — CRUD + `?include=post` 지원 |
 | `serializers.py` | `CommentSerializer` — ResourceRelatedField(post, parent), author_name, is_reply, reply_count |
-| `filters.py` | `CommentFilter` — Ransack 필터셋 (content, user_id, post, parent, created_at, updated_at) |
+| `filters.py` | `CommentFilter` — django-filter FilterSet (content, user_id, post, parent, created_at, updated_at) |
 | `urls.py` | `/api/v1/comments` 라우팅 (trailing_slash=False) |
 
 ## For AI Agents

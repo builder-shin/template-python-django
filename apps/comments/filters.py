@@ -1,7 +1,16 @@
-from apps.core.filters import create_ransack_filterset
+import django_filters
+
 from .models import Comment
 
-CommentFilter = create_ransack_filterset(
-    Comment,
-    ["content", "user_id", "post", "parent", "created_at", "updated_at"],
-)
+
+class CommentFilter(django_filters.FilterSet):
+    class Meta:
+        model = Comment
+        fields = {
+            "content": ["exact", "icontains"],
+            "user_id": ["exact", "in"],
+            "post": ["exact", "in"],
+            "parent": ["exact", "isnull"],
+            "created_at": ["exact", "gt", "gte", "lt", "lte"],
+            "updated_at": ["exact", "gt", "gte", "lt", "lte"],
+        }

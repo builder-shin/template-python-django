@@ -13,7 +13,7 @@
 | `models.py` | `Post` 모델 — Status(draft/published/archived), title/content/view_count/external_id + 풍부한 `PostQuerySet` |
 | `views.py` | `PostsViewSet` — CRUD + `publish` 액션 + upsert (external_id 기반) + `?include=comments` |
 | `serializers.py` | `PostSerializer` — days_since_published, summary, status_label(한국어), is_publishable, comment_count |
-| `filters.py` | `PostFilter` — Ransack 필터셋 (title, status, created_at, updated_at, user_id) |
+| `filters.py` | `PostFilter` — django-filter FilterSet (title, status, created_at, updated_at, user_id) |
 | `urls.py` | `/api/v1/posts` 라우팅 (trailing_slash=False) |
 
 ## For AI Agents

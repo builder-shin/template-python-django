@@ -13,7 +13,7 @@
 | `models.py` | `Member` 모델 — Status(active/suspended/withdrawn), nickname, bio, avatar_url + `MemberQuerySet` |
 | `views.py` | `MembersViewSet` — CRUD + `/me` 커스텀 액션 (본인 프로필 조회) |
 | `serializers.py` | `MemberSerializer` — status_label(한국어), display_name 포함 |
-| `filters.py` | `MemberFilter` — Ransack 필터셋 (nickname, status, user_id, created_at, updated_at) |
+| `filters.py` | `MemberFilter` — django-filter FilterSet (nickname, status, user_id, created_at, updated_at) |
 | `urls.py` | `/api/v1/members` 라우팅 (trailing_slash=False) |
 
 ## For AI Agents
@@ -35,6 +35,6 @@
 ### Internal
 - `apps.core.mixins.crud_actions` — CrudActionsMixin + HookableSerializerMixin
 - `apps.core.views.ApiViewSet` — 인증 포함 기본 ViewSet
-- `apps.core.filters` — Ransack 필터셋 생성
+- `django_filters` — 표준 필터 프레임워크
 
 <!-- MANUAL: -->

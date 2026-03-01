@@ -87,7 +87,7 @@ apps/<name>/
 ├── models.py            # Model + QuerySet
 ├── views.py             # ViewSet (CrudActionsMixin)
 ├── serializers.py       # Serializer (HookableSerializerMixin)
-├── filters.py           # Ransack 스타일 필터
+├── filters.py           # django-filter FilterSet
 ├── urls.py              # URL 라우팅
 └── migrations/
     └── __init__.py
@@ -135,7 +135,7 @@ docker-compose up
 │   │   ├── management/        # 커스텀 관리 명령어 (seed, generate_resource)
 │   │   ├── authentication.py  # 인증 설정 (Django 내장 Session + Token)
 │   │   ├── exceptions.py      # JSON:API 에러 핸들러
-│   │   ├── filters.py         # Ransack 스타일 필터
+│   │   ├── filters.py         # AllowedIncludesFilter
 │   │   ├── pagination.py      # JSON:API 페이지네이션
 │   │   ├── permissions.py     # 권한 클래스
 │   │   ├── serializers.py     # 베이스 시리얼라이저
@@ -185,7 +185,7 @@ docker-compose up
 ### JSON:API
 
 - `?include=relation` - 관계 포함 (자동 eager loading)
-- `?filter[attr_predicate]=value` - Ransack 스타일 필터링 (eq, cont, gt, lt 등)
+- `?filter[attr]=value` / `?filter[attr.lookup]=value` - django-filter 필터링 (exact, icontains, gt, lt 등)
 - `?page[number]=1&page[size]=10` - 페이지네이션
 
 ### 인증
