@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-03-01 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-02 -->
 
 # core
 
@@ -10,21 +10,22 @@
 
 | File | Description |
 |------|-------------|
-| `authentication.py` | 인증 설정 안내 — DRF 내장 SessionAuthentication + TokenAuthentication 사용 |
+| `authentication.py` | 인증 설정 안내 — DRF 내장 SessionAuthentication + TokenAuthentication 사용 (코드 없음, 문서 역할) |
 | `exceptions.py` | `JsonApiError`, `NotFound`, 통합 예외 핸들러 (JSON:API 포맷, 한국어 메시지) |
 | `filters.py` | `AllowedIncludesFilter` — JSON:API `?include=` 경로 화이트리스트 필터 백엔드 |
-| `serializers.py` | `ApplicationSerializer` — 모든 시리얼라이저의 베이스 클래스 |
+| `serializers.py` | (비어있음 — 현재 사용하지 않음) |
 | `pagination.py` | `JsonApiPageNumberPagination` — page[number]/page[size] + total-count 메타 |
-| `permissions.py` | `IsAuthenticated`, `IPBlocklistPermission` |
+| `permissions.py` | (비어있음 — DRF 내장 `IsAuthenticated` 사용, Allow2BanMiddleware로 IP 차단) |
 | `throttles.py` | `AuthRateThrottle` — 인증 엔드포인트 전용 (10/min) |
-| `views.py` | `ApiViewSet` — 인증 포함 기본 ViewSet (JSON:API ModelViewSet 상속) |
+| `utils.py` | `get_client_ip()` — django-ipware 기반 클라이언트 IP 추출 (X-Forwarded-For 스푸핑 방지) |
+| `views.py` | `ApiViewSet` — CRUD 라이프사이클 훅 내장 기본 ViewSet + `health_live`/`health_ready` 헬스체크 |
 
 ## Subdirectories
 
 | Directory | Purpose |
 |-----------|---------|
-| `middleware/` | 커스텀 미들웨어 3종 (see `middleware/AGENTS.md`) |
-| `mixins/` | CrudActionsMixin + HookableSerializerMixin (see `mixins/AGENTS.md`) |
+| `middleware/` | 커스텀 미들웨어 — Allow2Ban IP 자동 차단 (see `middleware/AGENTS.md`) |
+| `mixins/` | HookableSerializerMixin + OwnedResourceMixin (see `mixins/AGENTS.md`) |
 | `management/` | Django 관리 명령어 (see `management/AGENTS.md`) |
 
 ## For AI Agents
@@ -41,7 +42,8 @@
 
 ### Common Patterns
 - 예외는 항상 `JsonApiError` 또는 DRF 내장 예외 사용 — 직접 Response 반환 금지
-- `ApiViewSet` → `IsAuthenticated` 기본 적용
+- `ApiViewSet` → DRF `IsAuthenticated` 기본 적용, CRUD 라이프사이클 훅 내장
+- 구조화 로깅: django-structlog 패키지 사용 (커스텀 미들웨어 아님)
 - django-filter lookups: `exact`, `icontains`, `istartswith`, `iendswith`, `in`, `gt`, `gte`, `lt`, `lte`, `isnull`
 
 ## Dependencies
