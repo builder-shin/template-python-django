@@ -11,6 +11,7 @@ Python Django 5 기반 JSON:API 백엔드 템플릿 프로젝트입니다.
 - **Redis** - 캐시 및 Celery 브로커
 - **Celery** - 백그라운드 작업 처리
 - **djangorestframework-jsonapi** - JSON:API 스펙 준수
+- **drf-spectacular** - OpenAPI/Swagger API 문서 자동 생성
 
 ## 필요 환경
 
@@ -24,6 +25,18 @@ Python Django 5 기반 JSON:API 백엔드 템플릿 프로젝트입니다.
 make setup    # 프로젝트 초기 설정 (uv, 의존성, DB, pre-commit)
 make dev      # 개발 서버 실행 (http://localhost:4000)
 ```
+
+## API 문서
+
+개발 서버 실행 후 아래 URL에서 API 문서를 확인할 수 있습니다:
+
+- **Swagger UI**: `http://localhost:4000/api-docs/`
+- **OpenAPI Schema**: `http://localhost:4000/api/schema/`
+
+## Health Check
+
+- `GET /health/live` - 서버 생존 확인
+- `GET /health/ready` - 서버 준비 상태 확인 (DB + Cache 연결 포함)
 
 ## 개발 명령어
 
@@ -85,7 +98,7 @@ apps/<name>/
 ├── __init__.py
 ├── apps.py              # AppConfig
 ├── models.py            # Model + QuerySet
-├── views.py             # ViewSet (CrudActionsMixin)
+├── views.py             # ViewSet (ApiViewSet)
 ├── serializers.py       # Serializer (HookableSerializerMixin)
 ├── filters.py           # django-filter FilterSet
 ├── urls.py              # URL 라우팅
@@ -131,7 +144,7 @@ docker-compose up
 ├── apps/
 │   ├── core/                  # 핵심 인프라
 │   │   ├── middleware/        # 미들웨어 (인증, 로깅, Allow2Ban)
-│   │   ├── mixins/            # CrudActions 등 공통 믹스인
+│   │   ├── mixins/            # HookableSerializer, OwnedResource 등 공통 믹스인
 │   │   ├── management/        # 커스텀 관리 명령어 (seed, generate_resource)
 │   │   ├── authentication.py  # 인증 설정 (Django 내장 Session + Token)
 │   │   ├── exceptions.py      # JSON:API 에러 핸들러
@@ -152,6 +165,7 @@ docker-compose up
 │   │   ├── production.py      # 프로덕션 환경
 │   │   └── test.py            # 테스트 환경
 │   ├── celery.py              # Celery 설정
+│   ├── asgi.py               # ASGI 애플리케이션
 │   ├── urls.py                # 루트 URL 설정
 │   └── wsgi.py                # WSGI 애플리케이션
 ├── tests/                     # pytest 테스트
@@ -194,12 +208,12 @@ Django 내장 인증 시스템을 사용합니다 (SessionAuthentication + Token
 permission_classes = [IsAuthenticated]     # 인증 필수
 ```
 
-### CrudActions 믹스인
+### ApiViewSet 라이프사이클 훅
 
-`CrudActionsMixin`은 CRUD + upsert 기능과 라이프사이클 훅을 제공합니다:
+`ApiViewSet`은 CRUD + upsert 기능과 라이프사이클 훅을 내장하고 있습니다. Serializer에는 `HookableSerializerMixin`을 함께 사용해야 훅이 정상 동작합니다:
 
 ```python
-class MyViewSet(CrudActionsMixin, ApiViewSet):
+class MyViewSet(ApiViewSet):
     serializer_class = MySerializer
     filterset_class = MyFilterSet
 
@@ -209,6 +223,14 @@ class MyViewSet(CrudActionsMixin, ApiViewSet):
     def create_after_save(self, instance, success):
         if success:
             send_notification.delay(instance.id)
+```
+
+소유권 기반 접근 제어가 필요하면 `OwnedResourceMixin`을 추가합니다:
+
+```python
+class MyViewSet(OwnedResourceMixin, ApiViewSet):
+    serializer_class = MySerializer
+    resource_label = "내 리소스"  # 에러 메시지에 사용
 ```
 
 ## 테스트
