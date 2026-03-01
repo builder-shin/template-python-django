@@ -16,7 +16,7 @@ from rest_framework_json_api.views import ModelViewSet
 
 from apps.core.exceptions import JsonApiError, NotFound
 from apps.core.filters import AllowedIncludesFilter
-from apps.core.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 
 logger = logging.getLogger(__name__)
 

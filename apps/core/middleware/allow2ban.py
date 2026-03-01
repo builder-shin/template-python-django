@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.core.cache import cache
 from django.http import JsonResponse
 
@@ -43,9 +44,10 @@ class Allow2BanMiddleware:
     def __call__(self, request):
         ip = get_client_ip(request)
 
-        # Check if IP is banned
-        if cache.get(f"{self.CACHE_PREFIX_BAN}{ip}"):
-            logger.warning("Blocked banned IP: %s", ip)
+        # Check static blocklist (from settings) and dynamic bans (from cache)
+        blocked_ips = getattr(settings, "BLOCKED_IPS", [])
+        if ip in blocked_ips or cache.get(f"{self.CACHE_PREFIX_BAN}{ip}"):
+            logger.warning("Blocked IP: %s", ip)
             return JsonResponse(
                 {
                     "errors": [
@@ -70,9 +72,12 @@ class Allow2BanMiddleware:
     def _record_suspicious_hit(self, ip):
         """Record a suspicious hit and ban if threshold exceeded."""
         cache_key = f"{self.CACHE_PREFIX_COUNT}{ip}"
-        count = cache.get(cache_key, 0)
-        count += 1
-        cache.set(cache_key, count, self.FIND_TIME)
+        try:
+            count = cache.incr(cache_key)
+        except ValueError:
+            # Key doesn't exist yet, initialize it
+            cache.set(cache_key, 1, self.FIND_TIME)
+            count = 1
 
         if count >= self.MAX_RETRY:
             # Ban the IP

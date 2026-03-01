@@ -1,5 +1,11 @@
+from ipware import get_client_ip as _get_client_ip
+
+
 def get_client_ip(request) -> str:
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        return x_forwarded_for.split(",")[0].strip()
-    return request.META.get("REMOTE_ADDR", "")
+    """
+    Extract the real client IP address from the request.
+    Uses django-ipware for safe IP extraction that handles
+    X-Forwarded-For header spoofing protection.
+    """
+    ip, _ = _get_client_ip(request)
+    return ip or ""

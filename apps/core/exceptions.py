@@ -49,7 +49,7 @@ def json_api_exception_handler(exc, context):
             [{
                 "status": "401",
                 "title": "Unauthorized",
-                "detail": str(exc.detail),
+                "detail": "로그인 후 이용해주세요.",
             }],
             status=401,
         )
