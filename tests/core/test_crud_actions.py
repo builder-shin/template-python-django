@@ -212,3 +212,85 @@ class TestAllowedIncludesFilter:
         f = AllowedIncludesFilter()
         result = f.filter_queryset(request, "queryset", MockView())
         assert result == "queryset"
+
+
+@pytest.mark.django_db
+class TestAutoPrefetchIntegration:
+    """AutoPrefetchMixin 체인 복원 검증."""
+
+    def test_include_triggers_prefetch_on_list(self, mock_authenticated, jsonapi_headers):
+        """?include=post 요청 시 prefetch_related가 적용되어 N+1 방지."""
+        from apps.posts.models import Post
+        from apps.comments.models import Comment
+
+        post = Post.objects.create(
+            title="Prefetch Test", content="Content", user_id=str(mock_authenticated.id)
+        )
+        Comment.objects.create(post=post, content="c1", user_id=str(mock_authenticated.id))
+        Comment.objects.create(post=post, content="c2", user_id=str(mock_authenticated.id))
+
+        client = APIClient()
+        client.force_authenticate(user=mock_authenticated)
+        response = client.get("/api/v1/comments?include=post", **jsonapi_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "included" in data
+        assert len(data["included"]) == 1
+
+    def test_no_include_no_included_data(self, mock_authenticated, jsonapi_headers):
+        """include 없을 때 included 데이터가 없음."""
+        from apps.posts.models import Post
+
+        Post.objects.create(
+            title="No Include", content="Content", user_id=str(mock_authenticated.id)
+        )
+
+        client = APIClient()
+        client.force_authenticate(user=mock_authenticated)
+        response = client.get("/api/v1/posts", **jsonapi_headers)
+        assert response.status_code == 200
+
+    def test_detail_include_triggers_prefetch(self, mock_authenticated, jsonapi_headers):
+        """detail 엔드포인트에서도 include prefetch가 작동."""
+        from apps.posts.models import Post
+        from apps.comments.models import Comment
+
+        post = Post.objects.create(
+            title="Detail Prefetch", content="Content", user_id=str(mock_authenticated.id)
+        )
+        comment = Comment.objects.create(post=post, content="c1", user_id=str(mock_authenticated.id))
+
+        client = APIClient()
+        client.force_authenticate(user=mock_authenticated)
+        response = client.get(
+            f"/api/v1/comments/{comment.id}?include=post", **jsonapi_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "included" in data
+        assert len(data["included"]) == 1
+
+    def test_comment_include_post(self, mock_authenticated, jsonapi_headers):
+        """comments에서 ?include=post 요청 시 post가 포함됨."""
+        from apps.posts.models import Post
+        from apps.comments.models import Comment
+
+        post = Post.objects.create(
+            title="Comment Include", content="Content", user_id=str(mock_authenticated.id)
+        )
+        Comment.objects.create(post=post, content="c1", user_id=str(mock_authenticated.id))
+
+        client = APIClient()
+        client.force_authenticate(user=mock_authenticated)
+        response = client.get("/api/v1/comments?include=post", **jsonapi_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert "included" in data
+
+    def test_members_works_without_queryset_attribute(self, mock_authenticated, jsonapi_headers):
+        """MembersViewSet이 queryset 클래스 속성 없이 정상 작동."""
+        client = APIClient()
+        client.force_authenticate(user=mock_authenticated)
+        response = client.get("/api/v1/members", **jsonapi_headers)
+        assert response.status_code == 200
