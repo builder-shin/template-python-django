@@ -71,15 +71,19 @@ class ApiViewSet(ModelViewSet):
         return []
 
     def get_base_queryset(self):
-        """공통 queryset (annotation 포함). 하위 클래스에서 override."""
-        return super().get_queryset()
+        """순수 queryset (annotation 포함). 하위 클래스에서 override."""
+        model = self.get_serializer_class().Meta.model
+        return model.objects.all()
 
     def get_queryset(self):
-        return self.get_base_queryset()
+        if not hasattr(self, '_base_qs_cached'):
+            self._base_qs_cached = True
+            self.queryset = self.get_base_queryset()
+        return super().get_queryset()
 
     def get_index_scope(self):
-        """list 전용 스코핑. 기본은 get_base_queryset()."""
-        return self.get_base_queryset()
+        """list 전용 스코핑. 기본은 get_queryset() (mixin 체인 포함)."""
+        return self.get_queryset()
 
     # ==================== CRUD Actions ====================
 
