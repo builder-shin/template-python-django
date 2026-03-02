@@ -211,17 +211,19 @@ def _gen_views_py(
     lines.append("        return []")
     lines.append("")
 
-    # get_queryset
-    lines.append("    def get_queryset(self):")
+    # get_base_queryset
+    lines.append("    def get_base_queryset(self):")
+    lines.append("        # TODO: annotation이 필요하면 여기에 추가 (예: .annotate(...))")
     lines.append(f"        return {singular_pascal}.objects.all()")
     lines.append("")
 
     # get_index_scope
     if user_scoped:
         lines.append("    def get_index_scope(self):")
+        lines.append("        # super()는 mixin 체인(AutoPrefetch + PreloadIncludes)이 적용된 queryset 반환")
         lines.append("        user = self.request.user")
         lines.append('        if user and hasattr(user, "id") and user.id:')
-        lines.append(f"            return {singular_pascal}.objects.by_user(user.id)")
+        lines.append("            return super().get_index_scope().filter(user_id=user.id)")
         lines.append(f"        return {singular_pascal}.objects.none()")
         lines.append("")
         lines.append("    def _check_ownership(self, instance, action_label: str) -> None:")
@@ -236,10 +238,6 @@ def _gen_views_py(
         lines.append("")
         lines.append("    def destroy_after_init(self, instance) -> None:")
         lines.append('        self._check_ownership(instance, "삭제")')
-    else:
-        lines.append("    def get_index_scope(self):")
-        lines.append(f"        return {singular_pascal}.objects.all()")
-
     return "\n".join(lines) + "\n"
 
 
