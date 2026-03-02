@@ -2,12 +2,15 @@ from rest_framework_json_api import serializers
 from rest_framework_json_api.relations import ResourceRelatedField
 
 from apps.core.mixins.crud_actions import HookableSerializerMixin
+from apps.core.serializers import AutoLinksMixin
 from apps.posts.models import Post
 
 from .models import Comment
 
 
-class CommentSerializer(HookableSerializerMixin, serializers.ModelSerializer):
+class CommentSerializer(AutoLinksMixin, HookableSerializerMixin, serializers.ModelSerializer):
+    resource_path = "comments"
+
     post = ResourceRelatedField(queryset=Post.objects.all())
     parent = ResourceRelatedField(queryset=Comment.objects.all(), required=False, allow_null=True)
     author_name = serializers.SerializerMethodField()
@@ -44,10 +47,8 @@ class CommentSerializer(HookableSerializerMixin, serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data["links"] = {
-            "self": f"/api/v1/comments/{instance.pk}",
-            "post": f"/api/v1/posts/{instance.post_id}",
-        }
+        # AutoLinksMixin이 data["links"]["self"]를 이미 설정함
+        data["links"]["post"] = f"/api/v1/posts/{instance.post_id}"
         if instance.parent_id:
             data["links"]["parent"] = f"/api/v1/comments/{instance.parent_id}"
         return data

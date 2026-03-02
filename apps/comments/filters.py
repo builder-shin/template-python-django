@@ -1,5 +1,7 @@
 import django_filters
 
+from apps.core.filters import TIMESTAMP_LOOKUPS
+
 from .models import Comment
 
 
@@ -11,6 +13,6 @@ class CommentFilter(django_filters.FilterSet):
             "user_id": ["exact", "in"],
             "post": ["exact", "in"],
             "parent": ["exact", "isnull"],
-            "created_at": ["exact", "gt", "gte", "lt", "lte"],
-            "updated_at": ["exact", "gt", "gte", "lt", "lte"],
+            "created_at": TIMESTAMP_LOOKUPS,
+            "updated_at": TIMESTAMP_LOOKUPS,
         }

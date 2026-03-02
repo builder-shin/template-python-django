@@ -17,15 +17,9 @@ class CommentsViewSet(OwnedResourceMixin, ApiViewSet):
     def allowed_includes(self):
         return ["post"]
 
-    select_for_includes = {
-        "__all__": [],
-    }
     prefetch_for_includes = {
         "post": ["post"],
     }
 
-    def get_queryset(self):
+    def get_base_queryset(self):
         return Comment.objects.annotate(_reply_count=Count("replies"))
-
-    def get_index_scope(self):
-        return Comment.objects.all()
