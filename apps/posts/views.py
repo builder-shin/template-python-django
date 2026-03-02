@@ -31,15 +31,12 @@ class PostsViewSet(ApiViewSet):
     def allowed_includes(self):
         return ["comments"]
 
-    prefetch_for_includes = {
-        "comments": ["comments"],
-    }
-
     def get_base_queryset(self):
-        return Post.objects.annotate(_comment_count=Count("comments"))
+        return Post.objects.annotate(_comment_count=Count("comments")).order_by("-created_at")
 
     def get_index_scope(self):
-        return self.get_base_queryset().filter(user_id=self.request.user.id)
+        # super()는 mixin 체인(AutoPrefetch + PreloadIncludes)이 적용된 queryset 반환
+        return super().get_index_scope().filter(user_id=self.request.user.id)
 
     def upsert_after_init(self, instance):
         if not instance.user_id:

@@ -29,9 +29,5 @@ class CommentsViewSet(ApiViewSet):
     def allowed_includes(self):
         return ["post"]
 
-    prefetch_for_includes = {
-        "post": ["post"],
-    }
-
     def get_base_queryset(self):
-        return Comment.objects.annotate(_reply_count=Count("replies"))
+        return Comment.objects.annotate(_reply_count=Count("replies")).order_by("-created_at")

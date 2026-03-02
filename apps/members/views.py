@@ -12,7 +12,6 @@ from .serializers import MemberSerializer
 class MembersViewSet(ApiViewSet):
     serializer_class = MemberSerializer
     filterset_class = MemberFilter
-    queryset = Member.objects.all()
 
     def _check_ownership(self, instance, action_label: str) -> None:
         if str(instance.user_id) != str(self.request.user.id):
