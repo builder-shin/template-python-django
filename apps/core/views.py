@@ -56,6 +56,7 @@ class ApiViewSet(ModelViewSet):
     """
 
     permission_classes = [IsAuthenticated]
+    http_method_names = ["get", "post", "put", "patch", "delete", "head", "options"]
     filter_backends = [
         QueryParameterValidationFilter,
         OrderingFilter,
@@ -69,9 +70,16 @@ class ApiViewSet(ModelViewSet):
         """List of allowed include paths. Enforced by AllowedIncludesFilter."""
         return []
 
+    def get_base_queryset(self):
+        """공통 queryset (annotation 포함). 하위 클래스에서 override."""
+        return super().get_queryset()
+
+    def get_queryset(self):
+        return self.get_base_queryset()
+
     def get_index_scope(self):
-        """Override to provide custom base queryset for list. Default: model.objects.all()"""
-        return self.get_queryset()
+        """list 전용 스코핑. 기본은 get_base_queryset()."""
+        return self.get_base_queryset()
 
     # ==================== CRUD Actions ====================
 
@@ -127,18 +135,15 @@ class ApiViewSet(ModelViewSet):
 
         try:
             instance.delete()
-            success = True
         except ProtectedError as err:
+            self.destroy_after_save(instance, False)
             raise JsonApiError("DeleteFailed", "연관된 데이터가 있어 삭제할 수 없습니다.", 409) from err
-        except Exception:
+        except Exception as err:
             logger.exception("Unexpected error deleting %s(pk=%s)", type(instance).__name__, instance.pk)
-            success = False
+            self.destroy_after_save(instance, False)
+            raise JsonApiError("DeleteFailed", "리소스 삭제에 실패했습니다.", 422) from err
 
-        self.destroy_after_save(instance, success)
-
-        if not success:
-            raise JsonApiError("DeleteFailed", "리소스 삭제에 실패했습니다.", 422)
-
+        self.destroy_after_save(instance, True)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=["get"], url_path="new")
@@ -152,6 +157,15 @@ class ApiViewSet(ModelViewSet):
         self.new_after_init(instance)
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+    def _parse_raw_body(self):
+        """Parse JSONAPI raw body once and cache."""
+        if not hasattr(self, '_cached_raw_body'):
+            try:
+                self._cached_raw_body = _json.loads(self.request._request.body)
+            except Exception:
+                self._cached_raw_body = {}
+        return self._cached_raw_body
 
     @action(detail=False, methods=["put"], url_path="upsert")
     def upsert(self, request, *args, **kwargs):
@@ -170,12 +184,8 @@ class ApiViewSet(ModelViewSet):
         self.upsert_after_init(instance)
 
         # Parse raw body to extract attributes, bypassing JSONAPI parser's id requirement
-        try:
-            raw_body = _json.loads(request._request.body)
-            flat_data = raw_body.get("data", {}).get("attributes", {})
-        except Exception:
-            logger.warning("Failed to parse raw body in upsert for %s", type(instance).__name__)
-            flat_data = {}
+        raw_body = self._parse_raw_body()
+        flat_data = raw_body.get("data", {}).get("attributes", {})
 
         serializer = self.get_serializer(instance, data=flat_data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -217,6 +227,9 @@ class ApiViewSet(ModelViewSet):
         return Response(output_serializer.data, status=http_status)
 
     # ==================== Lifecycle Hooks ====================
+    # Note: create/update hooks are called by HookableSerializerMixin,
+    # not directly by ApiViewSet CRUD methods.
+    # destroy/show/new/upsert hooks are called directly by ApiViewSet.
 
     def create_after_init(self, instance: models.Model) -> None:
         pass
