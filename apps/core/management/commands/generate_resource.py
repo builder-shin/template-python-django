@@ -186,9 +186,9 @@ def _gen_views_py(
     lines = []
 
     # Imports
-    if user_scoped:
-        lines.append("from apps.core.mixins.owned_resource import OwnedResourceMixin")
     lines.append("from apps.core.views import ApiViewSet")
+    if user_scoped:
+        lines.append("from apps.core.exceptions import JsonApiError")
     lines.append("")
     lines.append(f"from .models import {singular_pascal}")
     lines.append(f"from .serializers import {singular_pascal}Serializer")
@@ -197,10 +197,7 @@ def _gen_views_py(
     lines.append("")
 
     # ViewSet 클래스
-    if user_scoped:
-        lines.append(f"class {plural_pascal}ViewSet(OwnedResourceMixin, ApiViewSet):")
-    else:
-        lines.append(f"class {plural_pascal}ViewSet(ApiViewSet):")
+    lines.append(f"class {plural_pascal}ViewSet(ApiViewSet):")
     lines.append(f"    serializer_class = {singular_pascal}Serializer")
     lines.append(f"    filterset_class = {singular_pascal}FilterSet")
     if user_scoped:
@@ -226,6 +223,19 @@ def _gen_views_py(
         lines.append('        if user and hasattr(user, "id") and user.id:')
         lines.append(f"            return {singular_pascal}.objects.by_user(user.id)")
         lines.append(f"        return {singular_pascal}.objects.none()")
+        lines.append("")
+        lines.append("    def _check_ownership(self, instance, action_label: str) -> None:")
+        lines.append("        if str(instance.user_id) != str(self.request.user.id):")
+        lines.append(f'            raise JsonApiError("Forbidden", f"본인의 {{self.resource_label}}만 {{action_label}}할 수 없습니다.", 403)')
+        lines.append("")
+        lines.append("    def create_after_init(self, instance) -> None:")
+        lines.append('        instance.user_id = str(self.request.user.id)')
+        lines.append("")
+        lines.append("    def update_after_init(self, instance) -> None:")
+        lines.append('        self._check_ownership(instance, "수정")')
+        lines.append("")
+        lines.append("    def destroy_after_init(self, instance) -> None:")
+        lines.append('        self._check_ownership(instance, "삭제")')
     else:
         lines.append("    def get_index_scope(self):")
         lines.append(f"        return {singular_pascal}.objects.all()")
@@ -280,15 +290,6 @@ def _gen_serializers_py(
     ro_str = "[" + ", ".join(f'"{f}"' for f in ro_fields) + "]"
     lines.append(f"        read_only_fields = {ro_str}")
     lines.append(f'        resource_name = "{resource_name}"')
-    lines.append("")
-
-    # to_representation
-    lines.append("    def to_representation(self, instance):")
-    lines.append("        data = super().to_representation(instance)")
-    lines.append('        data["links"] = {')
-    lines.append(f'            "self": f"/api/v1/{resource_name}/{{instance.pk}}",')
-    lines.append("        }")
-    lines.append("        return data")
 
     return "\n".join(lines) + "\n"
 
