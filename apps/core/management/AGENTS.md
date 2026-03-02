@@ -4,12 +4,12 @@
 # management
 
 ## Purpose
-Django 관리 명령어 컨테이너.
+Django 관리 명령어(`python manage.py <command>`) 컨테이너 디렉토리.
 
 ## Subdirectories
 
 | Directory | Purpose |
 |-----------|---------|
-| `commands/` | 관리 명령어 구현 (see `commands/AGENTS.md`) |
+| `commands/` | 실행 가능한 관리 명령어 (see `commands/AGENTS.md`) |
 
 <!-- MANUAL: -->

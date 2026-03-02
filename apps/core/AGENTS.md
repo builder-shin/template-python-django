@@ -4,53 +4,52 @@
 # core
 
 ## Purpose
-프로젝트 전체에서 사용하는 공통 기반 모듈. 인증, 예외 처리, 필터, 페이지네이션, 퍼미션, 스로틀링, 미들웨어, Mixin, 관리 명령어를 제공.
+프로젝트 공통 인프라. ApiViewSet(CRUD 라이프사이클 훅 + CoC 자동 추론), 예외 처리, 필터, 미들웨어, 믹스인, 유틸리티를 제공한다. 모든 도메인 앱이 이 모듈에 의존한다.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `authentication.py` | 인증 설정 안내 — DRF 내장 SessionAuthentication + TokenAuthentication 사용 (코드 없음, 문서 역할) |
-| `exceptions.py` | `JsonApiError`, `NotFound`, 통합 예외 핸들러 (JSON:API 포맷, 한국어 메시지) |
-| `filters.py` | `AllowedIncludesFilter` — JSON:API `?include=` 경로 화이트리스트 필터 백엔드 |
-| `serializers.py` | (삭제됨) |
-| `pagination.py` | `JsonApiPageNumberPagination` — page[number]/page[size] + total-count 메타 |
-| `permissions.py` | (비어있음 — DRF 내장 `IsAuthenticated` 사용, Allow2BanMiddleware로 IP 차단) |
-| `throttles.py` | `AuthRateThrottle` — 인증 엔드포인트 전용 (10/min) |
-| `utils.py` | `get_client_ip()` — django-ipware 기반 클라이언트 IP 추출 (X-Forwarded-For 스푸핑 방지) |
-| `views.py` | `ApiViewSet` — CRUD 라이프사이클 훅 내장 기본 ViewSet + `health_live`/`health_ready` 헬스체크 |
+| `views.py` | **ApiViewSet** — ModelViewSet 기반, CRUD 라이프사이클 훅 + CoC 자동 추론 (serializer_class, filterset_class, included_serializers). health_live/health_ready 엔드포인트 포함 |
+| `exceptions.py` | **JsonApiError**, **NotFound** 커스텀 예외 + `json_api_exception_handler` 통합 핸들러 (한국어 메시지) |
+| `filters.py` | **AllowedIncludesFilter** — JSON:API `?include=` 경로 화이트리스트 필터 백엔드 |
+| `pagination.py` | **JsonApiPageNumberPagination** — page[number]/page[size] 파라미터, total-count 메타 |
+| `utils.py` | `get_client_ip`, `singularize` (inflect 기반), `to_pascal` 유틸리티 |
+| `authentication.py` | DRF 내장 인증 사용 문서 (SessionAuthentication + TokenAuthentication) |
+| `permissions.py` | DRF 내장 IsAuthenticated 사용 문서 |
+| `throttles.py` | **AuthRateThrottle** — 인증 엔드포인트 10/min 제한 |
+| `apps.py` | CoreConfig 앱 설정 |
+| `urls.py` | Core URL 라우팅 |
 
 ## Subdirectories
 
 | Directory | Purpose |
 |-----------|---------|
-| `middleware/` | 커스텀 미들웨어 — Allow2Ban IP 자동 차단 (see `middleware/AGENTS.md`) |
-| `mixins/` | HookableSerializerMixin (see `mixins/AGENTS.md`) |
+| `middleware/` | HTTP 미들웨어 — IP 차단 (see `middleware/AGENTS.md`) |
 | `management/` | Django 관리 명령어 (see `management/AGENTS.md`) |
+| `mixins/` | 재사용 가능한 클래스 믹스인 (see `mixins/AGENTS.md`) |
 
 ## For AI Agents
 
 ### Working In This Directory
-- 이 앱은 다른 모든 앱의 기반 — 변경 시 전체 영향 분석 필수
-- `JsonApiError(title, detail, status_code)`로 예외 발생 — 한국어 detail 필수
-- 새 퍼미션 추가 시 `BasePermission` 상속, `has_permission()` 오버라이드
-- 필터 확장 시 각 앱의 `FilterSet.Meta.fields`에 lookup 추가
+- **ApiViewSet 수정 시 주의**: 모든 도메인 앱이 의존하므로 하위 호환성 유지 필수
+- **CoC 자동 추론**: `get_serializer_class()`, `filterset_class` property, `_maybe_inject_included_serializers()`가 앱 경로(apps.{app_label})에서 자동으로 Serializer/Filter/IncludedSerializers를 찾음
+- **라이프사이클 훅 체인**: create/update 훅은 HookableSerializerMixin이 호출, destroy/show/new/upsert 훅은 ApiViewSet이 직접 호출
+- **예외 처리**: 모든 커스텀 에러는 `JsonApiError(title, detail, status_code)`로 발생
+- **CoC 네이밍 규칙**: `{SingularPascal}Serializer`, `{SingularPascal}Filter` (singularize + to_pascal 사용)
 
 ### Testing Requirements
-- `tests/core/` 에서 CrudActionsMixin 등 통합 테스트
-- 미들웨어 변경 시 요청 흐름 전체 테스트 필요
+- views.py 변경 시 `tests/core/test_coc_inference.py` + `tests/core/test_crud_actions.py` 실행
+- 새 필터 백엔드 추가 시 통합 테스트 필수
 
-### Common Patterns
-- 예외는 항상 `JsonApiError` 또는 DRF 내장 예외 사용 — 직접 Response 반환 금지
-- `ApiViewSet` → DRF `IsAuthenticated` 기본 적용, CRUD 라이프사이클 훅 내장
-- 구조화 로깅: django-structlog 패키지 사용 (커스텀 미들웨어 아님)
-- django-filter lookups: `exact`, `icontains`, `istartswith`, `iendswith`, `in`, `gt`, `gte`, `lt`, `lte`, `isnull`
-
-## Dependencies
-
-### External
-- rest_framework — DRF 기반
-- rest_framework_json_api — JSON:API 직렬화/뷰
-- django_filters — 필터 프레임워크
+### Key Architecture: CoC Auto-Inference
+```
+ViewSet._get_app_label() → "posts"
+  → singularize("posts") → "post"
+  → to_pascal("post") → "Post"
+  → get_serializer_class() → apps.posts.serializers.PostSerializer
+  → filterset_class → apps.posts.filters.PostFilter
+  → _infer_included_serializers() → allowed_includes + model introspection
+```
 
 <!-- MANUAL: -->

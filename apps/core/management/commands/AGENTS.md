@@ -4,24 +4,34 @@
 # commands
 
 ## Purpose
-Django 커스텀 관리 명령어. 코드 생성, 시드 데이터 제공.
+커스텀 Django 관리 명령어. 리소스 스캐폴딩 생성기와 데이터베이스 시딩 명령어를 제공한다.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `generate_resource.py` | 리소스 스캐폴드 생성기 — 모델/뷰/시리얼라이저/필터/URL/테스트를 한번에 생성하고 settings/urls에 자동 등록 |
-| `seed.py` | 개발용 샘플 데이터 생성 — Member 10개, Post 20개, Comment 30개 (factory-boy 사용) |
+| `__init__.py` | 패키지 초기화 |
+| `generate_resource.py` | **generate_resource** — 리소스 스캐폴딩 생성기. 복수형 snake_case 이름으로 모델, 뷰, 시리얼라이저, 필터, URL, 테스트 파일 자동 생성. `--user-scoped`, `--fields`, `--model-name`, `--no-tests` 옵션 지원. `config/settings/base.py`와 `config/urls.py`에 자동 등록 |
+| `seed.py` | **seed** — 데이터베이스 시딩 명령어 |
+
 ## For AI Agents
 
 ### Working In This Directory
-- `generate_resource` 사용법: `python manage.py generate_resource <복수형_snake> --fields "name:CharField content:TextField" --user-scoped`
+- 새 명령어: `BaseCommand` 상속, `handle()` 메서드 구현
+- 생성기 사용: `python manage.py generate_resource products --fields "name:CharField price:IntegerField" --user-scoped`
+- 단축: `make generate name=products fields="name:CharField price:IntegerField"`
 - 지원 필드 타입: CharField, TextField, IntegerField, BooleanField, DateTimeField, DateField, DecimalField, FloatField, IntegerChoices
-- `--user-scoped`: user_id 필드 및 소유권 검증 훅 자동 추가
-- `--model-name`: inflect 단수화 결과 오버라이드
-- `seed` 명령어: `--flush` 옵션으로 기존 데이터 삭제 후 생성
-### Testing Requirements
-- generate_resource는 통합 테스트로 검증 (실제 파일 생성 확인)
-- seed는 factories.py 의존
+- 생성기가 자동으로 apps/ + tests/ 디렉토리에 파일 생성, settings + urls 등록
+
+### generate_resource 생성 파일
+```
+apps/{name}/
+├── __init__.py, apps.py, models.py, views.py
+├── serializers.py, filters.py, urls.py
+└── migrations/__init__.py
+
+tests/{name}/
+├── __init__.py, test_models.py, test_api.py
+```
 
 <!-- MANUAL: -->
