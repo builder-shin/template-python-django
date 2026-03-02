@@ -1,3 +1,6 @@
+TIMESTAMP_LOOKUPS = ["exact", "gt", "gte", "lt", "lte"]
+
+
 class AllowedIncludesFilter:
     """
     Filter backend that enforces allowed include paths.

@@ -13,15 +13,20 @@ class HookableSerializerMixin:
                 fields = [...]
     """
 
+    def _extract_m2m_fields(self, validated_data):
+        """Pop M2M fields from validated_data and return them separately."""
+        m2m_names = {f.name for f in self.Meta.model._meta.many_to_many}
+        m2m_fields = {}
+        for field_name in list(validated_data):
+            if field_name in m2m_names:
+                m2m_fields[field_name] = validated_data.pop(field_name)
+        return m2m_fields
+
     def create(self, validated_data):
         view = self.context.get("view")
         ModelClass = self.Meta.model  # noqa: N806
 
-        m2m_fields = {}
-        info = self.Meta.model._meta
-        for field_name, _value in list(validated_data.items()):
-            if field_name in [f.name for f in info.many_to_many]:
-                m2m_fields[field_name] = validated_data.pop(field_name)
+        m2m_fields = self._extract_m2m_fields(validated_data)
 
         instance = ModelClass(**validated_data)
 
@@ -48,11 +53,7 @@ class HookableSerializerMixin:
     def update(self, instance, validated_data):
         view = self.context.get("view")
 
-        m2m_fields = {}
-        info = self.Meta.model._meta
-        for field_name, _value in list(validated_data.items()):
-            if field_name in [f.name for f in info.many_to_many]:
-                m2m_fields[field_name] = validated_data.pop(field_name)
+        m2m_fields = self._extract_m2m_fields(validated_data)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
