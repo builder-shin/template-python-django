@@ -2,22 +2,18 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator, MinLengthValidator
 from django.db import models
 
+from apps.core.models import BaseModel, BaseQuerySet
 
-class CommentQuerySet(models.QuerySet):
+
+class CommentQuerySet(BaseQuerySet):
     def by_post(self, post_id):
         return self.filter(post_id=post_id)
-
-    def by_user(self, user_id):
-        return self.filter(user_id=user_id)
-
-    def recent(self):
-        return self.order_by("-created_at")
 
     def root_comments(self):
         return self.filter(parent__isnull=True)
 
 
-class Comment(models.Model):
+class Comment(BaseModel):
     post = models.ForeignKey(
         "posts.Post",
         on_delete=models.CASCADE,
@@ -34,13 +30,10 @@ class Comment(models.Model):
         on_delete=models.CASCADE,
         related_name="replies",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     objects = CommentQuerySet.as_manager()
 
-    class Meta:
-        ordering = ["-created_at"]
+    class Meta(BaseModel.Meta):
         indexes = [
             models.Index(fields=["post", "created_at"], name="idx_comments_post_created"),
         ]
@@ -55,11 +48,6 @@ class Comment(models.Model):
             errors["parent"] = "대댓글은 같은 글의 댓글에만 달 수 있습니다."
         if errors:
             raise ValidationError(errors)
-
-    def save(self, *args, **kwargs):  # noqa: DJ012
-        if not kwargs.get("update_fields"):
-            self.full_clean()
-        super().save(*args, **kwargs)
 
     def is_reply(self):
         return self.parent_id is not None

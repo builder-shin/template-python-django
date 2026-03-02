@@ -5,11 +5,10 @@ from django.db.models import Avg, F
 from django.db.models.functions import Lower
 from django.utils import timezone
 
+from apps.core.models import BaseModel, BaseQuerySet
 
-class PostQuerySet(models.QuerySet):
-    def recent(self):
-        return self.order_by("-created_at")
 
+class PostQuerySet(BaseQuerySet):
     def published_only(self):
         return self.filter(status=Post.Status.PUBLISHED)
 
@@ -21,9 +20,6 @@ class PostQuerySet(models.QuerySet):
 
     def active(self):
         return self.exclude(status=Post.Status.ARCHIVED)
-
-    def by_user(self, user_id):
-        return self.filter(user_id=user_id)
 
     def search_by_title(self, query):
         if not query:
@@ -58,7 +54,7 @@ class PostQuerySet(models.QuerySet):
         }
 
 
-class Post(models.Model):
+class Post(BaseModel):
     class Status(models.IntegerChoices):
         DRAFT = 0, "draft"
         PUBLISHED = 1, "published"
@@ -77,13 +73,10 @@ class Post(models.Model):
     published_at = models.DateTimeField(null=True, blank=True)
     user_id = models.CharField(max_length=255, db_index=True)
     external_id = models.CharField(max_length=255, null=True, blank=True, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     objects = PostQuerySet.as_manager()
 
-    class Meta:
-        ordering = ["-created_at"]
+    class Meta(BaseModel.Meta):
         indexes = [
             models.Index(fields=["status"], name="idx_posts_status"),
         ]
@@ -108,12 +101,9 @@ class Post(models.Model):
         if errors:
             raise ValidationError(errors)
 
-    def save(self, *args, **kwargs):  # noqa: DJ012
+    def pre_save(self):
         self._strip_title()
         self._set_published_at_if_published()
-        if not kwargs.get("update_fields"):
-            self.full_clean()
-        super().save(*args, **kwargs)
 
     def _strip_title(self):
         if self.title:

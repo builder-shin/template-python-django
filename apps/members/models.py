@@ -1,22 +1,18 @@
 from django.core.validators import MaxLengthValidator, MinLengthValidator
 from django.db import models
 
+from apps.core.models import BaseModel, BaseQuerySet
 
-class MemberQuerySet(models.QuerySet):
+
+class MemberQuerySet(BaseQuerySet):
     def active(self):
         return self.filter(status=Member.Status.ACTIVE)
 
     def suspended(self):
         return self.filter(status=Member.Status.SUSPENDED)
 
-    def by_user(self, user_id):
-        return self.filter(user_id=user_id)
 
-    def recent(self):
-        return self.order_by("-created_at")
-
-
-class Member(models.Model):
+class Member(BaseModel):
     class Status(models.IntegerChoices):
         ACTIVE = 0, "active"
         SUSPENDED = 1, "suspended"
@@ -33,13 +29,10 @@ class Member(models.Model):
         choices=Status.choices,
         default=Status.ACTIVE,
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     objects = MemberQuerySet.as_manager()
 
-    class Meta:
-        ordering = ["-created_at"]
+    class Meta(BaseModel.Meta):
         indexes = [
             models.Index(fields=["status"], name="idx_members_status"),
         ]
@@ -47,17 +40,14 @@ class Member(models.Model):
     def __str__(self):
         return self.nickname
 
+    def pre_save(self):
+        if self.nickname:
+            self.nickname = self.nickname.strip()
+
     def clean(self):
         super().clean()
         if self.nickname:
             self.nickname = self.nickname.strip()
-
-    def save(self, *args, **kwargs):  # noqa: DJ012
-        if self.nickname:
-            self.nickname = self.nickname.strip()
-        if not kwargs.get("update_fields"):
-            self.full_clean()
-        super().save(*args, **kwargs)
 
     def is_active(self):
         return self.status == self.Status.ACTIVE
