@@ -2,17 +2,19 @@ from django.utils import timezone
 from rest_framework_json_api import serializers
 
 from apps.core.mixins.crud_actions import HookableSerializerMixin
+from apps.core.serializers import AutoLinksMixin, StatusLabelMixin
 
 from .models import Post
 
-STATUS_LABELS_KO = {
-    Post.Status.DRAFT: "초안",
-    Post.Status.PUBLISHED: "게시됨",
-    Post.Status.ARCHIVED: "보관됨",
-}
 
+class PostSerializer(AutoLinksMixin, StatusLabelMixin, HookableSerializerMixin, serializers.ModelSerializer):
+    resource_path = "posts"
+    status_labels_ko = {
+        Post.Status.DRAFT: "초안",
+        Post.Status.PUBLISHED: "게시됨",
+        Post.Status.ARCHIVED: "보관됨",
+    }
 
-class PostSerializer(HookableSerializerMixin, serializers.ModelSerializer):
     days_since_published = serializers.SerializerMethodField()
     summary = serializers.SerializerMethodField()
     author_name = serializers.SerializerMethodField()
@@ -51,9 +53,6 @@ class PostSerializer(HookableSerializerMixin, serializers.ModelSerializer):
     def get_author_name(self, obj):
         return obj.author_name()
 
-    def get_status_label(self, obj):
-        return STATUS_LABELS_KO.get(obj.status, obj.get_status_display())
-
     def get_is_publishable(self, obj):
         return obj.publishable()
 
@@ -63,10 +62,8 @@ class PostSerializer(HookableSerializerMixin, serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
 
-        data["links"] = {
-            "self": f"/api/v1/posts/{instance.pk}",
-            "comments": f"/api/v1/comments?filter[post_id_eq]={instance.pk}",
-        }
+        # AutoLinksMixin이 data["links"]["self"]를 이미 설정함
+        data["links"]["comments"] = f"/api/v1/comments?filter[post_id_eq]={instance.pk}"
 
         if instance.status == instance.Status.PUBLISHED:
             data["links"]["public_url"] = f"/posts/{instance.pk}"

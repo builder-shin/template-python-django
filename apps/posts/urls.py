@@ -1,11 +1,5 @@
-from django.urls import include, path
-from rest_framework.routers import DefaultRouter
+from apps.core.urls import make_urlpatterns
 
 from .views import PostsViewSet
 
-router = DefaultRouter(trailing_slash=False)
-router.register(r"posts", PostsViewSet, basename="post")
-
-urlpatterns = [
-    path("", include(router.urls)),
-]
+urlpatterns = make_urlpatterns(("posts", PostsViewSet, "post"))
