@@ -4,18 +4,19 @@
 # scripts
 
 ## Purpose
-프로젝트 초기 설정 셸 스크립트.
+프로젝트 초기 설정 및 유틸리티 셸 스크립트.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `setup.sh` | 프로젝트 초기 설정 — uv 설치 확인, 의존성 설치(uv sync), DB 마이그레이션, pre-commit 설정 |
+| `setup.sh` | 프로젝트 초기 설정 스크립트 — uv 설치 확인, 의존성 설치(uv sync), DB 마이그레이션, pre-commit 설정 |
 
 ## For AI Agents
 
 ### Working In This Directory
 - `make setup`으로 실행
-- 새 셸 스크립트 추가 시 실행 권한 부여 필요 (`chmod +x`)
+- 스크립트 추가 시 실행 권한 부여: `chmod +x script.sh`
+- 기존 setup.sh 패턴을 참고하여 작성
 
 <!-- MANUAL: -->

@@ -4,13 +4,13 @@
 # .github
 
 ## Purpose
-GitHub Actions CI/CD 워크플로우 설정.
+GitHub 설정 — CI/CD 워크플로우, PR 템플릿 등.
 
 ## Subdirectories
 
 | Directory | Purpose |
 |-----------|---------|
-| `workflows/` | CI 파이프라인 정의 |
+| `workflows/` | GitHub Actions CI 워크플로우 |
 
 ## Key Files
 
@@ -26,8 +26,6 @@ GitHub Actions CI/CD 워크플로우 설정.
 - test job: `uv sync --group test` → `uv run pytest --cov=apps --cov-report=term-missing`
 - test 서비스: PostgreSQL 16 (`django_test` DB) + Redis 7
 - 트리거: main 브랜치 push 또는 PR
-
-### Testing Requirements
 - CI 워크플로우 변경 시 별도 브랜치에서 PR로 검증
 
 <!-- MANUAL: -->

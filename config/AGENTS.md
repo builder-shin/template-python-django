@@ -4,39 +4,49 @@
 # config
 
 ## Purpose
-Django 프로젝트 설정, URL 라우팅, WSGI/ASGI 진입점, Celery 설정을 담당하는 프로젝트 구성 패키지.
+Django 프로젝트 설정 모듈. WSGI/ASGI 진입점, 루트 URL 라우팅, Celery 설정, 환경별 설정을 포함한다.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `urls.py` | URL 라우팅 — health check, API v1 엔드포인트, Swagger UI, debug toolbar |
-| `celery.py` | Celery 앱 초기화 (autodiscover_tasks, Django settings 연동) |
-| `wsgi.py` | WSGI 진입점 (gunicorn 사용) |
-| `asgi.py` | ASGI 진입점 (비동기 지원) |
-| `__init__.py` | Celery app import (`from .celery import app as celery_app`) |
+| `__init__.py` | 패키지 초기화 — Celery app import (`from .celery import app as celery_app`) |
+| `urls.py` | 루트 URL 라우팅 — health 체크, API v1 엔드포인트, Swagger UI, debug toolbar |
+| `wsgi.py` | WSGI 진입점 (Gunicorn용) |
+| `asgi.py` | ASGI 진입점 (향후 WebSocket 등) |
+| `celery.py` | Celery 앱 설정 및 autodiscover |
 
 ## Subdirectories
 
 | Directory | Purpose |
 |-----------|---------|
-| `settings/` | 환경별 분리된 Django 설정 (see `settings/AGENTS.md`) |
+| `settings/` | 환경별 설정 (base, development, production, test) (see `settings/AGENTS.md`) |
 
 ## For AI Agents
 
 ### Working In This Directory
-- URL 추가 시 `urlpatterns`에 `path("api/v1/", include("apps.<name>.urls"))` 형태로 등록
-- `# API v1 endpoints` 주석 아래에 새 앱 URL 등록 (generate_resource 명령어가 자동 등록)
-- Health check 엔드포인트: `/health/live`, `/health/ready` (인증 불필요)
-- Swagger UI: `/api-docs/`, Schema: `/api/schema/`
+- 새 앱 URL 등록: `urls.py`의 `# API v1 endpoints` 주석 아래에 추가
+- URL 패턴: `path("api/v1/", include("apps.{name}.urls"))`
+- health 엔드포인트: `/health/live` (단순 OK), `/health/ready` (DB + Cache 체크)
+- Swagger UI: `/api-docs/` (개발 환경)
+- `trailing_slash=False` — DefaultRouter에서 설정
+- DEBUG 모드에서만 django-debug-toolbar 활성화
+- Celery autodiscover로 앱 내 tasks.py 자동 탐지
+
+### URL Structure
+```
+/health/live          → 단순 생존 체크
+/health/ready         → DB + 캐시 연결 체크
+/api/v1/members       → MembersViewSet
+/api/v1/posts         → PostsViewSet
+/api/v1/comments      → CommentsViewSet
+/api/schema/          → OpenAPI 스키마
+/api-docs/            → Swagger UI
+```
 
 ### Testing Requirements
 - URL 라우팅은 통합 테스트에서 검증
 - Celery 태스크는 테스트 시 `CELERY_TASK_ALWAYS_EAGER=True`로 동기 실행
-
-### Common Patterns
-- DEBUG 모드에서만 django-debug-toolbar URL 등록
-- Celery autodiscover로 앱 내 tasks.py 자동 탐지
 
 ## Dependencies
 
