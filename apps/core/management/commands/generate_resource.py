@@ -76,22 +76,17 @@ def _gen_models_py(
     lines = [
         "from django.db import models",
         "",
+        "from apps.core.models import BaseModel, BaseQuerySet",
+        "",
         "",
     ]
 
     # QuerySet 클래스
-    lines.append(f"class {singular_pascal}QuerySet(models.QuerySet):")
-    lines.append("    def recent(self):")
-    lines.append('        return self.order_by("-created_at")')
-    lines.append("")
-    if user_scoped:
-        lines.append("    def by_user(self, user_id):")
-        lines.append("        return self.filter(user_id=user_id)")
-        lines.append("")
+    lines.append(f"class {singular_pascal}QuerySet(BaseQuerySet):")
     lines.append("")
 
     # 모델 클래스
-    lines.append(f"class {singular_pascal}(models.Model):")
+    lines.append(f"class {singular_pascal}(BaseModel):")
 
     # IntegerChoices 내부 클래스
     if has_choices:
@@ -111,18 +106,12 @@ def _gen_models_py(
     if user_scoped:
         lines.append("    user_id = models.CharField(max_length=255, db_index=True)")
 
-    # 타임스탬프 필드
-    lines.append("    created_at = models.DateTimeField(auto_now_add=True)")
-    lines.append("    updated_at = models.DateTimeField(auto_now=True)")
-    lines.append("")
-
     # objects 매니저
     lines.append(f"    objects = {singular_pascal}QuerySet.as_manager()")
     lines.append("")
 
     # Meta
-    lines.append("    class Meta:")
-    lines.append('        ordering = ["-created_at"]')
+    lines.append("    class Meta(BaseModel.Meta):")
     lines.append("")
 
     # __str__
@@ -133,13 +122,6 @@ def _gen_models_py(
         lines.append(f'        return f"{singular_pascal}#{{self.pk}}"')
     else:
         lines.append(f"        return self.{str_field}")
-    lines.append("")
-
-    # save with full_clean
-    lines.append("    def save(self, *args, **kwargs):")
-    lines.append('        if not kwargs.get("update_fields"):')
-    lines.append("            self.full_clean()")
-    lines.append("        super().save(*args, **kwargs)")
 
     return "\n".join(lines) + "\n"
 
