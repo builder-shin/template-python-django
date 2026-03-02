@@ -1,5 +1,7 @@
 import django_filters
 
+from apps.core.filters import TIMESTAMP_LOOKUPS
+
 from .models import Member
 
 
@@ -10,6 +12,6 @@ class MemberFilter(django_filters.FilterSet):
             "nickname": ["exact", "icontains", "istartswith", "iendswith"],
             "status": ["exact", "in"],
             "user_id": ["exact", "in"],
-            "created_at": ["exact", "gt", "gte", "lt", "lte"],
-            "updated_at": ["exact", "gt", "gte", "lt", "lte"],
+            "created_at": TIMESTAMP_LOOKUPS,
+            "updated_at": TIMESTAMP_LOOKUPS,
         }

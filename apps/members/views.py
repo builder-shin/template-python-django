@@ -13,13 +13,8 @@ from .serializers import MemberSerializer
 class MembersViewSet(OwnedResourceMixin, ApiViewSet):
     serializer_class = MemberSerializer
     filterset_class = MemberFilter
+    queryset = Member.objects.all()
     resource_label = "프로필"
-
-    def get_queryset(self):
-        return Member.objects.all()
-
-    def get_index_scope(self):
-        return Member.objects.all()
 
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request, *args, **kwargs):
