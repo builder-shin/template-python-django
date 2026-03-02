@@ -14,10 +14,6 @@ class CommentSerializer(HookableSerializerMixin, serializers.ModelSerializer):
     is_reply = serializers.SerializerMethodField()
     reply_count = serializers.SerializerMethodField()
 
-    included_serializers = {
-        "post": "apps.posts.serializers.PostSerializer",
-    }
-
     class Meta:
         model = Comment
         fields = [
