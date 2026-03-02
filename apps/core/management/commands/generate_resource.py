@@ -13,42 +13,10 @@ import os
 import re
 import textwrap
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-try:
-    import inflect
-
-    _inflect_engine = inflect.engine()
-except ImportError:
-    _inflect_engine = None
-
-
-# ---------------------------------------------------------------------------
-# 이름 변환 유틸리티
-# ---------------------------------------------------------------------------
-
-
-def _to_pascal(snake: str) -> str:
-    """snake_case -> PascalCase"""
-    return "".join(word.capitalize() for word in snake.split("_"))
-
-
-def _singularize(plural: str) -> str:
-    """복수형 -> 단수형 (inflect 사용, 실패 시 원본 반환)"""
-    if _inflect_engine is None:
-        # inflect 미설치 시 단순 규칙
-        if plural.endswith("ies"):
-            return plural[:-3] + "y"
-        if plural.endswith(("ses", "xes", "zes")):
-            return plural[:-2]
-        if plural.endswith("s") and not plural.endswith("ss"):
-            return plural[:-1]
-        return plural
-    result = _inflect_engine.singular_noun(plural)
-    if result is False:
-        # 이미 단수형인 경우
-        return plural
-    return result
+from apps.core.utils import singularize, to_pascal
 
 
 # ---------------------------------------------------------------------------
@@ -189,17 +157,17 @@ def _gen_views_py(
     lines.append("from apps.core.views import ApiViewSet")
     if user_scoped:
         lines.append("from apps.core.exceptions import JsonApiError")
+        lines.append("from apps.core.mixins import UserScopedMixin")
     lines.append("")
     lines.append(f"from .models import {singular_pascal}")
-    lines.append(f"from .serializers import {singular_pascal}Serializer")
-    lines.append(f"from .filters import {singular_pascal}FilterSet")
     lines.append("")
     lines.append("")
 
     # ViewSet 클래스
-    lines.append(f"class {plural_pascal}ViewSet(ApiViewSet):")
-    lines.append(f"    serializer_class = {singular_pascal}Serializer")
-    lines.append(f"    filterset_class = {singular_pascal}FilterSet")
+    if user_scoped:
+        lines.append(f"class {plural_pascal}ViewSet(UserScopedMixin, ApiViewSet):")
+    else:
+        lines.append(f"class {plural_pascal}ViewSet(ApiViewSet):")
     if user_scoped:
         lines.append('    resource_label = "리소스"')
     lines.append("")
@@ -225,24 +193,10 @@ def _gen_views_py(
         lines.append('        if user and hasattr(user, "id") and user.id:')
         lines.append("            return super().get_index_scope().filter(user_id=user.id)")
         lines.append(f"        return {singular_pascal}.objects.none()")
-        lines.append("")
-        lines.append("    def _check_ownership(self, instance, action_label: str) -> None:")
-        lines.append("        if str(instance.user_id) != str(self.request.user.id):")
-        lines.append(f'            raise JsonApiError("Forbidden", f"본인의 {{self.resource_label}}만 {{action_label}}할 수 없습니다.", 403)')
-        lines.append("")
-        lines.append("    def create_after_init(self, instance) -> None:")
-        lines.append('        instance.user_id = str(self.request.user.id)')
-        lines.append("")
-        lines.append("    def update_after_init(self, instance) -> None:")
-        lines.append('        self._check_ownership(instance, "수정")')
-        lines.append("")
-        lines.append("    def destroy_after_init(self, instance) -> None:")
-        lines.append('        self._check_ownership(instance, "삭제")')
     return "\n".join(lines) + "\n"
 
 
 def _gen_serializers_py(
-    resource_name: str,
     singular_pascal: str,
     fields: list[tuple[str, str]],
     user_scoped: bool,
@@ -258,7 +212,6 @@ def _gen_serializers_py(
     # Serializer 클래스
     lines.append(f"class {singular_pascal}Serializer(HookableSerializerMixin, serializers.ModelSerializer):")
 
-    # TODO 주석 (관계 필드)
     lines.append("    # TODO: 관계 필드는 수동으로 추가하세요 (참고: apps/comments/)")
     lines.append("    # included_serializers = {}")
     lines.append("    # related_field = ResourceRelatedField(queryset=RelatedModel.objects.all())")
@@ -287,7 +240,6 @@ def _gen_serializers_py(
         ro_fields.insert(0, "user_id")
     ro_str = "[" + ", ".join(f'"{f}"' for f in ro_fields) + "]"
     lines.append(f"        read_only_fields = {ro_str}")
-    lines.append(f'        resource_name = "{resource_name}"')
 
     return "\n".join(lines) + "\n"
 
@@ -303,7 +255,7 @@ def _gen_filters_py(
     lines.append(f"from .models import {singular_pascal}")
     lines.append("")
     lines.append("")
-    lines.append(f"class {singular_pascal}FilterSet(django_filters.FilterSet):")
+    lines.append(f"class {singular_pascal}Filter(django_filters.FilterSet):")
     lines.append("    class Meta:")
     lines.append(f"        model = {singular_pascal}")
     lines.append("        fields = {")
@@ -630,18 +582,18 @@ class Command(BaseCommand):
         if model_name_override:
             singular_snake = model_name_override.lower()
             singular_pascal = (
-                _to_pascal(model_name_override)
+                to_pascal(model_name_override)
                 if "_" in model_name_override
                 else model_name_override[0].upper() + model_name_override[1:]
             )
         else:
-            singular_snake = _singularize(resource_name)
-            singular_pascal = _to_pascal(singular_snake)
+            singular_snake = singularize(resource_name)
+            singular_pascal = to_pascal(singular_snake)
 
-        plural_pascal = _to_pascal(resource_name)
+        plural_pascal = to_pascal(resource_name)
 
         # 프로젝트 루트 디렉토리 결정 (manage.py 기준)
-        base_dir = os.getcwd()
+        base_dir = str(settings.BASE_DIR)
         apps_dir = os.path.join(base_dir, "apps", resource_name)
         tests_dir = os.path.join(base_dir, "tests", resource_name)
 
@@ -654,7 +606,7 @@ class Command(BaseCommand):
         self.stdout.write(f"  모델: {singular_pascal}")
         self.stdout.write(f"  뷰셋: {plural_pascal}ViewSet")
         self.stdout.write(f"  시리얼라이저: {singular_pascal}Serializer")
-        self.stdout.write(f"  필터: {singular_pascal}FilterSet")
+        self.stdout.write(f"  필터: {singular_pascal}Filter")
         self.stdout.write(f"  User-scoped: {user_scoped}")
         self.stdout.write(f"  필드: {fields if fields else '(없음)'}")
         self.stdout.write("")
@@ -688,7 +640,7 @@ class Command(BaseCommand):
         # 5. serializers.py
         self._write_file(
             os.path.join(apps_dir, "serializers.py"),
-            _gen_serializers_py(resource_name, singular_pascal, fields, user_scoped),
+            _gen_serializers_py(singular_pascal, fields, user_scoped),
         )
 
         # 6. filters.py
