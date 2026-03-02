@@ -1,23 +1,24 @@
 <!-- Parent: ../AGENTS.md -->
 <!-- Generated: 2026-02-28 | Updated: 2026-03-02 -->
 
-# posts
+# tests/posts
 
 ## Purpose
-Post 모델 유효성 및 API 엔드포인트 테스트.
+Post 도메인 테스트. 모델 단위 테스트와 API 통합 테스트를 포함한다.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `test_models.py` | Post 모델 테스트 — 생성, publish/archive, 유효성(published 시 content 필수), view_count, summary |
-| `test_api.py` | Posts API 테스트 — CRUD, publish 액션, upsert, include=comments, 권한 |
+| `test_models.py` | Post 모델 테스트 — 생성, 유효성 검증, publish/archive, 조회수, summary, QuerySet |
+| `test_api.py` | Post API 테스트 — CRUD, 인증, 소유권, upsert, publish 엔드포인트, JSON:API 필터/정렬/include |
 
 ## For AI Agents
 
 ### Working In This Directory
-- PostFactory 사용하여 테스트 데이터 생성
-- publish 테스트: draft 상태에서만 발행 가능, content 필수
-- upsert 테스트: external_id 기반 find-or-create
+- `mock_authenticated` fixture로 인증 사용자 생성
+- `jsonapi_payload()` 헬퍼로 JSON:API 요청 본문 생성
+- user_id 소유권 테스트: 다른 사용자의 리소스 접근 시 403
+- upsert 테스트: external_id 기반 생성/업데이트
 
 <!-- MANUAL: -->

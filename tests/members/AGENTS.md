@@ -1,22 +1,22 @@
 <!-- Parent: ../AGENTS.md -->
 <!-- Generated: 2026-02-28 | Updated: 2026-03-02 -->
 
-# members
+# tests/members
 
 ## Purpose
-Member 모델 유효성 및 API 엔드포인트 테스트.
+Member 도메인 테스트. 모델 단위 테스트와 API 통합 테스트를 포함한다.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `test_models.py` | Member 모델 테스트 — 생성, 상태 변경(suspend/withdraw), nickname strip, 유효성 |
-| `test_api.py` | Members API 테스트 — CRUD, /me 액션, 권한(본인 프로필만 수정/삭제) |
+| `test_models.py` | Member 모델 테스트 — 생성, 상태 변경(suspend/withdraw), nickname strip |
+| `test_api.py` | Member API 테스트 — CRUD, 인증, 소유권, /me 엔드포인트 |
 
 ## For AI Agents
 
 ### Working In This Directory
-- MemberFactory 사용하여 테스트 데이터 생성
-- Status IntegerChoices: 0=active, 1=suspended, 2=withdrawn
+- `/me` 엔드포인트: 인증 사용자의 Member 프로필 반환 테스트
+- user_id unique 제약 조건 테스트
 
 <!-- MANUAL: -->

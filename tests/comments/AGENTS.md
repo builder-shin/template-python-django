@@ -1,22 +1,22 @@
 <!-- Parent: ../AGENTS.md -->
 <!-- Generated: 2026-02-28 | Updated: 2026-03-02 -->
 
-# comments
+# tests/comments
 
 ## Purpose
-Comment 모델 유효성 및 API 엔드포인트 테스트.
+Comment 도메인 테스트. 모델 단위 테스트와 API 통합 테스트를 포함한다.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `test_models.py` | Comment 모델 테스트 — 생성, 대댓글 유효성(같은 post 내), reply_count |
-| `test_api.py` | Comments API 테스트 — CRUD, include=post, 권한(본인 댓글만 수정/삭제) |
+| `test_models.py` | Comment 모델 테스트 — 생성, 대댓글, 유효성 검증(다른 글의 댓글 parent 불가) |
+| `test_api.py` | Comment API 테스트 — CRUD, 인증, 소유권, include=post, 필터 |
 
 ## For AI Agents
 
 ### Working In This Directory
-- Comment는 Post 의존 — 테스트 시 PostFactory로 post 먼저 생성
-- 대댓글 테스트: parent가 다른 post의 댓글이면 ValidationError
+- Comment는 Post에 의존 — 테스트 데이터에 Post 먼저 생성 필요
+- 대댓글 테스트: parent가 같은 post의 댓글인지 검증
 
 <!-- MANUAL: -->
