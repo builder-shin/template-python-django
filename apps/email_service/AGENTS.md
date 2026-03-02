@@ -4,25 +4,21 @@
 # email_service
 
 ## Purpose
-SendGrid 기반 이메일 발송 서비스. 템플릿 이메일 단건/배치 발송 지원.
+이메일 발송 서비스. SendGrid API를 통한 템플릿 기반 이메일 발송 (단건 + 배치)을 제공한다.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `sendgrid_service.py` | `SendGridEmailService` — 단건 `send_template_email()` + 배치 `send_batch_template_emails()` (최대 1000건/API 호출) |
-| `apps.py` | Django AppConfig |
+| `sendgrid_service.py` | **SendGridEmailService** — `send_template_email` (단건), `send_batch_template_emails` (최대 1000건/API 호출, Personalization 기반 배치). settings.SENDGRID_API_KEY 미설정 시 graceful skip |
+| `apps.py` | EmailServiceConfig |
 
 ## For AI Agents
 
 ### Working In This Directory
-- `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL` 환경변수 필수
-- `enabled()` 체크로 미설정 시 graceful skip
-- 배치 발송: 1000건 단위 Personalization 분할
-- 응답: `{ "success": bool, "status_code": int }` (단건), `{ "success": bool, "total": int, "sent": int, "failed": int }` (배치)
-
-### Testing Requirements
-- SendGrid 미설정 시 자동 스킵 로직 확인
-- Mock 사용하여 외부 API 호출 차단
+- SendGrid 설정 필요: `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME` (settings/환경변수)
+- 배치 발송: MAX_BATCH_SIZE=1000, 초과 시 자동 청크 분할
+- `enabled()` 메서드로 설정 유무 체크 후 graceful 처리
+- Celery 태스크에서 호출하여 비동기 발송 권장
 
 <!-- MANUAL: -->

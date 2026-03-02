@@ -1,21 +1,17 @@
 <!-- Parent: ../AGENTS.md -->
 <!-- Generated: 2026-02-28 | Updated: 2026-03-02 -->
 
-# migrations
+# migrations (comments)
 
 ## Purpose
-Comments 앱 Django 데이터베이스 마이그레이션 파일.
-
-## Key Files
-
-| File | Description |
-|------|-------------|
-| `0001_initial.py` | 초기 마이그레이션 — Comment 테이블, post+created_at 복합 인덱스 |
+Comment 모델의 Django 데이터베이스 마이그레이션 파일.
 
 ## For AI Agents
 
 ### Working In This Directory
-- `make makemigrations` → `make migrate` 순서로 마이그레이션 관리
-- 마이그레이션 파일 직접 수정 금지 — `makemigrations`로 재생성
+- 마이그레이션 생성: `python manage.py makemigrations comments`
+- 적용: `python manage.py migrate`
+- 수동 편집 지양 — 항상 makemigrations로 생성
+- Ruff/린트 제외 대상 (pyproject.toml per-file-ignores)
 
 <!-- MANUAL: -->
