@@ -13,7 +13,7 @@
 | `authentication.py` | 인증 설정 안내 — DRF 내장 SessionAuthentication + TokenAuthentication 사용 (코드 없음, 문서 역할) |
 | `exceptions.py` | `JsonApiError`, `NotFound`, 통합 예외 핸들러 (JSON:API 포맷, 한국어 메시지) |
 | `filters.py` | `AllowedIncludesFilter` — JSON:API `?include=` 경로 화이트리스트 필터 백엔드 |
-| `serializers.py` | (비어있음 — 현재 사용하지 않음) |
+| `serializers.py` | (삭제됨) |
 | `pagination.py` | `JsonApiPageNumberPagination` — page[number]/page[size] + total-count 메타 |
 | `permissions.py` | (비어있음 — DRF 내장 `IsAuthenticated` 사용, Allow2BanMiddleware로 IP 차단) |
 | `throttles.py` | `AuthRateThrottle` — 인증 엔드포인트 전용 (10/min) |
@@ -25,7 +25,7 @@
 | Directory | Purpose |
 |-----------|---------|
 | `middleware/` | 커스텀 미들웨어 — Allow2Ban IP 자동 차단 (see `middleware/AGENTS.md`) |
-| `mixins/` | HookableSerializerMixin + OwnedResourceMixin (see `mixins/AGENTS.md`) |
+| `mixins/` | HookableSerializerMixin (see `mixins/AGENTS.md`) |
 | `management/` | Django 관리 명령어 (see `management/AGENTS.md`) |
 
 ## For AI Agents

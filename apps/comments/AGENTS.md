@@ -36,6 +36,6 @@
 - `apps.posts.models.Post` — ForeignKey 관계
 - `apps.posts.serializers.PostSerializer` — included_serializers
 - `apps.core.views.ApiViewSet` — CRUD 라이프사이클 훅 내장 ViewSet
-- `apps.core.mixins` — HookableSerializerMixin + OwnedResourceMixin
+- `apps.core.mixins` — HookableSerializerMixin
 
 <!-- MANUAL: -->

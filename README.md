@@ -225,12 +225,24 @@ class MyViewSet(ApiViewSet):
             send_notification.delay(instance.id)
 ```
 
-소유권 기반 접근 제어가 필요하면 `OwnedResourceMixin`을 추가합니다:
+소유권 기반 접근 제어가 필요하면 라이프사이클 훅을 직접 구현합니다:
 
 ```python
-class MyViewSet(OwnedResourceMixin, ApiViewSet):
+class MyViewSet(ApiViewSet):
     serializer_class = MySerializer
-    resource_label = "내 리소스"  # 에러 메시지에 사용
+
+    def _check_ownership(self, instance, action_label: str) -> None:
+        if str(instance.user_id) != str(self.request.user.id):
+            raise JsonApiError("Forbidden", f"본인의 리소스만 {action_label}할 수 있습니다.", 403)
+
+    def create_after_init(self, instance) -> None:
+        instance.user_id = str(self.request.user.id)
+
+    def update_after_init(self, instance) -> None:
+        self._check_ownership(instance, "수정")
+
+    def destroy_after_init(self, instance) -> None:
+        self._check_ownership(instance, "삭제")
 ```
 
 ## 테스트

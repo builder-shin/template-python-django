@@ -22,7 +22,7 @@ Django 애플리케이션 모듈 컨테이너. 도메인(members, posts, comment
 - 새 앱 생성: `make generate name=<복수형> fields="<필드 정의>"` 사용
 - 앱 구조 패턴: `models.py`, `views.py`, `serializers.py`, `filters.py`, `urls.py`, `apps.py`
 - 모든 ViewSet은 `ApiViewSet` 상속 (CRUD 라이프사이클 훅 내장)
-- 소유권 검증이 필요한 ViewSet은 `OwnedResourceMixin` 추가 상속
+- 소유권 검증이 필요한 ViewSet은 `_check_ownership` 등 훅을 직접 구현
 - 모든 Serializer는 `HookableSerializerMixin + serializers.ModelSerializer` 상속
 - 필터는 표준 `django_filters.FilterSet` 클래스 사용
 

@@ -12,7 +12,7 @@
 |------|-------------|
 | `models.py` | `Member` 모델 — Status(active/suspended/withdrawn), nickname, bio, avatar_url + `MemberQuerySet` |
 | `views.py` | `MembersViewSet` — CRUD + `/me` 커스텀 액션 (본인 프로필 조회) |
-| `serializers.py` | `MemberSerializer` — status_label(한국어), display_name 포함 |
+| `serializers.py` | `MemberSerializer` — display_name 포함 |
 | `filters.py` | `MemberFilter` — django-filter FilterSet (nickname, status, user_id, created_at, updated_at) |
 | `urls.py` | `/api/v1/members` 라우팅 (trailing_slash=False) |
 
@@ -34,7 +34,7 @@
 
 ### Internal
 - `apps.core.views.ApiViewSet` — CRUD 라이프사이클 훅 내장 ViewSet
-- `apps.core.mixins` — HookableSerializerMixin + OwnedResourceMixin
+- `apps.core.mixins` — HookableSerializerMixin
 - `django_filters` — 표준 필터 프레임워크
 
 <!-- MANUAL: -->

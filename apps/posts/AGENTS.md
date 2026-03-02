@@ -12,7 +12,7 @@
 |------|-------------|
 | `models.py` | `Post` 모델 — Status(draft/published/archived), title/content/view_count/external_id + 풍부한 `PostQuerySet` |
 | `views.py` | `PostsViewSet` — CRUD + `publish` 액션 + upsert (external_id 기반) + `?include=comments` |
-| `serializers.py` | `PostSerializer` — days_since_published, summary, status_label(한국어), is_publishable, comment_count |
+| `serializers.py` | `PostSerializer` — days_since_published, summary, is_publishable, comment_count |
 | `filters.py` | `PostFilter` — django-filter FilterSet (title, status, created_at, updated_at, user_id) |
 | `urls.py` | `/api/v1/posts` 라우팅 (trailing_slash=False) |
 
@@ -37,6 +37,6 @@
 ### Internal
 - `apps.comments` — `comments` 역참조 관계 (ForeignKey)
 - `apps.core.views.ApiViewSet` — CRUD 라이프사이클 훅 내장 ViewSet
-- `apps.core.mixins` — HookableSerializerMixin + OwnedResourceMixin
+- `apps.core.mixins` — HookableSerializerMixin
 
 <!-- MANUAL: -->

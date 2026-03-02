@@ -59,7 +59,7 @@ Client → Django (Gunicorn) → DRF JSON:API
     (DRF 내장 인증)         (CRUD + 라이프사이클 훅)
            ↓                      ↓
     Redis (캐시/Celery)     HookableSerializerMixin
-    PostgreSQL (데이터)      OwnedResourceMixin
+    PostgreSQL (데이터)
 ```
 
 ## Dependencies
