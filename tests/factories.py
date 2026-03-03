@@ -1,10 +1,18 @@
-import uuid
-
 import factory
+from django.contrib.auth.models import User
 from factory.django import DjangoModelFactory
 from faker import Faker
 
 fake = Faker("ko_KR")
+
+
+class UserFactory(DjangoModelFactory):
+    class Meta:
+        model = User
+
+    username = factory.Sequence(lambda n: f"user{n}")
+    email = factory.LazyAttribute(lambda o: f"{o.username}@example.com")
+    password = factory.PostGenerationMethodCall("set_password", "testpass123")
 
 
 class MemberFactory(DjangoModelFactory):
@@ -12,7 +20,7 @@ class MemberFactory(DjangoModelFactory):
         model = "members.Member"
 
     nickname = factory.LazyFunction(lambda: fake.name())
-    user_id = factory.LazyFunction(lambda: str(uuid.uuid4()))
+    user = factory.SubFactory(UserFactory)
     status = 0  # active
 
 
@@ -22,7 +30,7 @@ class PostFactory(DjangoModelFactory):
 
     title = factory.LazyFunction(lambda: fake.sentence())
     content = factory.LazyFunction(lambda: fake.paragraph())
-    user_id = factory.LazyFunction(lambda: str(uuid.uuid4()))
+    member = factory.SubFactory(MemberFactory)
     status = 0  # draft
 
 
@@ -32,4 +40,4 @@ class CommentFactory(DjangoModelFactory):
 
     content = factory.LazyFunction(lambda: fake.sentence())
     post = factory.SubFactory(PostFactory)
-    user_id = factory.LazyFunction(lambda: str(uuid.uuid4()))
+    member = factory.SubFactory(MemberFactory)

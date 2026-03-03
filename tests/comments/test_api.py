@@ -7,13 +7,13 @@ from apps.posts.models import Post
 
 @pytest.mark.django_db
 class TestCommentsAPI:
-    def _create_post(self, user_id="user-1"):
-        return Post.objects.create(title="Test Post", content="Content", user_id=user_id)
+    def _create_post(self, member):
+        return Post.objects.create(title="Test Post", content="Content", member=member)
 
-    def test_index_with_auth(self, mock_authenticated, jsonapi_headers):
-        post = self._create_post(str(mock_authenticated.id))
-        Comment.objects.create(post=post, content="Comment 1", user_id=str(mock_authenticated.id))
-        Comment.objects.create(post=post, content="Comment 2", user_id="other-user")
+    def test_index_with_auth(self, mock_authenticated, member, other_member, jsonapi_headers):
+        post = self._create_post(member)
+        Comment.objects.create(post=post, content="Comment 1", member=member)
+        Comment.objects.create(post=post, content="Comment 2", member=other_member)
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
@@ -28,8 +28,8 @@ class TestCommentsAPI:
         response = client.get("/api/v1/comments", **jsonapi_headers)
         assert response.status_code == 401
 
-    def test_create_valid(self, mock_authenticated, jsonapi_headers):
-        post = self._create_post(str(mock_authenticated.id))
+    def test_create_valid(self, mock_authenticated, member, jsonapi_headers):
+        post = self._create_post(member)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         payload = {
@@ -45,11 +45,10 @@ class TestCommentsAPI:
         assert response.status_code == 201
         data = response.json()
         assert data["data"]["attributes"]["content"] == "Great post!"
-        assert data["data"]["attributes"]["user_id"] == str(mock_authenticated.id)
 
-    def test_create_reply(self, mock_authenticated, jsonapi_headers):
-        post = self._create_post(str(mock_authenticated.id))
-        parent = Comment.objects.create(post=post, content="Parent", user_id="other-user")
+    def test_create_reply(self, mock_authenticated, member, other_member, jsonapi_headers):
+        post = self._create_post(member)
+        parent = Comment.objects.create(post=post, content="Parent", member=other_member)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         payload = {
@@ -67,19 +66,19 @@ class TestCommentsAPI:
         response = client.post("/api/v1/comments", data=payload, format="vnd.api+json", **jsonapi_headers)
         assert response.status_code == 201
         data = response.json()
-        assert data["data"]["attributes"]["is_reply"] is True
+        assert data["data"]["relationships"]["parent"]["data"] is not None
 
-    def test_show_existing(self, mock_authenticated, jsonapi_headers):
-        post = self._create_post(str(mock_authenticated.id))
-        comment = Comment.objects.create(post=post, content="Show Me", user_id=str(mock_authenticated.id))
+    def test_show_existing(self, mock_authenticated, member, jsonapi_headers):
+        post = self._create_post(member)
+        comment = Comment.objects.create(post=post, content="Show Me", member=member)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         response = client.get(f"/api/v1/comments/{comment.id}", **jsonapi_headers)
         assert response.status_code == 200
 
-    def test_update_own(self, mock_authenticated, jsonapi_headers):
-        post = self._create_post(str(mock_authenticated.id))
-        comment = Comment.objects.create(post=post, content="Old Content", user_id=str(mock_authenticated.id))
+    def test_update_own(self, mock_authenticated, member, jsonapi_headers):
+        post = self._create_post(member)
+        comment = Comment.objects.create(post=post, content="Old Content", member=member)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         payload = {
@@ -96,9 +95,9 @@ class TestCommentsAPI:
         comment.refresh_from_db()
         assert comment.content == "Updated Content"
 
-    def test_update_forbidden_other_user(self, mock_authenticated, jsonapi_headers):
-        post = self._create_post(str(mock_authenticated.id))
-        comment = Comment.objects.create(post=post, content="Other", user_id="other-user")
+    def test_update_forbidden_other_user(self, mock_authenticated, member, other_member, jsonapi_headers):
+        post = self._create_post(member)
+        comment = Comment.objects.create(post=post, content="Other", member=other_member)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         payload = {
@@ -113,18 +112,18 @@ class TestCommentsAPI:
         )
         assert response.status_code == 403
 
-    def test_destroy_own(self, mock_authenticated, jsonapi_headers):
-        post = self._create_post(str(mock_authenticated.id))
-        comment = Comment.objects.create(post=post, content="Delete Me", user_id=str(mock_authenticated.id))
+    def test_destroy_own(self, mock_authenticated, member, jsonapi_headers):
+        post = self._create_post(member)
+        comment = Comment.objects.create(post=post, content="Delete Me", member=member)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         response = client.delete(f"/api/v1/comments/{comment.id}", **jsonapi_headers)
         assert response.status_code == 204
         assert not Comment.objects.filter(id=comment.id).exists()
 
-    def test_destroy_forbidden_other_user(self, mock_authenticated, jsonapi_headers):
-        post = self._create_post(str(mock_authenticated.id))
-        comment = Comment.objects.create(post=post, content="Other", user_id="other-user")
+    def test_destroy_forbidden_other_user(self, mock_authenticated, member, other_member, jsonapi_headers):
+        post = self._create_post(member)
+        comment = Comment.objects.create(post=post, content="Other", member=other_member)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         response = client.delete(f"/api/v1/comments/{comment.id}", **jsonapi_headers)
