@@ -1,15 +1,8 @@
+from django.conf import settings
 from django.core.validators import MaxLengthValidator, MinLengthValidator
 from django.db import models
 
-from apps.core.models import BaseModel, BaseQuerySet
-
-
-class MemberQuerySet(BaseQuerySet):
-    def active(self):
-        return self.filter(status=Member.Status.ACTIVE)
-
-    def suspended(self):
-        return self.filter(status=Member.Status.SUSPENDED)
+from apps.core.models import BaseModel
 
 
 class Member(BaseModel):
@@ -18,7 +11,11 @@ class Member(BaseModel):
         SUSPENDED = 1, "suspended"
         WITHDRAWN = 2, "withdrawn"
 
-    user_id = models.CharField(max_length=255, unique=True, db_index=True)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="member",
+    )
     nickname = models.CharField(
         max_length=50,
         validators=[MinLengthValidator(2), MaxLengthValidator(50)],
@@ -29,8 +26,6 @@ class Member(BaseModel):
         choices=Status.choices,
         default=Status.ACTIVE,
     )
-
-    objects = MemberQuerySet.as_manager()
 
     class Meta(BaseModel.Meta):
         indexes = [
@@ -48,19 +43,3 @@ class Member(BaseModel):
         super().clean()
         if self.nickname:
             self.nickname = self.nickname.strip()
-
-    def is_active(self):
-        return self.status == self.Status.ACTIVE
-
-    def suspend(self):
-        self.status = self.Status.SUSPENDED
-        self.save()
-        return True
-
-    def withdraw(self):
-        self.status = self.Status.WITHDRAWN
-        self.save()
-        return True
-
-    def display_name(self):
-        return self.nickname if self.nickname else f"User#{self.user_id}"

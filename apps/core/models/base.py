@@ -4,11 +4,7 @@ from django.db import models
 class BaseQuerySet(models.QuerySet):
     """도메인 QuerySet의 공통 메서드를 제공하는 베이스 QuerySet."""
 
-    def by_user(self, user_id):
-        return self.filter(user_id=user_id)
-
-    def recent(self):
-        return self.order_by("-created_at")
+    pass
 
 
 class BaseModel(models.Model):
