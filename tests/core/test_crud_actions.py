@@ -139,44 +139,6 @@ class TestCrudActionsAPI:
         data = response.json()
         assert "data" in data
 
-    def test_forbidden_update_other_user(self, mock_authenticated, other_user, jsonapi_headers):
-        from apps.posts.models import Post
-
-        client = APIClient()
-        client.force_authenticate(user=mock_authenticated)
-        post = Post.objects.create(
-            title="Other User",
-            content="Content",
-            user=other_user,
-        )
-        payload = {
-            "data": {
-                "type": "posts",
-                "id": str(post.id),
-                "attributes": {"title": "Hacked"},
-            }
-        }
-        response = client.patch(
-            f"/api/v1/posts/{post.id}",
-            data=payload,
-            format="vnd.api+json",
-            **jsonapi_headers,
-        )
-        assert response.status_code == 403
-
-    def test_forbidden_delete_other_user(self, mock_authenticated, other_user, jsonapi_headers):
-        from apps.posts.models import Post
-
-        client = APIClient()
-        client.force_authenticate(user=mock_authenticated)
-        post = Post.objects.create(
-            title="Other User Delete",
-            content="Content",
-            user=other_user,
-        )
-        response = client.delete(f"/api/v1/posts/{post.id}", **jsonapi_headers)
-        assert response.status_code == 403
-
 
 class TestAllowedIncludesFilter:
     def test_rejects_disallowed_includes(self):

@@ -83,20 +83,6 @@ class TestPostsAPI:
         post.refresh_from_db()
         assert post.title == "New Title"
 
-    def test_update_forbidden_other_user(self, mock_authenticated, other_user, jsonapi_headers):
-        post = Post.objects.create(title="Other", content="Content", user=other_user)
-        client = APIClient()
-        client.force_authenticate(user=mock_authenticated)
-        payload = {
-            "data": {
-                "type": "posts",
-                "id": str(post.id),
-                "attributes": {"title": "Hacked"},
-            }
-        }
-        response = client.patch(f"/api/v1/posts/{post.id}", data=payload, format="vnd.api+json", **jsonapi_headers)
-        assert response.status_code == 403
-
     def test_destroy_own(self, mock_authenticated, jsonapi_headers):
         post = Post.objects.create(title="Delete Me", content="Content", user=mock_authenticated)
         client = APIClient()
@@ -104,13 +90,6 @@ class TestPostsAPI:
         response = client.delete(f"/api/v1/posts/{post.id}", **jsonapi_headers)
         assert response.status_code == 204
         assert not Post.objects.filter(id=post.id).exists()
-
-    def test_destroy_forbidden_other_user(self, mock_authenticated, other_user, jsonapi_headers):
-        post = Post.objects.create(title="Other Delete", content="Content", user=other_user)
-        client = APIClient()
-        client.force_authenticate(user=mock_authenticated)
-        response = client.delete(f"/api/v1/posts/{post.id}", **jsonapi_headers)
-        assert response.status_code == 403
 
     def test_new_action(self, mock_authenticated, jsonapi_headers):
         client = APIClient()

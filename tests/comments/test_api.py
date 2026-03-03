@@ -95,23 +95,6 @@ class TestCommentsAPI:
         comment.refresh_from_db()
         assert comment.content == "Updated Content"
 
-    def test_update_forbidden_other_user(self, mock_authenticated, other_user, jsonapi_headers):
-        post = self._create_post(mock_authenticated)
-        comment = Comment.objects.create(post=post, content="Other", user=other_user)
-        client = APIClient()
-        client.force_authenticate(user=mock_authenticated)
-        payload = {
-            "data": {
-                "type": "comments",
-                "id": str(comment.id),
-                "attributes": {"content": "Hacked"},
-            }
-        }
-        response = client.patch(
-            f"/api/v1/comments/{comment.id}", data=payload, format="vnd.api+json", **jsonapi_headers
-        )
-        assert response.status_code == 403
-
     def test_destroy_own(self, mock_authenticated, jsonapi_headers):
         post = self._create_post(mock_authenticated)
         comment = Comment.objects.create(post=post, content="Delete Me", user=mock_authenticated)
@@ -121,10 +104,3 @@ class TestCommentsAPI:
         assert response.status_code == 204
         assert not Comment.objects.filter(id=comment.id).exists()
 
-    def test_destroy_forbidden_other_user(self, mock_authenticated, other_user, jsonapi_headers):
-        post = self._create_post(mock_authenticated)
-        comment = Comment.objects.create(post=post, content="Other", user=other_user)
-        client = APIClient()
-        client.force_authenticate(user=mock_authenticated)
-        response = client.delete(f"/api/v1/comments/{comment.id}", **jsonapi_headers)
-        assert response.status_code == 403

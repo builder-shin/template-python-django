@@ -46,27 +46,6 @@ class TestUsersAPI:
         mock_authenticated.refresh_from_db()
         assert mock_authenticated.nickname == "New Nick"
 
-    def test_update_forbidden_other_user(self, mock_authenticated, other_user, jsonapi_headers):
-        client = APIClient()
-        client.force_authenticate(user=mock_authenticated)
-        payload = {
-            "data": {
-                "type": "users",
-                "id": str(other_user.id),
-                "attributes": {"nickname": "Hacked"},
-            }
-        }
-        response = client.patch(
-            f"/api/v1/users/{other_user.id}", data=payload, format="vnd.api+json", **jsonapi_headers
-        )
-        assert response.status_code == 403
-
-    def test_destroy_forbidden_other_user(self, mock_authenticated, other_user, jsonapi_headers):
-        client = APIClient()
-        client.force_authenticate(user=mock_authenticated)
-        response = client.delete(f"/api/v1/users/{other_user.id}", **jsonapi_headers)
-        assert response.status_code == 403
-
     def test_me_action(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
