@@ -79,3 +79,23 @@ def jsonapi_payload(attributes, resource_type, id=None):
     if id:
         data["id"] = str(id)
     return {"data": data}
+
+
+@pytest.fixture
+def auth_tokens(auth_user):
+    """JWT token pair for auth_user."""
+    from apps.core.auth.jwt_utils import generate_token_pair
+    return generate_token_pair(auth_user)
+
+
+@pytest.fixture
+def access_token(auth_tokens):
+    """Access token string."""
+    return auth_tokens["access"]
+
+
+@pytest.fixture
+def jwt_authenticated_client(api_client, access_token):
+    """API client with JWT Bearer token header."""
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+    return api_client
