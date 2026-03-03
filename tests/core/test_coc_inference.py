@@ -12,9 +12,9 @@ class TestGetAppLabel:
         from apps.posts.views import PostsViewSet
         assert PostsViewSet._get_app_label() == "posts"
 
-    def test_members_viewset_returns_members(self):
-        from apps.members.views import MembersViewSet
-        assert MembersViewSet._get_app_label() == "members"
+    def test_users_viewset_returns_users(self):
+        from apps.users.views import UsersViewSet
+        assert UsersViewSet._get_app_label() == "users"
 
     def test_comments_viewset_returns_comments(self):
         from apps.comments.views import CommentsViewSet
@@ -32,9 +32,9 @@ class TestSingularizeAndToPascal:
         from apps.core.utils import singularize
         assert singularize("posts") == "post"
 
-    def test_singularize_members(self):
+    def test_singularize_users(self):
         from apps.core.utils import singularize
-        assert singularize("members") == "member"
+        assert singularize("users") == "user"
 
     def test_singularize_comments(self):
         from apps.core.utils import singularize
@@ -79,33 +79,33 @@ class TestSerializerClassInference:
         # PostsViewSet has allowed_includes=["comments"], so it may return a subclass
         assert issubclass(result, PostSerializer)
 
-    def test_members_viewset_infers_member_serializer(self, mock_authenticated):
-        """MembersViewSet에서 serializer_class 자동 추론."""
-        from apps.members.views import MembersViewSet
-        from apps.members.serializers import MemberSerializer
+    def test_users_viewset_infers_user_serializer(self, mock_authenticated):
+        """UsersViewSet에서 serializer_class 자동 추론."""
+        from apps.users.views import UsersViewSet
+        from apps.users.serializers import UserSerializer
 
         for key in ('_coc_serializer_class', '_coc_serializer_with_includes'):
-            if hasattr(MembersViewSet, key):
-                delattr(MembersViewSet, key)
+            if hasattr(UsersViewSet, key):
+                delattr(UsersViewSet, key)
 
-        viewset = MembersViewSet()
+        viewset = UsersViewSet()
         viewset.request = type('Request', (), {'user': mock_authenticated, 'query_params': {}})()
         viewset.kwargs = {}
         viewset.format_kwarg = None
 
         result = viewset.get_serializer_class()
-        # MembersViewSet has no allowed_includes, so it should return exactly MemberSerializer
-        assert result is MemberSerializer
+        # UsersViewSet has no allowed_includes, so it should return exactly UserSerializer
+        assert result is UserSerializer
 
     def test_caching_avoids_repeated_import(self, mock_authenticated):
         """추론 결과가 캐싱되어 두 번째 호출 시 importlib 미사용."""
-        from apps.members.views import MembersViewSet
+        from apps.users.views import UsersViewSet
 
         for key in ('_coc_serializer_class', '_coc_serializer_with_includes'):
-            if hasattr(MembersViewSet, key):
-                delattr(MembersViewSet, key)
+            if hasattr(UsersViewSet, key):
+                delattr(UsersViewSet, key)
 
-        viewset = MembersViewSet()
+        viewset = UsersViewSet()
         viewset.request = type('Request', (), {'user': mock_authenticated, 'query_params': {}})()
         viewset.kwargs = {}
         viewset.format_kwarg = None
@@ -228,20 +228,20 @@ class TestIncludedSerializersInference:
 
     def test_no_includes_returns_original_serializer(self, mock_authenticated):
         """allowed_includes = [] → included_serializers 없음."""
-        from apps.members.views import MembersViewSet
-        from apps.members.serializers import MemberSerializer
+        from apps.users.views import UsersViewSet
+        from apps.users.serializers import UserSerializer
 
         for key in ('_coc_serializer_class', '_coc_serializer_with_includes'):
-            if hasattr(MembersViewSet, key):
-                delattr(MembersViewSet, key)
+            if hasattr(UsersViewSet, key):
+                delattr(UsersViewSet, key)
 
-        viewset = MembersViewSet()
+        viewset = UsersViewSet()
         viewset.request = type('Request', (), {'user': mock_authenticated, 'query_params': {}})()
         viewset.kwargs = {}
         viewset.format_kwarg = None
 
         result = viewset.get_serializer_class()
-        assert result is MemberSerializer
+        assert result is UserSerializer
         assert not getattr(result, 'included_serializers', None)
 
 

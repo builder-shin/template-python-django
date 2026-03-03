@@ -1,10 +1,11 @@
 import pytest
-from django.contrib.auth.models import User
-from django.test import RequestFactory
+from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
 from apps.core.exceptions import JsonApiError, NotFound
 from apps.core.filters import AllowedIncludesFilter
+
+User = get_user_model()
 
 
 @pytest.fixture(autouse=True)
@@ -28,6 +29,7 @@ def auth_user(db):
         username="testuser",
         email="test@example.com",
         password="testpass123",
+        nickname="Test User",
     )
 
 
@@ -37,6 +39,7 @@ def other_user(db):
         username="otheruser",
         email="other@example.com",
         password="otherpass123",
+        nickname="Other User",
     )
 
 
@@ -61,22 +64,6 @@ def authenticated_client(api_client, auth_user):
     """Pre-authenticated API client."""
     api_client.force_authenticate(user=auth_user)
     return api_client
-
-
-@pytest.fixture
-def member(auth_user):
-    """Member profile linked to auth_user."""
-    from apps.members.models import Member
-
-    return Member.objects.create(user=auth_user, nickname="Test User")
-
-
-@pytest.fixture
-def other_member(other_user):
-    """Member profile linked to other_user."""
-    from apps.members.models import Member
-
-    return Member.objects.create(user=other_user, nickname="Other User")
 
 
 @pytest.fixture

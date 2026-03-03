@@ -6,9 +6,9 @@ from apps.posts.models import Post
 
 @pytest.mark.django_db
 class TestPostsAPI:
-    def test_index_with_auth(self, mock_authenticated, member, jsonapi_headers):
-        Post.objects.create(title="Test 1", content="Content 1", member=member)
-        Post.objects.create(title="Test 2", content="Content 2", member=member)
+    def test_index_with_auth(self, mock_authenticated, jsonapi_headers):
+        Post.objects.create(title="Test 1", content="Content 1", user=mock_authenticated)
+        Post.objects.create(title="Test 2", content="Content 2", user=mock_authenticated)
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
@@ -23,9 +23,9 @@ class TestPostsAPI:
         response = client.get("/api/v1/posts", **jsonapi_headers)
         assert response.status_code == 401
 
-    def test_index_only_own_posts(self, mock_authenticated, member, other_member, jsonapi_headers):
-        Post.objects.create(title="My Post", content="Mine", member=member)
-        Post.objects.create(title="Other Post", content="Other", member=other_member)
+    def test_index_only_own_posts(self, mock_authenticated, other_user, jsonapi_headers):
+        Post.objects.create(title="My Post", content="Mine", user=mock_authenticated)
+        Post.objects.create(title="Other Post", content="Other", user=other_user)
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
@@ -34,7 +34,7 @@ class TestPostsAPI:
         assert len(data["data"]) == 1
         assert data["data"][0]["attributes"]["title"] == "My Post"
 
-    def test_create_valid(self, mock_authenticated, member, jsonapi_headers):
+    def test_create_valid(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         payload = {
@@ -52,8 +52,8 @@ class TestPostsAPI:
         data = response.json()
         assert data["data"]["attributes"]["title"] == "New Post"
 
-    def test_show_existing(self, mock_authenticated, member, jsonapi_headers):
-        post = Post.objects.create(title="Show Me", content="Content", member=member)
+    def test_show_existing(self, mock_authenticated, jsonapi_headers):
+        post = Post.objects.create(title="Show Me", content="Content", user=mock_authenticated)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         response = client.get(f"/api/v1/posts/{post.id}", **jsonapi_headers)
@@ -61,14 +61,14 @@ class TestPostsAPI:
         data = response.json()
         assert data["data"]["attributes"]["title"] == "Show Me"
 
-    def test_show_404(self, mock_authenticated, member, jsonapi_headers):
+    def test_show_404(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         response = client.get("/api/v1/posts/99999", **jsonapi_headers)
         assert response.status_code == 404
 
-    def test_update_own(self, mock_authenticated, member, jsonapi_headers):
-        post = Post.objects.create(title="Old Title", content="Content", member=member)
+    def test_update_own(self, mock_authenticated, jsonapi_headers):
+        post = Post.objects.create(title="Old Title", content="Content", user=mock_authenticated)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         payload = {
@@ -83,8 +83,8 @@ class TestPostsAPI:
         post.refresh_from_db()
         assert post.title == "New Title"
 
-    def test_update_forbidden_other_user(self, mock_authenticated, member, other_member, jsonapi_headers):
-        post = Post.objects.create(title="Other", content="Content", member=other_member)
+    def test_update_forbidden_other_user(self, mock_authenticated, other_user, jsonapi_headers):
+        post = Post.objects.create(title="Other", content="Content", user=other_user)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         payload = {
@@ -97,22 +97,22 @@ class TestPostsAPI:
         response = client.patch(f"/api/v1/posts/{post.id}", data=payload, format="vnd.api+json", **jsonapi_headers)
         assert response.status_code == 403
 
-    def test_destroy_own(self, mock_authenticated, member, jsonapi_headers):
-        post = Post.objects.create(title="Delete Me", content="Content", member=member)
+    def test_destroy_own(self, mock_authenticated, jsonapi_headers):
+        post = Post.objects.create(title="Delete Me", content="Content", user=mock_authenticated)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         response = client.delete(f"/api/v1/posts/{post.id}", **jsonapi_headers)
         assert response.status_code == 204
         assert not Post.objects.filter(id=post.id).exists()
 
-    def test_destroy_forbidden_other_user(self, mock_authenticated, member, other_member, jsonapi_headers):
-        post = Post.objects.create(title="Other Delete", content="Content", member=other_member)
+    def test_destroy_forbidden_other_user(self, mock_authenticated, other_user, jsonapi_headers):
+        post = Post.objects.create(title="Other Delete", content="Content", user=other_user)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         response = client.delete(f"/api/v1/posts/{post.id}", **jsonapi_headers)
         assert response.status_code == 403
 
-    def test_new_action(self, mock_authenticated, member, jsonapi_headers):
+    def test_new_action(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         response = client.get("/api/v1/posts/new", **jsonapi_headers)
@@ -120,7 +120,7 @@ class TestPostsAPI:
         data = response.json()
         assert "data" in data
 
-    def test_upsert_creates_new(self, mock_authenticated, member, jsonapi_headers):
+    def test_upsert_creates_new(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         payload = {
@@ -137,9 +137,9 @@ class TestPostsAPI:
         assert response.status_code == 201
         assert Post.objects.filter(external_id="ext-001").exists()
 
-    def test_upsert_updates_existing(self, mock_authenticated, member, jsonapi_headers):
+    def test_upsert_updates_existing(self, mock_authenticated, jsonapi_headers):
         Post.objects.create(
-            title="Existing", content="Old content", member=member, external_id="ext-002"
+            title="Existing", content="Old content", user=mock_authenticated, external_id="ext-002"
         )
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)

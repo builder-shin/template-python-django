@@ -31,7 +31,7 @@ class TestNotFound:
 
 @pytest.mark.django_db
 class TestCrudActionsAPI:
-    def test_list_returns_jsonapi_format(self, mock_authenticated, member, jsonapi_headers):
+    def test_list_returns_jsonapi_format(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         response = client.get("/api/v1/posts", **jsonapi_headers)
@@ -44,7 +44,7 @@ class TestCrudActionsAPI:
         response = client.get("/api/v1/posts", **jsonapi_headers)
         assert response.status_code == 401
 
-    def test_create_returns_201(self, mock_authenticated, member, jsonapi_headers):
+    def test_create_returns_201(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         payload = {
@@ -68,7 +68,7 @@ class TestCrudActionsAPI:
         assert data["data"]["type"] == "posts"
         assert data["data"]["attributes"]["title"] == "Test Post"
 
-    def test_show_returns_200(self, mock_authenticated, member, jsonapi_headers):
+    def test_show_returns_200(self, mock_authenticated, jsonapi_headers):
         from apps.posts.models import Post
 
         client = APIClient()
@@ -76,12 +76,12 @@ class TestCrudActionsAPI:
         post = Post.objects.create(
             title="Show Test",
             content="Content",
-            member=member,
+            user=mock_authenticated,
         )
         response = client.get(f"/api/v1/posts/{post.id}", **jsonapi_headers)
         assert response.status_code == 200
 
-    def test_show_404(self, mock_authenticated, member, jsonapi_headers):
+    def test_show_404(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         response = client.get("/api/v1/posts/99999", **jsonapi_headers)
@@ -89,7 +89,7 @@ class TestCrudActionsAPI:
         data = response.json()
         assert "errors" in data
 
-    def test_update_returns_200(self, mock_authenticated, member, jsonapi_headers):
+    def test_update_returns_200(self, mock_authenticated, jsonapi_headers):
         from apps.posts.models import Post
 
         client = APIClient()
@@ -97,7 +97,7 @@ class TestCrudActionsAPI:
         post = Post.objects.create(
             title="Update Test",
             content="Content",
-            member=member,
+            user=mock_authenticated,
         )
         payload = {
             "data": {
@@ -118,7 +118,7 @@ class TestCrudActionsAPI:
         data = response.json()
         assert data["data"]["attributes"]["title"] == "Updated Title"
 
-    def test_destroy_returns_204(self, mock_authenticated, member, jsonapi_headers):
+    def test_destroy_returns_204(self, mock_authenticated, jsonapi_headers):
         from apps.posts.models import Post
 
         client = APIClient()
@@ -126,12 +126,12 @@ class TestCrudActionsAPI:
         post = Post.objects.create(
             title="Delete Test",
             content="Content",
-            member=member,
+            user=mock_authenticated,
         )
         response = client.delete(f"/api/v1/posts/{post.id}", **jsonapi_headers)
         assert response.status_code == 204
 
-    def test_new_action(self, mock_authenticated, member, jsonapi_headers):
+    def test_new_action(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         response = client.get("/api/v1/posts/new", **jsonapi_headers)
@@ -139,7 +139,7 @@ class TestCrudActionsAPI:
         data = response.json()
         assert "data" in data
 
-    def test_forbidden_update_other_user(self, mock_authenticated, member, other_member, jsonapi_headers):
+    def test_forbidden_update_other_user(self, mock_authenticated, other_user, jsonapi_headers):
         from apps.posts.models import Post
 
         client = APIClient()
@@ -147,7 +147,7 @@ class TestCrudActionsAPI:
         post = Post.objects.create(
             title="Other User",
             content="Content",
-            member=other_member,
+            user=other_user,
         )
         payload = {
             "data": {
@@ -164,7 +164,7 @@ class TestCrudActionsAPI:
         )
         assert response.status_code == 403
 
-    def test_forbidden_delete_other_user(self, mock_authenticated, member, other_member, jsonapi_headers):
+    def test_forbidden_delete_other_user(self, mock_authenticated, other_user, jsonapi_headers):
         from apps.posts.models import Post
 
         client = APIClient()
@@ -172,7 +172,7 @@ class TestCrudActionsAPI:
         post = Post.objects.create(
             title="Other User Delete",
             content="Content",
-            member=other_member,
+            user=other_user,
         )
         response = client.delete(f"/api/v1/posts/{post.id}", **jsonapi_headers)
         assert response.status_code == 403
@@ -218,16 +218,16 @@ class TestAllowedIncludesFilter:
 class TestAutoPrefetchIntegration:
     """AutoPrefetchMixin 체인 복원 검증."""
 
-    def test_include_triggers_prefetch_on_list(self, mock_authenticated, member, jsonapi_headers):
+    def test_include_triggers_prefetch_on_list(self, mock_authenticated, jsonapi_headers):
         """?include=post 요청 시 prefetch_related가 적용되어 N+1 방지."""
         from apps.posts.models import Post
         from apps.comments.models import Comment
 
         post = Post.objects.create(
-            title="Prefetch Test", content="Content", member=member
+            title="Prefetch Test", content="Content", user=mock_authenticated
         )
-        Comment.objects.create(post=post, content="c1", member=member)
-        Comment.objects.create(post=post, content="c2", member=member)
+        Comment.objects.create(post=post, content="c1", user=mock_authenticated)
+        Comment.objects.create(post=post, content="c2", user=mock_authenticated)
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
@@ -238,12 +238,12 @@ class TestAutoPrefetchIntegration:
         assert "included" in data
         assert len(data["included"]) == 1
 
-    def test_no_include_no_included_data(self, mock_authenticated, member, jsonapi_headers):
+    def test_no_include_no_included_data(self, mock_authenticated, jsonapi_headers):
         """include 없을 때 included 데이터가 없음."""
         from apps.posts.models import Post
 
         Post.objects.create(
-            title="No Include", content="Content", member=member
+            title="No Include", content="Content", user=mock_authenticated
         )
 
         client = APIClient()
@@ -251,15 +251,15 @@ class TestAutoPrefetchIntegration:
         response = client.get("/api/v1/posts", **jsonapi_headers)
         assert response.status_code == 200
 
-    def test_detail_include_triggers_prefetch(self, mock_authenticated, member, jsonapi_headers):
+    def test_detail_include_triggers_prefetch(self, mock_authenticated, jsonapi_headers):
         """detail 엔드포인트에서도 include prefetch가 작동."""
         from apps.posts.models import Post
         from apps.comments.models import Comment
 
         post = Post.objects.create(
-            title="Detail Prefetch", content="Content", member=member
+            title="Detail Prefetch", content="Content", user=mock_authenticated
         )
-        comment = Comment.objects.create(post=post, content="c1", member=member)
+        comment = Comment.objects.create(post=post, content="c1", user=mock_authenticated)
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
@@ -271,15 +271,15 @@ class TestAutoPrefetchIntegration:
         assert "included" in data
         assert len(data["included"]) == 1
 
-    def test_comment_include_post(self, mock_authenticated, member, jsonapi_headers):
+    def test_comment_include_post(self, mock_authenticated, jsonapi_headers):
         """comments에서 ?include=post 요청 시 post가 포함됨."""
         from apps.posts.models import Post
         from apps.comments.models import Comment
 
         post = Post.objects.create(
-            title="Comment Include", content="Content", member=member
+            title="Comment Include", content="Content", user=mock_authenticated
         )
-        Comment.objects.create(post=post, content="c1", member=member)
+        Comment.objects.create(post=post, content="c1", user=mock_authenticated)
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
@@ -288,9 +288,9 @@ class TestAutoPrefetchIntegration:
         data = response.json()
         assert "included" in data
 
-    def test_members_works_without_queryset_attribute(self, mock_authenticated, jsonapi_headers):
-        """MembersViewSet이 queryset 클래스 속성 없이 정상 작동."""
+    def test_users_works_without_queryset_attribute(self, mock_authenticated, jsonapi_headers):
+        """UsersViewSet이 queryset 클래스 속성 없이 정상 작동."""
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
-        response = client.get("/api/v1/members", **jsonapi_headers)
+        response = client.get("/api/v1/users", **jsonapi_headers)
         assert response.status_code == 200
