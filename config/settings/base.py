@@ -30,7 +30,7 @@ INSTALLED_APPS = [
     # Local apps
     "apps.core.apps.CoreConfig",
     "apps.email_service.apps.EmailServiceConfig",
-    "apps.members.apps.MembersConfig",
+    "apps.users.apps.UsersConfig",
     "apps.posts.apps.PostsConfig",
     "apps.comments.apps.CommentsConfig",
 ]
@@ -104,7 +104,7 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "None"
 SESSION_COOKIE_SECURE = False  # Override in production
 
-AUTH_USER_MODEL = "auth.User"
+AUTH_USER_MODEL = "users.User"
 
 # IP Blocklist
 BLOCKED_IPS = [ip.strip() for ip in os.environ.get("BLOCKED_IPS", "").split(",") if ip.strip()]
