@@ -1,11 +1,12 @@
-from apps.core.mixins import UserScopedMixin
 from apps.core.views import ApiViewSet
 
 from .models import Post
 
 
-class PostsViewSet(UserScopedMixin, ApiViewSet):
-    resource_label = "글"
+class PostsViewSet(ApiViewSet):
+
+    def create_after_init(self, instance) -> None:
+        instance.user = self.request.user
 
     @property
     def allowed_includes(self):
