@@ -141,21 +141,13 @@ def _gen_views_py(
 
     # Imports
     lines.append("from apps.core.views import ApiViewSet")
-    if user_scoped:
-        lines.append("from apps.core.exceptions import JsonApiError")
-        lines.append("from apps.core.mixins import UserScopedMixin")
     lines.append("")
     lines.append(f"from .models import {singular_pascal}")
     lines.append("")
     lines.append("")
 
     # ViewSet 클래스
-    if user_scoped:
-        lines.append(f"class {plural_pascal}ViewSet(UserScopedMixin, ApiViewSet):")
-    else:
-        lines.append(f"class {plural_pascal}ViewSet(ApiViewSet):")
-    if user_scoped:
-        lines.append('    resource_label = "리소스"')
+    lines.append(f"class {plural_pascal}ViewSet(ApiViewSet):")
     lines.append("")
 
     # allowed_includes
