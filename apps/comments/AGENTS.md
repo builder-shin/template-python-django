@@ -11,7 +11,7 @@
 | File | Description |
 |------|-------------|
 | `models.py` | **Comment** 모델 — post(FK→Post), content(1~2000자), parent(self FK, 대댓글), user_id. **CommentQuerySet** — by_post, by_user, recent, root_comments |
-| `views.py` | **CommentsViewSet** — UserScopedMixin + ApiViewSet. allowed_includes=["post"], annotate(_reply_count) |
+| `views.py` | **CommentsViewSet** — ApiViewSet. allowed_includes=["post"], annotate(_reply_count) |
 | `serializers.py` | **CommentSerializer** — HookableSerializerMixin. post(ResourceRelatedField), parent(ResourceRelatedField). computed: author_name, is_reply, reply_count |
 | `filters.py` | **CommentFilter** — FilterSet |
 | `urls.py` | DefaultRouter — basename="comment" |
