@@ -16,10 +16,8 @@ ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").sp
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",
-    "django.contrib.sessions",
     # Third-party
     "rest_framework",
-    "rest_framework.authtoken",
     "rest_framework_json_api",
     "django_filters",
     "corsheaders",
@@ -41,8 +39,7 @@ MIDDLEWARE = [
     "csp.middleware.CSPMiddleware",
     "apps.core.middleware.allow2ban.Allow2BanMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.core.middleware.jwt_user.JWTUserMiddleware",
     "django_structlog.middlewares.RequestMiddleware",
 ]
 
@@ -98,12 +95,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 APPEND_SLASH = False
 
-# Session cookie settings (matching Rails)
-SESSION_COOKIE_NAME = "_template_session"
-SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SECURE = False  # Override in production
-
 AUTH_USER_MODEL = "users.User"
 
 # IP Blocklist
@@ -128,8 +119,7 @@ REST_FRAMEWORK = {
         "rest_framework.filters.SearchFilter",
     ),
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.TokenAuthentication",
+        "apps.core.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": [],
     "DEFAULT_THROTTLE_CLASSES": [
@@ -257,3 +247,12 @@ LOGGING = {
 
 # Structured Logging (django-structlog)
 DJANGO_STRUCTLOG_COMMAND_LOGGING_ENABLED = False
+
+# JWT Authentication
+JWT_AUTH = {
+    "ACCESS_TOKEN_LIFETIME_SECONDS": 900,       # 15분
+    "REFRESH_TOKEN_LIFETIME_SECONDS": 2592000,  # 30일
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,  # 프로덕션에서는 별도 JWT_SECRET_KEY 환경변수 권장
+    "ROTATE_REFRESH_TOKENS": True,
+}

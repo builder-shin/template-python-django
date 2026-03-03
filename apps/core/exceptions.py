@@ -1,7 +1,7 @@
 import logging
 import traceback
 
-from rest_framework.exceptions import NotAuthenticated, PermissionDenied, Throttled
+from rest_framework.exceptions import AuthenticationFailed, NotAuthenticated, PermissionDenied, Throttled
 from rest_framework.response import Response
 from rest_framework_json_api.exceptions import exception_handler as jsonapi_exception_handler
 
@@ -22,6 +22,7 @@ class NotFound(JsonApiError):
 
 
 _EXCEPTION_MAP = {
+    AuthenticationFailed: ("401", "Unauthorized", None),  # None = use exc.detail (JWT 상세 메시지 유지)
     NotAuthenticated: ("401", "Unauthorized", "로그인 후 이용해주세요."),
     PermissionDenied: ("403", "Forbidden", None),  # None = use exc.detail
     Throttled: ("429", "Too Many Requests", "요청이 너무 많습니다. 잠시 후 다시 시도해주세요."),
