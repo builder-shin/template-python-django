@@ -75,6 +75,10 @@ def _gen_models_py(
 
     lines = [
         "from django.db import models",
+    ]
+    if user_scoped:
+        lines.append("from django.conf import settings")
+    lines += [
         "",
         "from apps.core.models import BaseModel, BaseQuerySet",
         "",
@@ -102,9 +106,9 @@ def _gen_models_py(
         django_field, opts = FIELD_TYPE_MAP[ftype]
         lines.append(f"    {fname} = {django_field}({opts})")
 
-    # member FK 필드
+    # user FK 필드
     if user_scoped:
-        lines.append('    member = models.ForeignKey("members.Member", on_delete=models.CASCADE, related_name="%(class)ss")')
+        lines.append('    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="%(class)ss")')
 
     # objects 매니저
     lines.append(f"    objects = {singular_pascal}QuerySet.as_manager()")
@@ -173,7 +177,7 @@ def _gen_views_py(
         lines.append("        # super()는 mixin 체인(AutoPrefetch + PreloadIncludes)이 적용된 queryset 반환")
         lines.append("        user = self.request.user")
         lines.append('        if user and hasattr(user, "id") and user.id:')
-        lines.append("            return super().get_index_scope().filter(member__user=user)")
+        lines.append("            return super().get_index_scope().filter(user=user)")
         lines.append(f"        return {singular_pascal}.objects.none()")
     return "\n".join(lines) + "\n"
 
@@ -206,8 +210,6 @@ def _gen_serializers_py(
     # fields 목록 구성
     field_names = [fn for fn, _ in fields]
     all_fields = list(field_names)
-    if user_scoped:
-        all_fields.append("member")
     all_fields.extend(["created_at", "updated_at"])
 
     fields_str = "[\n"
@@ -218,8 +220,6 @@ def _gen_serializers_py(
 
     # read_only_fields
     ro_fields = ["created_at", "updated_at"]
-    if user_scoped:
-        ro_fields.insert(0, "member")
     ro_str = "[" + ", ".join(f'"{f}"' for f in ro_fields) + "]"
     lines.append(f"        read_only_fields = {ro_str}")
 
@@ -264,7 +264,7 @@ def _gen_filters_py(
     lines.append('            "updated_at": ["exact", "gt", "gte", "lt", "lte"],')
 
     if user_scoped:
-        lines.append('            "member": ["exact", "in"],')
+        lines.append('            "user": ["exact", "in"],')
 
     lines.append("        }")
 
@@ -308,7 +308,7 @@ def _gen_test_models_py(
 
     # test_create
     if user_scoped:
-        lines.append(f"    def test_create_{singular_snake}(self, member):")
+        lines.append(f"    def test_create_{singular_snake}(self, auth_user):")
     else:
         lines.append(f"    def test_create_{singular_snake}(self):")
 
@@ -318,7 +318,7 @@ def _gen_test_models_py(
         if ft in FIELD_TEST_DEFAULTS:
             create_kwargs.append(f"{fn}={FIELD_TEST_DEFAULTS[ft]}")
     if user_scoped:
-        create_kwargs.append('member=member')
+        create_kwargs.append('user=auth_user')
 
     kwargs_str = ", ".join(create_kwargs)
     lines.append(f"        instance = {singular_pascal}.objects.create({kwargs_str})")
@@ -332,7 +332,7 @@ def _gen_test_models_py(
 
     # test_str
     if user_scoped:
-        lines.append("    def test_str(self, member):")
+        lines.append("    def test_str(self, auth_user):")
     else:
         lines.append("    def test_str(self):")
     lines.append(f"        instance = {singular_pascal}.objects.create({kwargs_str})")
@@ -360,7 +360,7 @@ def _gen_test_api_py(  # noqa: C901
 
     # -- test_index_with_auth
     if user_scoped:
-        lines.append("    def test_index_with_auth(self, mock_authenticated, jsonapi_headers, member):")
+        lines.append("    def test_index_with_auth(self, mock_authenticated, jsonapi_headers):")
     else:
         lines.append("    def test_index_with_auth(self, mock_authenticated, jsonapi_headers):")
 
@@ -370,7 +370,7 @@ def _gen_test_api_py(  # noqa: C901
         if ft in FIELD_TEST_DEFAULTS:
             create_kwargs_parts.append(f"{fn}={FIELD_TEST_DEFAULTS[ft]}")
     if user_scoped:
-        create_kwargs_parts.append("member=member")
+        create_kwargs_parts.append("user=mock_authenticated")
     create_kwargs_str = ", ".join(create_kwargs_parts)
 
     lines.append(f"        {singular_pascal}.objects.create({create_kwargs_str})")
@@ -530,7 +530,7 @@ class Command(BaseCommand):
             "--user-scoped",
             action="store_true",
             default=False,
-            help="member FK 필드 및 소유권 훅 자동 추가",
+            help="user FK 필드 및 소유권 훅 자동 추가",
         )
         parser.add_argument(
             "--no-tests",
