@@ -33,7 +33,7 @@ class Command(BaseCommand):
         for i, member in enumerate(members[:5]):
             batch = PostFactory.create_batch(
                 4,
-                user_id=member.user_id,
+                member=member,
                 status=Post.Status(i % len(Post.Status)),
             )
             posts.extend(batch)
@@ -45,7 +45,7 @@ class Command(BaseCommand):
             batch = CommentFactory.create_batch(
                 3,
                 post=post,
-                user_id=post.user_id,
+                member=post.member,
             )
             comments.extend(batch)
         self.stdout.write(f"  Comment {len(comments)}개 생성")
