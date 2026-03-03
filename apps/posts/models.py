@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator, MinLengthValidator
 from django.db import models
@@ -24,8 +25,8 @@ class Post(BaseModel):
         default=Status.DRAFT,
     )
     published_at = models.DateTimeField(null=True, blank=True)
-    member = models.ForeignKey(
-        "members.Member",
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="posts",
     )
@@ -38,8 +39,8 @@ class Post(BaseModel):
         constraints = [
             models.UniqueConstraint(
                 Lower("title"),
-                "member",
-                name="unique_post_title_per_member",
+                "user",
+                name="unique_post_title_per_user",
             ),
         ]
 

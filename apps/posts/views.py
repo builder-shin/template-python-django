@@ -16,11 +16,11 @@ class PostsViewSet(UserScopedMixin, ApiViewSet):
 
     def get_index_scope(self):
         # super()는 mixin 체인(AutoPrefetch + PreloadIncludes)이 적용된 queryset 반환
-        return super().get_index_scope().filter(member__user=self.request.user)
+        return super().get_index_scope().filter(user=self.request.user)
 
     def upsert_after_init(self, instance):
-        if not instance.member_id:
-            instance.member = self.request.user.member
+        if not instance.user_id:
+            instance.user = self.request.user
 
     def upsert_find_params(self):
         body = self._parse_raw_body()
