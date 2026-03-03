@@ -11,7 +11,7 @@ class MemberFilter(django_filters.FilterSet):
         fields = {
             "nickname": ["exact", "icontains", "istartswith", "iendswith"],
             "status": ["exact", "in"],
-            "user_id": ["exact", "in"],
+            "user": ["exact"],
             "created_at": TIMESTAMP_LOOKUPS,
             "updated_at": TIMESTAMP_LOOKUPS,
         }

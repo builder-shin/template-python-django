@@ -11,7 +11,7 @@ class PostFilter(django_filters.FilterSet):
         fields = {
             "title": ["exact", "icontains", "istartswith", "iendswith"],
             "status": ["exact", "in"],
-            "user_id": ["exact", "in"],
+            "member": ["exact", "in"],
             "created_at": TIMESTAMP_LOOKUPS,
             "updated_at": TIMESTAMP_LOOKUPS,
         }

@@ -10,7 +10,7 @@ class CommentFilter(django_filters.FilterSet):
         model = Comment
         fields = {
             "content": ["exact", "icontains"],
-            "user_id": ["exact", "in"],
+            "member": ["exact", "in"],
             "post": ["exact", "in"],
             "parent": ["exact", "isnull"],
             "created_at": TIMESTAMP_LOOKUPS,

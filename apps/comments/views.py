@@ -1,5 +1,3 @@
-from django.db.models import Count
-
 from apps.core.mixins import UserScopedMixin
 from apps.core.views import ApiViewSet
 
@@ -14,4 +12,4 @@ class CommentsViewSet(UserScopedMixin, ApiViewSet):
         return ["post"]
 
     def get_base_queryset(self):
-        return Comment.objects.annotate(_reply_count=Count("replies")).order_by("-created_at")
+        return Comment.objects.order_by("-created_at")
