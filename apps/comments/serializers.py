@@ -10,6 +10,7 @@ from .models import Comment
 class CommentSerializer(HookableSerializerMixin, serializers.ModelSerializer):
     post = ResourceRelatedField(queryset=Post.objects.all())
     parent = ResourceRelatedField(queryset=Comment.objects.all(), required=False, allow_null=True)
+    user = ResourceRelatedField(read_only=True)
 
     class Meta:
         model = Comment
@@ -17,7 +18,13 @@ class CommentSerializer(HookableSerializerMixin, serializers.ModelSerializer):
             "post",
             "content",
             "parent",
+            "user",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
+
+    def validate_post(self, value):
+        if value.status != Post.Status.PUBLISHED:
+            raise serializers.ValidationError("발행된 게시글에만 댓글을 달 수 있습니다.")
+        return value
