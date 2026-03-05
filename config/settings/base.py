@@ -118,10 +118,10 @@ REST_FRAMEWORK = {
         "rest_framework_json_api.django_filters.DjangoFilterBackend",
         "rest_framework.filters.SearchFilter",
     ),
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "apps.core.authentication.JWTAuthentication",
-    ),
-    "DEFAULT_PERMISSION_CLASSES": [],
+    "DEFAULT_AUTHENTICATION_CLASSES": ("apps.core.authentication.JWTAuthentication",),
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
@@ -199,8 +199,8 @@ CSP_DEFAULT_SRC = ("'self'",)
 CSP_FONT_SRC = ("'self'", "data:")
 CSP_IMG_SRC = ("'self'", "data:", "https:")
 CSP_OBJECT_SRC = ("'none'",)
-CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'")  # Swagger UI requires unsafe-inline
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")  # Swagger UI requires unsafe-inline
+CSP_SCRIPT_SRC = ("'self'",)
+CSP_STYLE_SRC = ("'self'",)
 CSP_FRAME_ANCESTORS = ("'none'",)
 
 # AWS S3
@@ -250,9 +250,9 @@ DJANGO_STRUCTLOG_COMMAND_LOGGING_ENABLED = False
 
 # JWT Authentication
 JWT_AUTH = {
-    "ACCESS_TOKEN_LIFETIME_SECONDS": 900,       # 15분
-    "REFRESH_TOKEN_LIFETIME_SECONDS": 2592000,  # 30일
+    "ACCESS_TOKEN_LIFETIME_SECONDS": 900,  # 15분
+    "REFRESH_TOKEN_LIFETIME_SECONDS": 604800,  # 7일 (was 30 days - H-9 fix)
     "ALGORITHM": "HS256",
-    "SIGNING_KEY": SECRET_KEY,  # 프로덕션에서는 별도 JWT_SECRET_KEY 환경변수 권장
+    "SIGNING_KEY": os.environ.get("JWT_SECRET_KEY", SECRET_KEY),
     "ROTATE_REFRESH_TOKENS": True,
 }

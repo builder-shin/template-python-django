@@ -27,3 +27,7 @@ CELERY_TASK_EAGER_PROPAGATES = True
 # Debug-level logging in development (matches Rails development.rb)
 LOGGING["loggers"]["django"]["level"] = "DEBUG"  # noqa: F405
 LOGGING["loggers"]["api"]["level"] = "DEBUG"  # noqa: F405
+
+# Allow unsafe-inline for Swagger UI in development
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'")
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")

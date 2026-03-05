@@ -4,6 +4,9 @@ from .base import *  # noqa: F403
 
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
+JWT_AUTH = globals().get("JWT_AUTH", {})
+JWT_AUTH["SIGNING_KEY"] = os.environ.get("JWT_SECRET_KEY", SECRET_KEY)
+
 DEBUG = False
 
 # SSL / Proxy (Railway terminates SSL at reverse proxy)
