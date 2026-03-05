@@ -10,18 +10,22 @@ class TestGetAppLabel:
 
     def test_posts_viewset_returns_posts(self):
         from apps.posts.views import PostsViewSet
+
         assert PostsViewSet._get_app_label() == "posts"
 
     def test_users_viewset_returns_users(self):
         from apps.users.views import UsersViewSet
+
         assert UsersViewSet._get_app_label() == "users"
 
     def test_comments_viewset_returns_comments(self):
         from apps.comments.views import CommentsViewSet
+
         assert CommentsViewSet._get_app_label() == "comments"
 
     def test_core_viewset_returns_none(self):
         from apps.core.views import ApiViewSet
+
         assert ApiViewSet._get_app_label() is None
 
 
@@ -30,27 +34,33 @@ class TestSingularizeAndToPascal:
 
     def test_singularize_posts(self):
         from apps.core.utils import singularize
+
         assert singularize("posts") == "post"
 
     def test_singularize_users(self):
         from apps.core.utils import singularize
+
         assert singularize("users") == "user"
 
     def test_singularize_comments(self):
         from apps.core.utils import singularize
+
         assert singularize("comments") == "comment"
 
     def test_singularize_categories(self):
         from apps.core.utils import singularize
+
         assert singularize("categories") == "category"
 
     def test_singularize_already_singular(self):
         from apps.core.utils import singularize
+
         result = singularize("post")
         assert result == "post"
 
     def test_to_pascal(self):
         from apps.core.utils import to_pascal
+
         assert to_pascal("post") == "Post"
         assert to_pascal("order_item") == "OrderItem"
         assert to_pascal("user_profile") == "UserProfile"
@@ -62,16 +72,16 @@ class TestSerializerClassInference:
 
     def test_posts_viewset_infers_post_serializer(self, mock_authenticated):
         """PostsViewSet에서 serializer_class 자동 추론."""
-        from apps.posts.views import PostsViewSet
         from apps.posts.serializers import PostSerializer
+        from apps.posts.views import PostsViewSet
 
         # Clean up any cached values from previous tests
-        for key in ('_coc_serializer_class', '_coc_serializer_with_includes'):
+        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
             if hasattr(PostsViewSet, key):
                 delattr(PostsViewSet, key)
 
         viewset = PostsViewSet()
-        viewset.request = type('Request', (), {'user': mock_authenticated, 'query_params': {}})()
+        viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
         viewset.kwargs = {}
         viewset.format_kwarg = None
 
@@ -81,15 +91,15 @@ class TestSerializerClassInference:
 
     def test_users_viewset_infers_user_serializer(self, mock_authenticated):
         """UsersViewSet에서 serializer_class 자동 추론."""
-        from apps.users.views import UsersViewSet
         from apps.users.serializers import UserSerializer
+        from apps.users.views import UsersViewSet
 
-        for key in ('_coc_serializer_class', '_coc_serializer_with_includes'):
+        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
             if hasattr(UsersViewSet, key):
                 delattr(UsersViewSet, key)
 
         viewset = UsersViewSet()
-        viewset.request = type('Request', (), {'user': mock_authenticated, 'query_params': {}})()
+        viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
         viewset.kwargs = {}
         viewset.format_kwarg = None
 
@@ -101,12 +111,12 @@ class TestSerializerClassInference:
         """추론 결과가 캐싱되어 두 번째 호출 시 importlib 미사용."""
         from apps.users.views import UsersViewSet
 
-        for key in ('_coc_serializer_class', '_coc_serializer_with_includes'):
+        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
             if hasattr(UsersViewSet, key):
                 delattr(UsersViewSet, key)
 
         viewset = UsersViewSet()
-        viewset.request = type('Request', (), {'user': mock_authenticated, 'query_params': {}})()
+        viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
         viewset.kwargs = {}
         viewset.format_kwarg = None
 
@@ -114,7 +124,7 @@ class TestSerializerClassInference:
         viewset.get_serializer_class()
 
         # Second call — should use cache, not importlib
-        with patch.object(importlib, 'import_module', side_effect=AssertionError("Should not import")) as mock_import:
+        with patch.object(importlib, "import_module", side_effect=AssertionError("Should not import")) as mock_import:
             result = viewset.get_serializer_class()
 
         mock_import.assert_not_called()
@@ -134,7 +144,7 @@ class TestExplicitSerializerPriority:
         ExplicitViewSet.__module__ = "apps.posts.views"
 
         viewset = ExplicitViewSet()
-        viewset.request = type('Request', (), {'user': mock_authenticated, 'query_params': {}})()
+        viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
         viewset.kwargs = {}
         viewset.format_kwarg = None
 
@@ -146,11 +156,11 @@ class TestFiltersetClassInference:
     """filterset_class 자동 추론 테스트"""
 
     def test_posts_viewset_infers_post_filter(self, mock_authenticated):
-        from apps.posts.views import PostsViewSet
         from apps.posts.filters import PostFilter
+        from apps.posts.views import PostsViewSet
 
-        if hasattr(PostsViewSet, '_coc_filterset_class'):
-            delattr(PostsViewSet, '_coc_filterset_class')
+        if hasattr(PostsViewSet, "_coc_filterset_class"):
+            delattr(PostsViewSet, "_coc_filterset_class")
 
         viewset = PostsViewSet()
         assert viewset.filterset_class is PostFilter
@@ -158,8 +168,8 @@ class TestFiltersetClassInference:
     def test_core_viewset_returns_none(self):
         from apps.core.views import ApiViewSet
 
-        if hasattr(ApiViewSet, '_coc_filterset_class'):
-            delattr(ApiViewSet, '_coc_filterset_class')
+        if hasattr(ApiViewSet, "_coc_filterset_class"):
+            delattr(ApiViewSet, "_coc_filterset_class")
 
         viewset = ApiViewSet()
         assert viewset.filterset_class is None
@@ -173,8 +183,8 @@ class TestFiltersetClassInference:
 
         NoFilterViewSet.__module__ = "apps.nonexistent.views"
 
-        if '_coc_filterset_class' in NoFilterViewSet.__dict__:
-            delattr(NoFilterViewSet, '_coc_filterset_class')
+        if "_coc_filterset_class" in NoFilterViewSet.__dict__:
+            delattr(NoFilterViewSet, "_coc_filterset_class")
 
         viewset = NoFilterViewSet()
         assert viewset.filterset_class is None
@@ -189,17 +199,17 @@ class TestIncludedSerializersInference:
         from apps.comments.views import CommentsViewSet
         from apps.posts.serializers import PostSerializer
 
-        for key in ('_coc_serializer_class', '_coc_serializer_with_includes'):
+        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
             if hasattr(CommentsViewSet, key):
                 delattr(CommentsViewSet, key)
 
         viewset = CommentsViewSet()
-        viewset.request = type('Request', (), {'user': mock_authenticated, 'query_params': {}})()
+        viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
         viewset.kwargs = {}
         viewset.format_kwarg = None
 
         serializer_class = viewset.get_serializer_class()
-        included = getattr(serializer_class, 'included_serializers', None)
+        included = getattr(serializer_class, "included_serializers", None)
         assert included is not None
         assert "post" in included
         # DRF-JSONAPI auto-resolves string paths to classes on access
@@ -207,20 +217,20 @@ class TestIncludedSerializersInference:
 
     def test_posts_viewset_infers_comment_serializer(self, mock_authenticated):
         """PostsViewSet.allowed_includes = ["comments"] → CommentSerializer 경로 추론."""
-        from apps.posts.views import PostsViewSet
         from apps.comments.serializers import CommentSerializer
+        from apps.posts.views import PostsViewSet
 
-        for key in ('_coc_serializer_class', '_coc_serializer_with_includes'):
+        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
             if hasattr(PostsViewSet, key):
                 delattr(PostsViewSet, key)
 
         viewset = PostsViewSet()
-        viewset.request = type('Request', (), {'user': mock_authenticated, 'query_params': {}})()
+        viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
         viewset.kwargs = {}
         viewset.format_kwarg = None
 
         serializer_class = viewset.get_serializer_class()
-        included = getattr(serializer_class, 'included_serializers', None)
+        included = getattr(serializer_class, "included_serializers", None)
         assert included is not None
         assert "comments" in included
         # DRF-JSONAPI auto-resolves string paths to classes on access
@@ -228,21 +238,21 @@ class TestIncludedSerializersInference:
 
     def test_no_includes_returns_original_serializer(self, mock_authenticated):
         """allowed_includes = [] → included_serializers 없음."""
-        from apps.users.views import UsersViewSet
         from apps.users.serializers import UserSerializer
+        from apps.users.views import UsersViewSet
 
-        for key in ('_coc_serializer_class', '_coc_serializer_with_includes'):
+        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
             if hasattr(UsersViewSet, key):
                 delattr(UsersViewSet, key)
 
         viewset = UsersViewSet()
-        viewset.request = type('Request', (), {'user': mock_authenticated, 'query_params': {}})()
+        viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
         viewset.kwargs = {}
         viewset.format_kwarg = None
 
         result = viewset.get_serializer_class()
         assert result is UserSerializer
-        assert not getattr(result, 'included_serializers', None)
+        assert not getattr(result, "included_serializers", None)
 
 
 @pytest.mark.django_db
@@ -250,19 +260,22 @@ class TestExplicitIncludedSerializersPriority:
     """Serializer에 직접 선언된 included_serializers가 추론보다 우선."""
 
     def test_explicit_included_serializers_preserved(self, mock_authenticated):
-        from apps.core.views import ApiViewSet
         from rest_framework_json_api import serializers as ja_serializers
+
+        from apps.core.views import ApiViewSet
         from apps.posts.models import Post
         from apps.posts.serializers import PostSerializer
 
         class MySerializer(ja_serializers.ModelSerializer):
             included_serializers = {"post": "apps.posts.serializers.PostSerializer"}
+
             class Meta:
                 model = Post
                 fields = ["title"]
 
         class MyViewSet(ApiViewSet):
             serializer_class = MySerializer
+
             @property
             def allowed_includes(self):
                 return ["comments"]
@@ -270,7 +283,7 @@ class TestExplicitIncludedSerializersPriority:
         MyViewSet.__module__ = "apps.posts.views"
 
         viewset = MyViewSet()
-        viewset.request = type('Request', (), {'user': mock_authenticated, 'query_params': {}})()
+        viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
         viewset.kwargs = {}
         viewset.format_kwarg = None
 
@@ -290,14 +303,15 @@ class TestInferenceFailure:
 
         class BadViewSet(ApiViewSet):
             pass
+
         BadViewSet.__module__ = "apps.nonexistent.views"
 
-        for key in ('_coc_serializer_class', '_coc_serializer_with_includes'):
+        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
             if hasattr(BadViewSet, key):
                 delattr(BadViewSet, key)
 
         viewset = BadViewSet()
-        viewset.request = type('Request', (), {'user': mock_authenticated, 'query_params': {}})()
+        viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
         viewset.kwargs = {}
         viewset.format_kwarg = None
 
@@ -310,7 +324,7 @@ class TestInferenceFailure:
         from apps.core.views import ApiViewSet
 
         viewset = ApiViewSet()
-        viewset.request = type('Request', (), {'user': mock_authenticated, 'query_params': {}})()
+        viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
         viewset.kwargs = {}
         viewset.format_kwarg = None
 

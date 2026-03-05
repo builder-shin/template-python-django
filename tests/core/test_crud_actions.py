@@ -182,12 +182,10 @@ class TestAutoPrefetchIntegration:
 
     def test_include_triggers_prefetch_on_list(self, mock_authenticated, jsonapi_headers):
         """?include=post 요청 시 prefetch_related가 적용되어 N+1 방지."""
-        from apps.posts.models import Post
         from apps.comments.models import Comment
+        from apps.posts.models import Post
 
-        post = Post.objects.create(
-            title="Prefetch Test", content="Content", user=mock_authenticated
-        )
+        post = Post.objects.create(title="Prefetch Test", content="Content", user=mock_authenticated)
         Comment.objects.create(post=post, content="c1", user=mock_authenticated)
         Comment.objects.create(post=post, content="c2", user=mock_authenticated)
 
@@ -204,9 +202,7 @@ class TestAutoPrefetchIntegration:
         """include 없을 때 included 데이터가 없음."""
         from apps.posts.models import Post
 
-        Post.objects.create(
-            title="No Include", content="Content", user=mock_authenticated
-        )
+        Post.objects.create(title="No Include", content="Content", user=mock_authenticated)
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
@@ -215,19 +211,15 @@ class TestAutoPrefetchIntegration:
 
     def test_detail_include_triggers_prefetch(self, mock_authenticated, jsonapi_headers):
         """detail 엔드포인트에서도 include prefetch가 작동."""
-        from apps.posts.models import Post
         from apps.comments.models import Comment
+        from apps.posts.models import Post
 
-        post = Post.objects.create(
-            title="Detail Prefetch", content="Content", user=mock_authenticated
-        )
+        post = Post.objects.create(title="Detail Prefetch", content="Content", user=mock_authenticated)
         comment = Comment.objects.create(post=post, content="c1", user=mock_authenticated)
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
-        response = client.get(
-            f"/api/v1/comments/{comment.id}?include=post", **jsonapi_headers
-        )
+        response = client.get(f"/api/v1/comments/{comment.id}?include=post", **jsonapi_headers)
         assert response.status_code == 200
         data = response.json()
         assert "included" in data
@@ -235,12 +227,10 @@ class TestAutoPrefetchIntegration:
 
     def test_comment_include_post(self, mock_authenticated, jsonapi_headers):
         """comments에서 ?include=post 요청 시 post가 포함됨."""
-        from apps.posts.models import Post
         from apps.comments.models import Comment
+        from apps.posts.models import Post
 
-        post = Post.objects.create(
-            title="Comment Include", content="Content", user=mock_authenticated
-        )
+        post = Post.objects.create(title="Comment Include", content="Content", user=mock_authenticated)
         Comment.objects.create(post=post, content="c1", user=mock_authenticated)
 
         client = APIClient()

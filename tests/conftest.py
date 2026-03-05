@@ -2,9 +2,6 @@ import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-from apps.core.exceptions import JsonApiError, NotFound
-from apps.core.filters import AllowedIncludesFilter
-
 User = get_user_model()
 
 
@@ -74,10 +71,10 @@ def jsonapi_headers():
     }
 
 
-def jsonapi_payload(attributes, resource_type, id=None):
+def jsonapi_payload(attributes, resource_type, resource_id=None):
     data = {"type": resource_type, "attributes": attributes}
-    if id:
-        data["id"] = str(id)
+    if resource_id:
+        data["id"] = str(resource_id)
     return {"data": data}
 
 
@@ -85,6 +82,7 @@ def jsonapi_payload(attributes, resource_type, id=None):
 def auth_tokens(auth_user):
     """JWT token pair for auth_user."""
     from apps.core.auth.jwt_utils import generate_token_pair
+
     return generate_token_pair(auth_user)
 
 

@@ -117,9 +117,7 @@ class TestPostsAPI:
         assert Post.objects.filter(external_id="ext-001").exists()
 
     def test_upsert_updates_existing(self, mock_authenticated, jsonapi_headers):
-        Post.objects.create(
-            title="Existing", content="Old content", user=mock_authenticated, external_id="ext-002"
-        )
+        Post.objects.create(title="Existing", content="Old content", user=mock_authenticated, external_id="ext-002")
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         payload = {
