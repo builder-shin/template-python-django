@@ -5,29 +5,36 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Post',
+            name="Post",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('title', models.CharField(max_length=200, validators=[django.core.validators.MinLengthValidator(2), django.core.validators.MaxLengthValidator(200)])),
-                ('content', models.TextField(blank=True, default='')),
-                ('view_count', models.PositiveIntegerField(default=0)),
-                ('status', models.IntegerField(choices=[(0, 'draft'), (1, 'published'), (2, 'archived')], default=0)),
-                ('published_at', models.DateTimeField(blank=True, null=True)),
-                ('external_id', models.CharField(blank=True, max_length=255, null=True, unique=True)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "title",
+                    models.CharField(
+                        max_length=200,
+                        validators=[
+                            django.core.validators.MinLengthValidator(2),
+                            django.core.validators.MaxLengthValidator(200),
+                        ],
+                    ),
+                ),
+                ("content", models.TextField(blank=True, default="")),
+                ("view_count", models.PositiveIntegerField(default=0)),
+                ("status", models.IntegerField(choices=[(0, "draft"), (1, "published"), (2, "archived")], default=0)),
+                ("published_at", models.DateTimeField(blank=True, null=True)),
+                ("external_id", models.CharField(blank=True, max_length=255, null=True, unique=True)),
             ],
             options={
-                'ordering': ['-created_at'],
-                'abstract': False,
+                "ordering": ["-created_at"],
+                "abstract": False,
             },
         ),
     ]

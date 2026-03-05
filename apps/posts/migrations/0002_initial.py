@@ -7,26 +7,29 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('posts', '0001_initial'),
+        ("posts", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='post',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='posts', to=settings.AUTH_USER_MODEL),
+            model_name="post",
+            name="user",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, related_name="posts", to=settings.AUTH_USER_MODEL
+            ),
         ),
         migrations.AddIndex(
-            model_name='post',
-            index=models.Index(fields=['status'], name='idx_posts_status'),
+            model_name="post",
+            index=models.Index(fields=["status"], name="idx_posts_status"),
         ),
         migrations.AddConstraint(
-            model_name='post',
-            constraint=models.UniqueConstraint(django.db.models.functions.text.Lower('title'), models.F('user'), name='unique_post_title_per_user'),
+            model_name="post",
+            constraint=models.UniqueConstraint(
+                django.db.models.functions.text.Lower("title"), models.F("user"), name="unique_post_title_per_user"
+            ),
         ),
     ]
