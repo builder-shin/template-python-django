@@ -4,7 +4,6 @@ from django.db import models
 class BaseQuerySet(models.QuerySet):
     """도메인 QuerySet의 공통 메서드를 제공하는 베이스 QuerySet."""
 
-    pass
 
 
 class BaseModel(models.Model):
@@ -19,7 +18,6 @@ class BaseModel(models.Model):
 
     def pre_save(self):
         """서브클래스에서 override하여 save 전 전처리 로직을 추가한다."""
-        pass
 
     def save(self, *args, **kwargs):  # noqa: DJ012
         self.pre_save()

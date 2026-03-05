@@ -1,5 +1,4 @@
 import logging
-import traceback
 
 from rest_framework.exceptions import AuthenticationFailed, NotAuthenticated, PermissionDenied, Throttled
 from rest_framework.response import Response
@@ -57,7 +56,6 @@ def json_api_exception_handler(exc, context):
             detail = detail or str(exc.detail)
             return _make_error_response(status_str, title, detail, int(status_str))
 
-    logger.error("Unhandled exception: %s", exc)
-    logger.error(traceback.format_exc())
+    logger.exception("Unhandled exception: %s", exc)
 
     return jsonapi_exception_handler(exc, context)

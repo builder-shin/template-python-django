@@ -1,3 +1,7 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
+from rest_framework.exceptions import ValidationError as DRFValidationError
+
+
 class HookableSerializerMixin:
     """
     REQUIRED mixin for serializers used with ApiViewSet.
@@ -34,11 +38,15 @@ class HookableSerializerMixin:
             view.create_after_init(instance)
 
         try:
-            instance.full_clean()
             instance.save()
             for field_name, value in m2m_fields.items():
                 getattr(instance, field_name).set(value)
             success = True
+        except DjangoValidationError as e:
+            success = False
+            if view and hasattr(view, "create_after_save"):
+                view.create_after_save(instance, False)
+            raise DRFValidationError(e.message_dict if hasattr(e, "message_dict") else e.messages) from e
         except Exception:
             success = False
             if view and hasattr(view, "create_after_save"):
@@ -62,11 +70,15 @@ class HookableSerializerMixin:
             view.update_after_assign(instance)
 
         try:
-            instance.full_clean()
             instance.save()
             for field_name, value in m2m_fields.items():
                 getattr(instance, field_name).set(value)
             success = True
+        except DjangoValidationError as e:
+            success = False
+            if view and hasattr(view, "update_after_save"):
+                view.update_after_save(instance, False)
+            raise DRFValidationError(e.message_dict if hasattr(e, "message_dict") else e.messages) from e
         except Exception:
             success = False
             if view and hasattr(view, "update_after_save"):

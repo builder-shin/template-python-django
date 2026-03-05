@@ -2,6 +2,7 @@ from ipware import get_client_ip as _get_client_ip
 
 try:
     import inflect
+
     _inflect_engine = inflect.engine()
 except ImportError:
     _inflect_engine = None
