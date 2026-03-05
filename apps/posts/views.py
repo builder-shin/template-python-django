@@ -1,9 +1,13 @@
+from rest_framework.permissions import IsAuthenticated
+
+from apps.core.permissions import IsOwnerOrReadOnly
 from apps.core.views import ApiViewSet
 
 from .models import Post
 
 
 class PostsViewSet(ApiViewSet):
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def create_after_init(self, instance) -> None:
         instance.user = self.request.user
@@ -13,10 +17,9 @@ class PostsViewSet(ApiViewSet):
         return ["comments"]
 
     def get_base_queryset(self):
-        return Post.objects.order_by("-created_at")
+        return Post.objects.select_related("user").order_by("-created_at")
 
     def get_index_scope(self):
-        # super()는 mixin 체인(AutoPrefetch + PreloadIncludes)이 적용된 queryset 반환
         return super().get_index_scope().filter(user=self.request.user)
 
     def upsert_after_init(self, instance):
