@@ -4,7 +4,7 @@ import logging
 
 from django.core.cache import cache
 from django.core.exceptions import FieldDoesNotExist, ImproperlyConfigured, ValidationError
-from django.db import connection, models
+from django.db import connection, models, transaction
 from django.db.models import ProtectedError
 from django.http import HttpResponse, JsonResponse
 from rest_framework import status
@@ -33,14 +33,16 @@ def health_ready(request):
     try:
         connection.ensure_connection()
     except Exception as e:
-        errors.append(f"DB: {e}")
+        logger.error("Health check DB failure: %s", e)
+        errors.append("DB: unavailable")
     # Cache check
     try:
         cache.set("_health_check", "ok", 10)
         if cache.get("_health_check") != "ok":
-            errors.append("Cache: read-back mismatch")
+            errors.append("Cache: unavailable")
     except Exception as e:
-        errors.append(f"Cache: {e}")
+        logger.error("Health check cache failure: %s", e)
+        errors.append("Cache: unavailable")
 
     if errors:
         return JsonResponse(
@@ -89,11 +91,11 @@ class ApiViewSet(ModelViewSet):
 
     def get_serializer_class(self):
         """명시적 serializer_class가 없으면 컨벤션 기반 추론."""
-        if 'serializer_class' in self.__class__.__dict__:
-            klass = self.__class__.__dict__['serializer_class']
+        if "serializer_class" in self.__class__.__dict__:
+            klass = self.__class__.__dict__["serializer_class"]
             return self._maybe_inject_included_serializers(klass)
 
-        cache_key = '_coc_serializer_class'
+        cache_key = "_coc_serializer_class"
         if hasattr(self.__class__, cache_key):
             return getattr(self.__class__, cache_key)
 
@@ -113,8 +115,7 @@ class ApiViewSet(ModelViewSet):
             klass = getattr(module, class_name)
         except (ImportError, AttributeError) as e:
             raise ImproperlyConfigured(
-                f"{class_name}을 {module_path}에서 찾을 수 없습니다. "
-                f"serializer_class를 명시하세요."
+                f"{class_name}을 {module_path}에서 찾을 수 없습니다. serializer_class를 명시하세요."
             ) from e
 
         klass = self._maybe_inject_included_serializers(klass)
@@ -125,19 +126,17 @@ class ApiViewSet(ModelViewSet):
 
     def _maybe_inject_included_serializers(self, serializer_class):
         """Serializer에 included_serializers가 없으면 allowed_includes에서 추론하여 주입."""
-        if getattr(serializer_class, 'included_serializers', None):
+        if getattr(serializer_class, "included_serializers", None):
             return serializer_class
 
-        cache_key = '_coc_serializer_with_includes'
+        cache_key = "_coc_serializer_with_includes"
         cached = getattr(self.__class__, cache_key, None)
         if cached is not None:
             return cached
 
         inferred = self._infer_included_serializers()
         if inferred:
-            klass = type(serializer_class.__name__, (serializer_class,), {
-                'included_serializers': inferred
-            })
+            klass = type(serializer_class.__name__, (serializer_class,), {"included_serializers": inferred})
         else:
             klass = serializer_class
 
@@ -152,8 +151,9 @@ class ApiViewSet(ModelViewSet):
             return {}
 
         # 이미 resolve된 serializer class를 우선 재사용
-        serializer_cls = self.__class__.__dict__.get('serializer_class') or \
-            getattr(self.__class__, '_coc_serializer_class', None)
+        serializer_cls = self.__class__.__dict__.get("serializer_class") or getattr(
+            self.__class__, "_coc_serializer_class", None
+        )
 
         if serializer_cls is None:
             app_label = self._get_app_label()
@@ -168,7 +168,7 @@ class ApiViewSet(ModelViewSet):
             except (ImportError, AttributeError):
                 return {}
 
-        model = getattr(getattr(serializer_cls, 'Meta', None), 'model', None)
+        model = getattr(getattr(serializer_cls, "Meta", None), "model", None)
         if model is None:
             return {}
 
@@ -179,15 +179,17 @@ class ApiViewSet(ModelViewSet):
             except FieldDoesNotExist:
                 logger.warning(
                     "Field '%s' not found on %s",
-                    include_name, model.__name__,
+                    include_name,
+                    model.__name__,
                 )
                 continue
 
-            related_model = getattr(field, 'related_model', None)
+            related_model = getattr(field, "related_model", None)
             if related_model is None:
                 logger.warning(
                     "Field '%s' on %s is not a relation",
-                    include_name, model.__name__,
+                    include_name,
+                    model.__name__,
                 )
                 continue
 
@@ -199,10 +201,10 @@ class ApiViewSet(ModelViewSet):
     @property
     def filterset_class(self):
         """명시적 filterset_class가 없으면 컨벤션 기반 추론."""
-        if '_filterset_class' in self.__class__.__dict__:
-            return self.__class__.__dict__['_filterset_class']
+        if "_filterset_class" in self.__class__.__dict__:
+            return self.__class__.__dict__["_filterset_class"]
 
-        cache_key = '_coc_filterset_class'
+        cache_key = "_coc_filterset_class"
         if hasattr(self.__class__, cache_key):
             return getattr(self.__class__, cache_key)
 
@@ -220,10 +222,7 @@ class ApiViewSet(ModelViewSet):
             module = importlib.import_module(module_path)
             klass = getattr(module, class_name)
         except (ImportError, AttributeError):
-            logger.debug(
-                "%s을 %s에서 찾을 수 없습니다. 필터 없이 동작합니다.",
-                class_name, module_path
-            )
+            logger.debug("%s을 %s에서 찾을 수 없습니다. 필터 없이 동작합니다.", class_name, module_path)
             klass = None
 
         setattr(self.__class__, cache_key, klass)
@@ -250,7 +249,7 @@ class ApiViewSet(ModelViewSet):
         ViewSet은 요청마다 새로 생성되므로 요청 간 캐시 문제는 없다.
         같은 요청 내에서 여러 번 호출되면 첫 번째 평가 결과를 재사용한다.
         """
-        if not hasattr(self, '_base_qs_cached'):
+        if not hasattr(self, "_base_qs_cached"):
             self._base_qs_cached = True
             self.queryset = self.get_base_queryset()
         return super().get_queryset()
@@ -338,7 +337,7 @@ class ApiViewSet(ModelViewSet):
 
     def _parse_raw_body(self):
         """Parse JSONAPI raw body once and cache."""
-        if not hasattr(self, '_cached_raw_body'):
+        if not hasattr(self, "_cached_raw_body"):
             try:
                 self._cached_raw_body = _json.loads(self.request._request.body)
             except (ValueError, UnicodeDecodeError):
@@ -352,53 +351,52 @@ class ApiViewSet(ModelViewSet):
             raise JsonApiError("BadRequest", "upsert_find_params를 뷰셋에서 정의해야 합니다.", 400)
 
         model_class = self.get_serializer().Meta.model
-        try:
-            instance = model_class.objects.get(**find_params)
-            created = False
-        except model_class.DoesNotExist:
-            instance = model_class(**find_params)
-            created = True
+        with transaction.atomic():
+            try:
+                instance = model_class.objects.select_for_update().get(**find_params)
+                created = False
+            except model_class.DoesNotExist:
+                instance = model_class(**find_params)
+                created = True
 
-        self.upsert_after_init(instance)
+            self.upsert_after_init(instance)
 
-        # Parse raw body to extract attributes, bypassing JSONAPI parser's id requirement
-        raw_body = self._parse_raw_body()
-        flat_data = raw_body.get("data", {}).get("attributes", {})
+            # Parse raw body to extract attributes, bypassing JSONAPI parser's id requirement
+            raw_body = self._parse_raw_body()
+            flat_data = raw_body.get("data", {}).get("attributes", {})
 
-        serializer = self.get_serializer(instance, data=flat_data, partial=True)
-        serializer.is_valid(raise_exception=True)
+            serializer = self.get_serializer(instance, data=flat_data, partial=True)
+            serializer.is_valid(raise_exception=True)
 
-        for attr, value in serializer.validated_data.items():
-            setattr(instance, attr, value)
-
-        self.upsert_after_assign(instance)
-
-        m2m_field_names = {f.name for f in instance.__class__._meta.many_to_many}
-        try:
-            instance.full_clean()
-            instance.save()
             for attr, value in serializer.validated_data.items():
-                if attr in m2m_field_names:
-                    getattr(instance, attr).set(value)
-            success = True
-        except ValidationError as e:
-            self.upsert_after_save(instance, False, created)
-            raise JsonApiError(  # noqa: B904 (re-raised with context via `e` in message)
-                "ValidationFailed",
-                "; ".join(
-                    f"{field}: {', '.join(messages)}" if field != "__all__" else ", ".join(messages)
-                    for field, messages in e.message_dict.items()
-                ),
-                422,
-            )
-        except Exception:
-            logger.exception("Unexpected error in upsert save for %s(pk=%s)", type(instance).__name__, instance.pk)
-            success = False
+                setattr(instance, attr, value)
+
+            self.upsert_after_assign(instance)
+
+            m2m_field_names = {f.name for f in instance.__class__._meta.many_to_many}
+            try:
+                instance.full_clean()
+                instance.save()
+                for attr, value in serializer.validated_data.items():
+                    if attr in m2m_field_names:
+                        getattr(instance, attr).set(value)
+                success = True
+            except ValidationError as e:
+                self.upsert_after_save(instance, False, created)
+                raise JsonApiError(
+                    "ValidationFailed",
+                    "; ".join(
+                        f"{field}: {', '.join(messages)}" if field != "__all__" else ", ".join(messages)
+                        for field, messages in e.message_dict.items()
+                    ),
+                    422,
+                ) from e
+            except Exception as err:
+                logger.exception("Unexpected error in upsert save for %s(pk=%s)", type(instance).__name__, instance.pk)
+                self.upsert_after_save(instance, False, created)
+                raise JsonApiError("SaveFailed", "리소스 저장에 실패했습니다.", 422) from err
 
         self.upsert_after_save(instance, success, created)
-
-        if not success:
-            raise JsonApiError("SaveFailed", "리소스 저장에 실패했습니다.", 422)
 
         output_serializer = self.get_serializer(instance)
         http_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
