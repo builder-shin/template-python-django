@@ -5,6 +5,7 @@ Sets request.user from JWT token for django_structlog logging purposes.
 This is NOT a security boundary -- DRF's JWTAuthentication handles actual auth.
 Falls back to AnonymousUser on any error (missing header, invalid token, etc.).
 """
+
 import logging
 
 import jwt
@@ -29,15 +30,21 @@ class JWTUserMiddleware:
         if not auth_header.startswith("Bearer "):
             return AnonymousUser()
 
-        token = auth_header[7:]  # len("Bearer ") == 7
+        token = auth_header[7:]
         try:
             conf = settings.JWT_AUTH
             payload = jwt.decode(
                 token,
                 conf["SIGNING_KEY"],
                 algorithms=[conf["ALGORITHM"]],
-                options={"verify_exp": False},  # Don't fail on expired -- DRF handles that
             )
+            jti = payload.get("jti")
+            if not jti:
+                return AnonymousUser()
+            from apps.core.auth.token_store import TokenStore
+
+            if not TokenStore.is_token_valid(jti):
+                return AnonymousUser()
             return UserModel.objects.get(id=payload["user_id"])
         except Exception:
             return AnonymousUser()

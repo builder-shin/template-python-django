@@ -2,6 +2,7 @@
 JWT Authentication backend for Django REST Framework.
 Validates Bearer tokens via signature verification + Redis jti check.
 """
+
 import logging
 
 import jwt
@@ -30,7 +31,7 @@ class JWTAuthentication(BaseAuthentication):
         if not auth_header.startswith(f"{self.keyword} "):
             return None  # No JWT auth attempted -- let other backends try
 
-        token = auth_header[len(self.keyword) + 1:]
+        token = auth_header[len(self.keyword) + 1 :]
 
         try:
             payload = decode_token(token, expected_type="access")

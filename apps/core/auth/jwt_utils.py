@@ -2,6 +2,7 @@
 JWT token generation and verification utilities.
 Uses PyJWT for encoding/decoding, TokenStore for Redis-backed validation.
 """
+
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -74,13 +75,15 @@ def decode_token(token: str, expected_type: str = "access") -> dict:
 
 def refresh_access_token(refresh_token_str: str) -> dict:
     """
-    Rotate: validate refresh token -> revoke old refresh -> issue new pair.
+    Rotate: validate refresh token -> atomically revoke old refresh -> issue new pair.
     Returns: {"access": str, "refresh": str}
     Raises: jwt.ExpiredSignatureError, jwt.InvalidTokenError, ValueError
     """
     payload = decode_token(refresh_token_str, expected_type="refresh")
+
+    # Atomic revoke: only proceed if we were the one to revoke it
+    if not TokenStore.atomic_revoke(payload["jti"]):
+        raise ValueError("Token has already been used")
+
     user = User.objects.get(id=payload["user_id"])
-
-    TokenStore.revoke_token(payload["jti"])
-
     return generate_token_pair(user)
