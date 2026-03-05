@@ -9,6 +9,8 @@ class User(AbstractUser):
         SUSPENDED = 1, "suspended"
         WITHDRAWN = 2, "withdrawn"
 
+    email = models.EmailField("email address", unique=True)
+
     nickname = models.CharField(
         max_length=50,
         blank=True,
@@ -32,8 +34,6 @@ class User(AbstractUser):
 
     def clean(self):
         super().clean()
-        if self.nickname:
-            self.nickname = self.nickname.strip()
 
     def save(self, *args, **kwargs):
         if self.nickname:

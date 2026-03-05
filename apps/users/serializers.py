@@ -15,4 +15,4 @@ class UserSerializer(HookableSerializerMixin, serializers.ModelSerializer):
             "status",
             "date_joined",
         ]
-        read_only_fields = ["date_joined"]
+        read_only_fields = ["date_joined", "status"]
