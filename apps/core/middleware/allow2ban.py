@@ -72,15 +72,16 @@ class Allow2BanMiddleware:
     def _record_suspicious_hit(self, ip):
         """Record a suspicious hit and ban if threshold exceeded."""
         cache_key = f"{self.CACHE_PREFIX_COUNT}{ip}"
+        # Atomic initialization: add() only sets if key doesn't exist
+        cache.add(cache_key, 0, self.FIND_TIME)
         try:
             count = cache.incr(cache_key)
         except ValueError:
-            # Key doesn't exist yet, initialize it
+            # Fallback if backend doesn't support incr after add
             cache.set(cache_key, 1, self.FIND_TIME)
             count = 1
 
         if count >= self.MAX_RETRY:
-            # Ban the IP
             cache.set(f"{self.CACHE_PREFIX_BAN}{ip}", True, self.BAN_TIME)
             cache.delete(cache_key)
             logger.warning(

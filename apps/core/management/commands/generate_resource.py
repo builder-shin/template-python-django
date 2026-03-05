@@ -18,7 +18,6 @@ from django.core.management.base import BaseCommand, CommandError
 
 from apps.core.utils import singularize, to_pascal
 
-
 # ---------------------------------------------------------------------------
 # 필드 타입 매핑
 # ---------------------------------------------------------------------------
@@ -108,7 +107,9 @@ def _gen_models_py(
 
     # user FK 필드
     if user_scoped:
-        lines.append('    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="%(class)ss")')
+        lines.append(
+            '    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="%(class)ss")'
+        )
 
     # objects 매니저
     lines.append(f"    objects = {singular_pascal}QuerySet.as_manager()")
@@ -171,6 +172,9 @@ def _gen_views_py(
         lines.append('        if user and hasattr(user, "id") and user.id:')
         lines.append("            return super().get_index_scope().filter(user=user)")
         lines.append(f"        return {singular_pascal}.objects.none()")
+        lines.append("")
+        lines.append("    def create_after_init(self, instance) -> None:")
+        lines.append("        instance.user = self.request.user")
     return "\n".join(lines) + "\n"
 
 
@@ -269,16 +273,12 @@ def _gen_urls_py(
     plural_pascal: str,
 ) -> str:
     return textwrap.dedent(f"""\
-        from django.urls import path, include
-        from rest_framework.routers import DefaultRouter
+        from apps.core.urls import make_urlpatterns
         from .views import {plural_pascal}ViewSet
 
-        router = DefaultRouter(trailing_slash=False)
-        router.register(r"{resource_name}", {plural_pascal}ViewSet, basename="{singular_snake}")
-
-        urlpatterns = [
-            path("", include(router.urls)),
-        ]
+        urlpatterns = make_urlpatterns(
+            ("{resource_name}", {plural_pascal}ViewSet, "{singular_snake}"),
+        )
     """)
 
 
@@ -310,7 +310,7 @@ def _gen_test_models_py(
         if ft in FIELD_TEST_DEFAULTS:
             create_kwargs.append(f"{fn}={FIELD_TEST_DEFAULTS[ft]}")
     if user_scoped:
-        create_kwargs.append('user=auth_user')
+        create_kwargs.append("user=auth_user")
 
     kwargs_str = ", ".join(create_kwargs)
     lines.append(f"        instance = {singular_pascal}.objects.create({kwargs_str})")

@@ -5,6 +5,12 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
+def _redact_email(email: str) -> str:
+    """Redact email for safe logging."""
+    local, _, domain = email.partition("@")
+    return f"{local[:2]}***@{domain}" if local else email
+
+
 class SendGridEmailService:
     """
     SendGrid email service for sending template-based emails.
@@ -49,11 +55,11 @@ class SendGridEmailService:
 
             sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
             response = sg.send(message)
-            logger.info(f"Email sent to {to}, status: {response.status_code}")
+            logger.info("Email sent to %s, status: %s", _redact_email(to), response.status_code)
             return {"success": response.status_code in (200, 201, 202), "status_code": response.status_code}
 
         except Exception as e:
-            logger.error(f"Failed to send email to {to}: {e}")
+            logger.error("Failed to send email to %s: %s", _redact_email(to), e)
             return {"success": False, "status_code": 0}
 
     @classmethod
@@ -87,7 +93,7 @@ class SendGridEmailService:
             from sendgrid import SendGridAPIClient
             from sendgrid.helpers.mail import Email, Mail, Personalization
         except ImportError as e:
-            logger.error(f"sendgrid package not available: {e}")
+            logger.error("sendgrid package not available: %s", e)
             return {"success": False, "total": total, "sent": 0, "failed": total}
 
         sent = 0
@@ -116,13 +122,13 @@ class SendGridEmailService:
                 response = sg.send(mail)
                 if response.status_code in (200, 201, 202):
                     sent += len(batch)
-                    logger.info(f"Batch sent: {len(batch)} recipients, status: {response.status_code}")
+                    logger.info("Batch sent: %d recipients, status: %s", len(batch), response.status_code)
                 else:
                     failed += len(batch)
-                    logger.error(f"Batch failed: {len(batch)} recipients, status: {response.status_code}")
+                    logger.error("Batch failed: %d recipients, status: %s", len(batch), response.status_code)
             except Exception as e:
                 failed += len(batch)
-                logger.error(f"Batch send error ({len(batch)} recipients): {e}")
+                logger.error("Batch send error (%d recipients): %s", len(batch), e)
 
         return {
             "success": failed == 0,
