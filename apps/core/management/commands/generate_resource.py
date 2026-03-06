@@ -108,7 +108,8 @@ def _gen_models_py(
     # user FK 필드
     if user_scoped:
         lines.append(
-            '    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="%(class)ss")'
+            '    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,'
+            ' related_name="%(class)ss")'
         )
 
     # objects 매니저

@@ -125,7 +125,7 @@ class TestSerializerClassInference:
 
         # Second call — should use cache, not importlib
         with patch.object(importlib, "import_module", side_effect=AssertionError("Should not import")) as mock_import:
-            result = viewset.get_serializer_class()
+            viewset.get_serializer_class()
 
         mock_import.assert_not_called()
 

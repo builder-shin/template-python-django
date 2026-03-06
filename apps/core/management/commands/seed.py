@@ -18,7 +18,7 @@ class Command(BaseCommand):
         from apps.posts.models import Post
         from tests.factories import CommentFactory, PostFactory, UserFactory
 
-        User = get_user_model()
+        User = get_user_model()  # noqa: N806
 
         if options["flush"]:
             self.stdout.write(">>> 기존 데이터 삭제...")
