@@ -15,6 +15,8 @@ class IsOwnerUser(BasePermission):
 
 
 class UsersViewSet(ApiViewSet):
+    ordering = ["-date_joined"]
+
     def get_permissions(self):
         if self.action in ("list", "retrieve"):
             return [AllowAny()]

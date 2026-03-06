@@ -3,10 +3,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from apps.core.permissions import IsOwnerOrReadOnly
 from apps.core.views import ApiViewSet
 
-from .models import Comment
-
 
 class CommentsViewSet(ApiViewSet):
+    select_related_extra = ["user"]
+
     def get_permissions(self):
         if self.action in ("list", "retrieve"):
             return [AllowAny()]
@@ -20,6 +20,3 @@ class CommentsViewSet(ApiViewSet):
     @property
     def allowed_includes(self):
         return ["post"]
-
-    def get_base_queryset(self):
-        return Comment.objects.select_related("post", "user").order_by("-created_at")

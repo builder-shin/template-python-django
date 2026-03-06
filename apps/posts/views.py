@@ -3,8 +3,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from apps.core.permissions import IsOwnerOrReadOnly
 from apps.core.views import ApiViewSet
 
-from .models import Post
-
 
 class PostsViewSet(ApiViewSet):
     def get_permissions(self):
@@ -20,9 +18,6 @@ class PostsViewSet(ApiViewSet):
     @property
     def allowed_includes(self):
         return ["user", "comments"]
-
-    def get_base_queryset(self):
-        return Post.objects.select_related("user").order_by("-created_at")
 
     def get_index_scope(self):
         qs = super().get_index_scope()
