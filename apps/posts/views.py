@@ -19,7 +19,7 @@ class PostsViewSet(ApiViewSet):
 
     @property
     def allowed_includes(self):
-        return ["comments"]
+        return ["user", "comments"]
 
     def get_base_queryset(self):
         return Post.objects.select_related("user").order_by("-created_at")
