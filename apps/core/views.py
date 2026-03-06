@@ -238,21 +238,59 @@ class ApiViewSet(ModelViewSet):
         if value is not None:
             self.__class__._filterset_class = value
 
-    def get_base_queryset(self):
-        """순수 queryset (annotation 포함). 하위 클래스에서 override."""
-        model = self.get_serializer_class().Meta.model
-        return model.objects.all()
+    ordering = ["-created_at"]
+    select_related_extra: list[str] = []
+    prefetch_related_extra: list[str] = []
+
+    @staticmethod
+    def _classify_include(model, name, select, prefetch):
+        """Classify an include name into select_related or prefetch_related lists."""
+        try:
+            field = model._meta.get_field(name)
+        except FieldDoesNotExist:
+            return
+        if field.many_to_one or field.one_to_one:
+            select.append(name)
+        elif field.one_to_many or field.many_to_many:
+            related_model = field.related_model
+            related_fks = [
+                f.name for f in related_model._meta.get_fields()
+                if hasattr(f, "related_model") and (f.many_to_one or f.one_to_one)
+            ]
+            if related_fks:
+                prefetch.append(
+                    models.Prefetch(name, queryset=related_model.objects.select_related(*related_fks))
+                )
+            else:
+                prefetch.append(name)
 
     def get_queryset(self):
-        """DRF의 super().get_queryset()이 요구하는 self.queryset을 설정.
+        """Build optimized queryset via CoC: auto select_related/prefetch_related from allowed_includes."""
+        if hasattr(self, "_qs_cached"):
+            return self._qs_cached
 
-        ViewSet은 요청마다 새로 생성되므로 요청 간 캐시 문제는 없다.
-        같은 요청 내에서 여러 번 호출되면 첫 번째 평가 결과를 재사용한다.
-        """
-        if not hasattr(self, "_base_qs_cached"):
-            self._base_qs_cached = True
-            self.queryset = self.get_base_queryset()
-        return super().get_queryset()
+        model = self.get_serializer_class().Meta.model
+        qs = model.objects.all()
+
+        # Auto-infer from allowed_includes
+        select = list(self.select_related_extra)
+        prefetch = list(self.prefetch_related_extra)
+
+        for name in self.allowed_includes:
+            self._classify_include(model, name, select, prefetch)
+
+        if select:
+            qs = qs.select_related(*select)
+        if prefetch:
+            qs = qs.prefetch_related(*prefetch)
+
+        if self.ordering:
+            valid_fields = {f.name for f in model._meta.get_fields()}
+            safe_ordering = [f for f in self.ordering if f.lstrip("-") in valid_fields]
+            if safe_ordering:
+                qs = qs.order_by(*safe_ordering)
+        self._qs_cached = qs
+        return qs
 
     def get_index_scope(self):
         """list 전용 스코핑. 기본은 get_queryset() (mixin 체인 포함)."""
