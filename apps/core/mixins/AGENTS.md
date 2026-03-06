@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-03-02 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-06 -->
 
 # mixins
 
@@ -10,8 +10,8 @@
 
 | File | Description |
 |------|-------------|
-| `__init__.py` | 패키지 내보내기 — `HookableSerializerMixin` |
-| `crud_actions.py` | **HookableSerializerMixin** — DRF serializer.save()와 ApiViewSet 라이프사이클 훅을 연결. create/update 시 훅 호출, M2M 필드 자동 처리. 모든 Serializer가 첫 번째 부모로 상속 필수 |
+| `__init__.py` | 패키지 내보내기 |
+| `crud_actions.py` | **HookableSerializerMixin** — DRF serializer.save()와 ApiViewSet 라이프사이클 훅을 연결. create/update 시 훅 호출, M2M 필드 자동 분리/처리. 모든 Serializer가 첫 번째 부모로 상속 필수 |
 
 ## For AI Agents
 

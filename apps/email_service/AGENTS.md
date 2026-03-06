@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-03-02 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-06 -->
 
 # email_service
 
@@ -10,7 +10,7 @@
 
 | File | Description |
 |------|-------------|
-| `sendgrid_service.py` | **SendGridEmailService** — `send_template_email` (단건), `send_batch_template_emails` (최대 1000건/API 호출, Personalization 기반 배치). settings.SENDGRID_API_KEY 미설정 시 graceful skip |
+| `sendgrid_service.py` | **SendGridEmailService** — `send_template_email` (단건), `send_batch_template_emails` (최대 1000건/API 호출, Personalization 기반 배치). settings.SENDGRID_API_KEY 미설정 시 graceful skip. 이메일 주소 로깅 시 자동 마스킹 |
 | `apps.py` | EmailServiceConfig |
 
 ## For AI Agents
