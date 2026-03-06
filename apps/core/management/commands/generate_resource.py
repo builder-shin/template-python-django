@@ -143,8 +143,9 @@ def _gen_views_py(
 
     # Imports
     lines.append("from apps.core.views import ApiViewSet")
-    lines.append("")
-    lines.append(f"from .models import {singular_pascal}")
+    if user_scoped:
+        lines.append("")
+        lines.append(f"from .models import {singular_pascal}")
     lines.append("")
     lines.append("")
 
@@ -152,17 +153,16 @@ def _gen_views_py(
     lines.append(f"class {plural_pascal}ViewSet(ApiViewSet):")
     lines.append("")
 
+    # select_related_extra for user-scoped resources
+    if user_scoped:
+        lines.append('    select_related_extra = ["user"]')
+        lines.append("")
+
     # allowed_includes
     lines.append("    @property")
     lines.append("    def allowed_includes(self):")
     lines.append("        # TODO: 관계 필드는 수동으로 추가하세요 (참고: apps/comments/)")
     lines.append("        return []")
-    lines.append("")
-
-    # get_base_queryset
-    lines.append("    def get_base_queryset(self):")
-    lines.append("        # TODO: annotation이 필요하면 여기에 추가 (예: .annotate(...))")
-    lines.append(f"        return {singular_pascal}.objects.all()")
     lines.append("")
 
     # get_index_scope
