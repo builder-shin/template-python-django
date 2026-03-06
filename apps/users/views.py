@@ -1,5 +1,5 @@
 from rest_framework.decorators import action
-from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.core.views import ApiViewSet
@@ -15,7 +15,12 @@ class IsOwnerUser(BasePermission):
 
 
 class UsersViewSet(ApiViewSet):
-    permission_classes = [IsAuthenticated, IsOwnerUser]
+    def get_permissions(self):
+        if self.action in ("list", "retrieve"):
+            return [AllowAny()]
+        if self.action == "me":
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsOwnerUser()]
 
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request, *args, **kwargs):

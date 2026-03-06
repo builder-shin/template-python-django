@@ -1,4 +1,4 @@
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from apps.core.permissions import IsOwnerOrReadOnly
 from apps.core.views import ApiViewSet
@@ -7,7 +7,12 @@ from .models import Comment
 
 
 class CommentsViewSet(ApiViewSet):
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    def get_permissions(self):
+        if self.action in ("list", "retrieve"):
+            return [AllowAny()]
+        if self.action == "create":
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsOwnerOrReadOnly()]
 
     def create_after_init(self, instance) -> None:
         instance.user = self.request.user

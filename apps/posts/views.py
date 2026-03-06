@@ -1,4 +1,4 @@
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from apps.core.permissions import IsOwnerOrReadOnly
 from apps.core.views import ApiViewSet
@@ -7,7 +7,12 @@ from .models import Post
 
 
 class PostsViewSet(ApiViewSet):
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    def get_permissions(self):
+        if self.action in ("list", "retrieve"):
+            return [AllowAny()]
+        if self.action == "create":
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsOwnerOrReadOnly()]
 
     def create_after_init(self, instance) -> None:
         instance.user = self.request.user
@@ -20,7 +25,10 @@ class PostsViewSet(ApiViewSet):
         return Post.objects.select_related("user").order_by("-created_at")
 
     def get_index_scope(self):
-        return super().get_index_scope().filter(user=self.request.user)
+        qs = super().get_index_scope()
+        if self.request.user.is_authenticated:
+            qs = qs.filter(user=self.request.user)
+        return qs
 
     def upsert_after_init(self, instance):
         if not instance.user_id:

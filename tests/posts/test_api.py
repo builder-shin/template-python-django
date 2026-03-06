@@ -21,7 +21,7 @@ class TestPostsAPI:
     def test_index_unauthenticated(self, mock_unauthenticated, jsonapi_headers):
         client = APIClient()
         response = client.get("/api/v1/posts", **jsonapi_headers)
-        assert response.status_code == 401
+        assert response.status_code == 200
 
     def test_index_only_own_posts(self, mock_authenticated, other_user, jsonapi_headers):
         Post.objects.create(title="My Post", content="Mine", user=mock_authenticated)

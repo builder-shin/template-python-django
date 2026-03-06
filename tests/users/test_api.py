@@ -19,7 +19,7 @@ class TestUsersAPI:
     def test_index_unauthenticated(self, mock_unauthenticated, jsonapi_headers):
         client = APIClient()
         response = client.get("/api/v1/users", **jsonapi_headers)
-        assert response.status_code == 401
+        assert response.status_code == 200
 
     def test_show_existing(self, mock_authenticated, jsonapi_headers):
         client = APIClient()

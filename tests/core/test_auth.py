@@ -50,7 +50,7 @@ class TestTokenValidation:
 
     def test_valid_access_token(self, jwt_authenticated_client):
         """유효한 access token -> 인증 성공 (아무 protected endpoint)"""
-        response = jwt_authenticated_client.get("/api/v1/posts")
+        response = jwt_authenticated_client.get("/api/v1/users/me")
         assert response.status_code == 200
 
     def test_expired_access_token(self, api_client, auth_user):
@@ -58,13 +58,13 @@ class TestTokenValidation:
         with freeze_time("2020-01-01"):
             tokens = generate_token_pair(auth_user)
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
-        response = api_client.get("/api/v1/posts")
+        response = api_client.get("/api/v1/users/me")
         assert response.status_code == 401
 
     def test_tampered_token(self, api_client):
         """변조된 token -> 401"""
         api_client.credentials(HTTP_AUTHORIZATION="Bearer eyJhbGciOiJIUzI1NiJ9.eyJ0ZXN0IjoiZmFrZSJ9.fake_sig")
-        response = api_client.get("/api/v1/posts")
+        response = api_client.get("/api/v1/users/me")
         assert response.status_code == 401
 
     def test_revoked_token(self, api_client, auth_user, auth_tokens):
@@ -73,12 +73,12 @@ class TestTokenValidation:
         payload = pyjwt.decode(access, settings.JWT_AUTH["SIGNING_KEY"], algorithms=["HS256"])
         TokenStore.revoke_token(payload["jti"])
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
-        response = api_client.get("/api/v1/posts")
+        response = api_client.get("/api/v1/users/me")
         assert response.status_code == 401
 
     def test_no_auth_header(self, api_client):
         """인증 헤더 없음 -> 401 (IsAuthenticated permission)"""
-        response = api_client.get("/api/v1/posts")
+        response = api_client.get("/api/v1/users/me")
         assert response.status_code == 401
 
 
@@ -123,7 +123,7 @@ class TestLogout:
         """로그아웃 후 access token -> 401"""
         response = jwt_authenticated_client.post("/api/v1/auth/logout")
         assert response.status_code == 204
-        response = jwt_authenticated_client.get("/api/v1/posts")
+        response = jwt_authenticated_client.get("/api/v1/users/me")
         assert response.status_code == 401
 
     def test_logout_all_revokes_all_sessions(self, api_client, auth_user):
@@ -136,10 +136,10 @@ class TestLogout:
         assert response.status_code == 204
 
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens1['access']}")
-        assert api_client.get("/api/v1/posts").status_code == 401
+        assert api_client.get("/api/v1/users/me").status_code == 401
 
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens2['access']}")
-        assert api_client.get("/api/v1/posts").status_code == 401
+        assert api_client.get("/api/v1/users/me").status_code == 401
 
 
 class TestTokenStore:

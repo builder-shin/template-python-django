@@ -42,7 +42,7 @@ class TestCrudActionsAPI:
     def test_list_unauthenticated(self, mock_unauthenticated, jsonapi_headers):
         client = APIClient()
         response = client.get("/api/v1/posts", **jsonapi_headers)
-        assert response.status_code == 401
+        assert response.status_code == 200
 
     def test_create_returns_201(self, mock_authenticated, jsonapi_headers):
         client = APIClient()
