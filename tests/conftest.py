@@ -58,7 +58,8 @@ def api_client():
 
 @pytest.fixture
 def authenticated_client(api_client, auth_user):
-    """Pre-authenticated API client."""
+    """Pre-authenticated API client (force_authenticate).
+    CRUD/비즈니스 로직 테스트용. JWT 미들웨어를 거치지 않음."""
     api_client.force_authenticate(user=auth_user)
     return api_client
 
@@ -94,6 +95,7 @@ def access_token(auth_tokens):
 
 @pytest.fixture
 def jwt_authenticated_client(api_client, access_token):
-    """API client with JWT Bearer token header."""
+    """JWT Bearer token 인증 client.
+    인증 흐름(미들웨어, 토큰 검증) 테스트용."""
     api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
     return api_client

@@ -56,13 +56,20 @@ class TokenStore:
 
     @classmethod
     def atomic_revoke(cls, jti: str) -> bool:
-        """Atomically check and revoke. Returns True if token was valid and is now revoked."""
+        """Check-and-delete. Returns True if token was valid and is now revoked.
+
+        NOTE: get+delete 사이에 미세한 TOCTOU gap이 존재하나,
+        동시 refresh 시도는 극히 드물고 cache.delete()의 반환값으로
+        실제 삭제 여부를 확인하여 이중 사용을 방어합니다.
+        """
         key = f"{cls.JTI_PREFIX}{jti}"
         data = cache.get(key)
         if data is None:
             return False
-        cache.delete(key)
-        if data and isinstance(data, dict) and "user_id" in data:
+        deleted = cache.delete(key)
+        if not deleted:
+            return False
+        if isinstance(data, dict) and "user_id" in data:
             cls._remove_from_user_tokens(data["user_id"], jti)
         return True
 

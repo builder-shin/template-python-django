@@ -38,4 +38,6 @@ class User(AbstractUser):
     def save(self, *args, **kwargs):
         if self.nickname:
             self.nickname = self.nickname.strip()
+        if not kwargs.get("update_fields"):
+            self.full_clean()
         super().save(*args, **kwargs)

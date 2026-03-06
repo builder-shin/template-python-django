@@ -8,6 +8,7 @@ from .models import Comment
 
 
 class CommentSerializer(HookableSerializerMixin, serializers.ModelSerializer):
+    # queryset은 전체 Post이나, validate_post에서 published 상태만 허용
     post = ResourceRelatedField(queryset=Post.objects.all())
     parent = ResourceRelatedField(queryset=Comment.objects.all(), required=False, allow_null=True)
     user = ResourceRelatedField(read_only=True)

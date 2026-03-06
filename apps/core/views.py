@@ -134,9 +134,9 @@ class ApiViewSet(ModelViewSet):
         if cached is not None:
             return cached
 
-        inferred = self._infer_included_serializers()
+        inferred = self._infer_included_serializers(serializer_class)
         if inferred:
-            klass = type(serializer_class.__name__, (serializer_class,), {"included_serializers": inferred})
+            klass = type(f"{serializer_class.__name__}WithIncludes", (serializer_class,), {"included_serializers": inferred})
         else:
             klass = serializer_class
 
@@ -144,16 +144,17 @@ class ApiViewSet(ModelViewSet):
         setattr(self.__class__, cache_key, klass)
         return klass
 
-    def _infer_included_serializers(self):
+    def _infer_included_serializers(self, serializer_cls=None):
         """allowed_includes + 모델 introspection으로 included_serializers 추론."""
         includes = self.allowed_includes
         if not includes:
             return {}
 
-        # 이미 resolve된 serializer class를 우선 재사용
-        serializer_cls = self.__class__.__dict__.get("serializer_class") or getattr(
-            self.__class__, "_coc_serializer_class", None
-        )
+        if serializer_cls is None:
+            # fallback: 이미 resolve된 serializer class를 우선 재사용
+            serializer_cls = self.__class__.__dict__.get("serializer_class") or getattr(
+                self.__class__, "_coc_serializer_class", None
+            )
 
         if serializer_cls is None:
             app_label = self._get_app_label()
@@ -200,7 +201,12 @@ class ApiViewSet(ModelViewSet):
 
     @property
     def filterset_class(self):
-        """명시적 filterset_class가 없으면 컨벤션 기반 추론."""
+        """컨벤션 기반 FilterSet 자동 추론.
+
+        CoC 규칙: apps.<app_name>.filters.<SingularPascal>Filter
+        명시적 override: 클래스 body에서 _filterset_class = MyFilter 선언.
+        DRF 내부에서 None 할당을 시도하므로 setter에서 None은 무시됨.
+        """
         if "_filterset_class" in self.__class__.__dict__:
             return self.__class__.__dict__["_filterset_class"]
 
@@ -243,15 +249,13 @@ class ApiViewSet(ModelViewSet):
     prefetch_related_extra: list[str] = []
 
     @staticmethod
-    def _classify_include(model, name, select, prefetch):
-        """Classify an include name into select_related or prefetch_related lists."""
+    def _add_prefetch(model, name, prefetch):
+        """Add a reverse FK / M2M relation to the prefetch list with nested select_related."""
         try:
             field = model._meta.get_field(name)
         except FieldDoesNotExist:
             return
-        if field.many_to_one or field.one_to_one:
-            select.append(name)
-        elif field.one_to_many or field.many_to_many:
+        if field.one_to_many or field.many_to_many:
             related_model = field.related_model
             related_fks = [
                 f.name for f in related_model._meta.get_fields()
@@ -264,20 +268,34 @@ class ApiViewSet(ModelViewSet):
             else:
                 prefetch.append(name)
 
-    def get_queryset(self):
-        """Build optimized queryset via CoC: auto select_related/prefetch_related from allowed_includes."""
-        if hasattr(self, "_qs_cached"):
-            return self._qs_cached
+    def _get_requested_includes(self):
+        """요청의 ?include 파라미터에서 실제 요청된 include 목록 추출."""
+        include_param = self.request.query_params.get("include", "")
+        return {inc.strip() for inc in include_param.split(",") if inc.strip()}
 
+    def get_queryset(self):
+        """Build optimized queryset via CoC: auto select_related/prefetch_related from allowed_includes.
+
+        FK relations (many_to_one, one_to_one) are always select_related (cheap JOIN).
+        Reverse FK/M2M (one_to_many, many_to_many) are only prefetched when actually
+        requested via ?include parameter to avoid unnecessary queries.
+        """
         model = self.get_serializer_class().Meta.model
         qs = model.objects.all()
 
-        # Auto-infer from allowed_includes
         select = list(self.select_related_extra)
         prefetch = list(self.prefetch_related_extra)
+        requested = self._get_requested_includes()
 
         for name in self.allowed_includes:
-            self._classify_include(model, name, select, prefetch)
+            try:
+                field = model._meta.get_field(name)
+            except FieldDoesNotExist:
+                continue
+            if field.many_to_one or field.one_to_one:
+                select.append(name)
+            elif name in requested:
+                self._add_prefetch(model, name, prefetch)
 
         if select:
             qs = qs.select_related(*select)
@@ -289,7 +307,6 @@ class ApiViewSet(ModelViewSet):
             safe_ordering = [f for f in self.ordering if f.lstrip("-") in valid_fields]
             if safe_ordering:
                 qs = qs.order_by(*safe_ordering)
-        self._qs_cached = qs
         return qs
 
     def get_index_scope(self):
@@ -441,9 +458,15 @@ class ApiViewSet(ModelViewSet):
         return Response(output_serializer.data, status=http_status)
 
     # ==================== Lifecycle Hooks ====================
-    # Note: create/update hooks are called by HookableSerializerMixin,
-    # not directly by ApiViewSet CRUD methods.
-    # destroy/show/new/upsert hooks are called directly by ApiViewSet.
+    # Hook 호출 순서:
+    #   create: create_after_init(할당 시점) -> save -> create_after_save
+    #     (create_after_init이 할당+초기화 역할을 겸하므로 assign hook 불필요)
+    #   update: update_after_init -> 속성 할당 -> update_after_assign -> save -> update_after_save
+    #   destroy: destroy_after_init -> delete -> destroy_after_save
+    #   upsert: upsert_after_init -> upsert_after_assign -> save -> upsert_after_save
+    #
+    # create/update hooks는 HookableSerializerMixin이 호출.
+    # destroy/show/new/upsert hooks는 ApiViewSet이 직접 호출.
 
     def create_after_init(self, instance: models.Model) -> None:
         pass

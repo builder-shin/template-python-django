@@ -168,7 +168,7 @@ def _gen_views_py(
     # get_index_scope
     if user_scoped:
         lines.append("    def get_index_scope(self):")
-        lines.append("        # super()는 mixin 체인(AutoPrefetch + PreloadIncludes)이 적용된 queryset 반환")
+        lines.append("        # super()는 CoC 자동 추론(select_related/prefetch_related)이 적용된 queryset 반환")
         lines.append("        user = self.request.user")
         lines.append('        if user and hasattr(user, "id") and user.id:')
         lines.append("            return super().get_index_scope().filter(user=user)")
@@ -231,6 +231,8 @@ def _gen_filters_py(
     lines = []
     lines.append("import django_filters")
     lines.append("")
+    lines.append("from apps.core.filters import TIMESTAMP_LOOKUPS")
+    lines.append("")
     lines.append(f"from .models import {singular_pascal}")
     lines.append("")
     lines.append("")
@@ -245,8 +247,8 @@ def _gen_filters_py(
         "TextField": '["exact", "icontains"]',
         "IntegerField": '["exact", "in", "gt", "gte", "lt", "lte"]',
         "BooleanField": '["exact"]',
-        "DateTimeField": '["exact", "gt", "gte", "lt", "lte"]',
-        "DateField": '["exact", "gt", "gte", "lt", "lte"]',
+        "DateTimeField": "TIMESTAMP_LOOKUPS",
+        "DateField": "TIMESTAMP_LOOKUPS",
         "DecimalField": '["exact", "gt", "gte", "lt", "lte"]',
         "FloatField": '["exact", "gt", "gte", "lt", "lte"]',
         "IntegerChoices": '["exact", "in"]',
@@ -257,8 +259,8 @@ def _gen_filters_py(
         lines.append(f'            "{fname}": {lookups},')
 
     # Add timestamp fields
-    lines.append('            "created_at": ["exact", "gt", "gte", "lt", "lte"],')
-    lines.append('            "updated_at": ["exact", "gt", "gte", "lt", "lte"],')
+    lines.append('            "created_at": TIMESTAMP_LOOKUPS,')
+    lines.append('            "updated_at": TIMESTAMP_LOOKUPS,')
 
     if user_scoped:
         lines.append('            "user": ["exact", "in"],')
