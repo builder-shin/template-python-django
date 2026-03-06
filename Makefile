@@ -12,7 +12,7 @@ dev: ## 개발 서버 실행 (포트 4000, Celery eager mode)
 	uv run python manage.py runserver 0.0.0.0:4000
 
 server: ## Docker Compose 전체 스택 실행
-	docker-compose up
+	docker compose up
 
 shell: ## Django 쉘 (모델 자동 import)
 	uv run python manage.py shell_plus --ipython
@@ -40,7 +40,10 @@ seed: ## 개발용 샘플 데이터 생성
 	uv run python manage.py seed
 
 generate: ## 새 리소스 생성 (예: make generate name=products fields="title:CharField")
-	uv run python manage.py generate_resource $(name) --fields $(fields)
+ifndef name
+	$(error name 인자가 필요합니다. 예: make generate name=products fields="title:CharField")
+endif
+	uv run python manage.py generate_resource $(name) $(if $(fields),--fields $(fields),)
 
 clean: ## 캐시, pyc, __pycache__ 정리
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
@@ -60,7 +63,7 @@ pre-commit: ## 전체 파일에 pre-commit 실행
 	uv run pre-commit run --all-files
 
 docker-up: ## Docker Compose 백그라운드 실행
-	docker-compose up -d
+	docker compose up -d
 
 docker-down: ## Docker Compose 중지
-	docker-compose down
+	docker compose down
