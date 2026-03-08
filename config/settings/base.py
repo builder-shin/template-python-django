@@ -27,7 +27,6 @@ INSTALLED_APPS = [
     "django_structlog",
     # Local apps
     "apps.core.apps.CoreConfig",
-    "apps.email_service.apps.EmailServiceConfig",
     "apps.users.apps.UsersConfig",
     "apps.posts.apps.PostsConfig",
     "apps.comments.apps.CommentsConfig",

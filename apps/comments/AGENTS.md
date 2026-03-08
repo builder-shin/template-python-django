@@ -1,29 +1,48 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-03-06 -->
+<!-- Generated: 2026-03-08 | Updated: 2026-03-08 -->
 
 # comments
 
 ## Purpose
-댓글(Comment) 도메인. Post에 대한 댓글 및 대댓글(self-referential parent) 구조를 제공한다.
+댓글 관리 앱. Comment 모델, post FK, user FK, self-referential parent FK (대댓글), nested reply 구조.
 
-## Key Files
+## Files
 
-| File | Description |
-|------|-------------|
-| `models.py` | **Comment** 모델 — post(FK→Post), content(1~2000자), user(FK→User), parent(self FK, 대댓글). `clean()`에서 대댓글이 같은 글인지 검증 |
-| `views.py` | **CommentsViewSet** — ApiViewSet. `allowed_includes=["post"]`, `select_related_extra=["user"]`. `create_after_init`에서 user 자동 할당 |
-| `serializers.py` | **CommentSerializer** — HookableSerializerMixin. post(ResourceRelatedField, writable), parent(optional), user(read_only). `validate_post`: 발행된 게시글만 댓글 가능 |
-| `filters.py` | **CommentFilter** — FilterSet |
-| `urls.py` | `make_urlpatterns()` — basename="comment" |
-| `apps.py` | CommentsConfig |
+| File | Purpose |
+|------|---------|
+| `models.py` | Comment 모델 — post FK, content (validators: min 1, max 2000), user FK, parent self-FK (replies). Indexes: (post, created_at). Validation: parent must belong to same post. |
+| `views.py` | CommentsViewSet (CoC pattern) — no explicit serializer_class/filterset_class. Permissions: AllowAny for list/retrieve, IsAuthenticated for create, IsOwnerOrReadOnly for update/delete. select_related_extra: ["user"]. allowed_includes: ["post"]. create_after_init sets user. |
+| `serializers.py` | Serializer (HookableSerializerMixin). Auto-generated from models. |
+| `filters.py` | FilterSet (django_filters). Auto-generated from models. |
+| `urls.py` | URL routing via make_urlpatterns() — auto-generated. |
+| `migrations/` | Django database migrations (see `migrations/AGENTS.md`). |
 
 ## For AI Agents
 
 ### Working In This Directory
-- CoC 자동 추론: serializer_class, filterset_class 명시 불필요
-- 대댓글: parent FK (self-referential), 같은 post의 댓글만 parent 가능 (`clean()` 검증)
-- `allowed_includes = ["post"]` → PostSerializer 자동 추론
-- related_name: Post.comments, Comment.replies
-- 권한: list/retrieve=AllowAny, create=IsAuthenticated, update/delete=IsAuthenticated+IsOwnerOrReadOnly
+- ViewSet inherits from `apps.core.views.ApiViewSet`
+- Serializer inherits from `HookableSerializerMixin` as first parent
+- CoC pattern: `serializer_class`, `filterset_class`, `queryset` are auto-inferred from app path and model name
+- select_related_extra = ["user"] optimizes queries to fetch user in one DB call
+- Comment.parent is optional (null/blank) for top-level comments
+- Nested replies: child comments have parent pointing to top-level or another reply
+- Validation enforces parent.post_id == comment.post_id (no cross-post replies)
+
+### Model Lifecycle
+- **Create**: user sets instance.user in create_after_init
+- **Validation**: parent must belong to same post as comment
+- **Deletion**: CASCADE from post (if post deleted, all comments deleted)
+- **Deletion**: CASCADE from parent (if parent reply deleted, all child replies deleted)
+
+### Permissions
+- **list/retrieve**: AllowAny (public)
+- **create**: IsAuthenticated
+- **update/delete**: IsAuthenticated + IsOwnerOrReadOnly
+- Comments inherit permission inheritance from Post (both AllowAny for read)
+
+### Includes/Relationships
+- allowed_includes: ["post"]
+- Use `?include=post` to nest full post object
+- Parent-child relationships exposed via parent FK (replies access via parent serializer)
 
 <!-- MANUAL: -->

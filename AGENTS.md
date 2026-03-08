@@ -1,9 +1,9 @@
-<!-- Generated: 2026-02-28 | Updated: 2026-03-06 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-08 -->
 
 # template-python-django
 
 ## Purpose
-Django REST Framework 기반 JSON:API 템플릿 프로젝트. Convention over Configuration(CoC) 패턴으로 리소스 CRUD를 자동화하며, JWT 인증, Celery 비동기 처리, SendGrid 이메일, S3 스토리지를 포함하는 프로덕션 레디 API 백엔드 템플릿.
+Django REST Framework 기반 JSON:API 템플릿 프로젝트. Convention over Configuration(CoC) 패턴으로 리소스 CRUD를 자동화하며, JWT 인증, Celery 비동기 처리, S3 스토리지를 포함하는 프로덕션 레디 API 백엔드 템플릿.
 
 ## Key Files
 
@@ -26,6 +26,7 @@ Django REST Framework 기반 JSON:API 템플릿 프로젝트. Convention over Co
 | `config/` | Django 프로젝트 설정 및 라우팅 (see `config/AGENTS.md`) |
 | `tests/` | pytest 기반 테스트 스위트 (see `tests/AGENTS.md`) |
 | `scripts/` | 셸 스크립트 (setup.sh) (see `scripts/AGENTS.md`) |
+| `docs/` | 프로젝트 문서 및 가이드 |
 
 ## For AI Agents
 
@@ -62,10 +63,10 @@ Request → Allow2BanMiddleware → JWTUserMiddleware (structlog용 경량 user)
 ## Dependencies
 
 ### External
-- Django 5.1, DRF 3.16, djangorestframework-jsonapi 7.1
-- psycopg 3.3 (PostgreSQL), redis 5.3
-- celery 5.6, django-celery-beat
-- PyJWT 2.x (JWT 인증), sendgrid 6.x, boto3 (S3)
+- Django 5.1, DRF 3.15+, djangorestframework-jsonapi 7.x
+- psycopg >=3.1 (PostgreSQL), redis >=5.0
+- celery >=5.4, django-celery-beat
+- PyJWT 2.x (JWT 인증), boto3 (S3)
 - drf-spectacular (OpenAPI), django-structlog (구조화 로깅)
 - sentry-sdk (에러 트래킹, production/staging만)
 - gunicorn 22 (프로덕션 WSGI)

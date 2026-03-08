@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-03-02 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-08 -->
 
 # management
 

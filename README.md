@@ -146,7 +146,7 @@ docker-compose up
 │   │   ├── middleware/        # 미들웨어 (인증, 로깅, Allow2Ban)
 │   │   ├── mixins/            # HookableSerializer, OwnedResource 등 공통 믹스인
 │   │   ├── management/        # 커스텀 관리 명령어 (seed, generate_resource)
-│   │   ├── authentication.py  # 인증 설정 (Django 내장 Session + Token)
+│   │   ├── authentication.py  # JWT Bearer token 인증 백엔드
 │   │   ├── exceptions.py      # JSON:API 에러 핸들러
 │   │   ├── filters.py         # AllowedIncludesFilter
 │   │   ├── pagination.py      # JSON:API 페이지네이션
@@ -154,8 +154,7 @@ docker-compose up
 │   │   ├── serializers.py     # 베이스 시리얼라이저
 │   │   ├── throttles.py       # 요청 제한
 │   │   └── views.py           # API 베이스 뷰셋
-│   ├── email_service/         # SendGrid 이메일 서비스
-│   ├── members/               # 회원 리소스
+│   ├── users/                 # 사용자 리소스
 │   ├── posts/                 # 게시글 리소스
 │   └── comments/              # 댓글 리소스
 ├── config/
@@ -201,9 +200,12 @@ docker-compose up
 
 ### 인증
 
-Django 내장 인증 시스템을 사용합니다 (SessionAuthentication + TokenAuthentication).
+JWT Bearer token 기반 인증을 사용합니다 (커스텀 구현, PyJWT + Redis). 모든 요청의 `Authorization` 헤더에 Bearer token을 포함해야 합니다.
 
 ```python
+# 요청 예시
+headers = {"Authorization": "Bearer <jwt_token>"}
+
 # views.py에서 권한 클래스 설정
 permission_classes = [IsAuthenticated]     # 인증 필수
 ```
@@ -266,7 +268,7 @@ pytest tests/posts/test_api.py::TestPostsAPI::test_list_posts
 `tests/factories.py`에 factory-boy 팩토리가 정의되어 있습니다:
 
 ```python
-from tests.factories import PostFactory, MemberFactory, CommentFactory
+from tests.factories import PostFactory, UserFactory, CommentFactory
 
 post = PostFactory()  # 기본 Post 생성
 post = PostFactory(title="커스텀 제목", status=1)  # 커스텀 속성

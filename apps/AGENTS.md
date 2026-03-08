@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-03-06 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-08 -->
 
 # apps
 
@@ -14,7 +14,6 @@ Django 애플리케이션 모듈 모음. `core` 앱이 공통 인프라(ApiViewS
 | `users/` | 사용자 모델 및 API — AbstractUser 확장, /me 엔드포인트 (see `users/AGENTS.md`) |
 | `posts/` | 게시글 관리 — Post 모델, 발행/아카이브 워크플로우, upsert (see `posts/AGENTS.md`) |
 | `comments/` | 댓글 관리 — Comment 모델, 대댓글(self-referential), post 관계 (see `comments/AGENTS.md`) |
-| `email_service/` | 이메일 발송 — SendGrid 템플릿 이메일 서비스 (see `email_service/AGENTS.md`) |
 
 ## For AI Agents
 

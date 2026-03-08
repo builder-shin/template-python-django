@@ -1,28 +1,55 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-03-06 | Updated: 2026-03-06 -->
+<!-- Generated: 2026-03-08 | Updated: 2026-03-08 -->
 
 # users
 
 ## Purpose
-사용자(User) 도메인. Django AbstractUser를 확장하여 nickname, bio, avatar_url, status(ACTIVE/SUSPENDED/WITHDRAWN)를 제공. `/me` 엔드포인트로 현재 사용자 조회.
+사용자 관리 앱. User 모델 (AbstractUser 확장), 상태 관리 (ACTIVE/SUSPENDED/WITHDRAWN), /me 엔드포인트.
 
-## Key Files
+## Files
 
-| File | Description |
-|------|-------------|
-| `models.py` | **User** 모델 — AbstractUser 확장. email(unique), nickname(2~50자), bio, avatar_url, Status(ACTIVE/SUSPENDED/WITHDRAWN). `save()`에서 nickname strip |
-| `views.py` | **UsersViewSet** — ApiViewSet. ordering=["-date_joined"]. `me` 커스텀 액션(GET /api/v1/users/me). IsOwnerUser 권한 (자기 프로필만 수정) |
-| `serializers.py` | **UserSerializer** — HookableSerializerMixin |
-| `filters.py` | **UserFilter** — FilterSet |
-| `urls.py` | `make_urlpatterns()` — basename="user" |
-| `apps.py` | UsersConfig |
+| File | Purpose |
+|------|---------|
+| `models.py` | User model (extends AbstractUser) — email unique, nickname (validators: min 2, max 50), bio (TextField), avatar_url (URLField), status (ACTIVE/SUSPENDED/WITHDRAWN). Indexes: status. full_clean on save, strips nickname. |
+| `views.py` | UsersViewSet (CoC pattern) — no explicit serializer_class/filterset_class. Permissions: AllowAny for list/retrieve, IsAuthenticated for me, IsOwnerUser for update/delete. ordering: -date_joined. /me action returns current authenticated user. |
+| `serializers.py` | Serializer (HookableSerializerMixin). Auto-generated from models. |
+| `filters.py` | FilterSet (django_filters). Auto-generated from models. |
+| `urls.py` | URL routing via make_urlpatterns() — auto-generated. |
+| `migrations/` | Django database migrations (see `migrations/AGENTS.md`). |
 
 ## For AI Agents
 
 ### Working In This Directory
-- `AUTH_USER_MODEL = "users.User"` — 프로젝트 전체에서 이 모델 사용
-- CoC 자동 추론: serializer_class, filterset_class 명시 불필요
-- 권한: list/retrieve=AllowAny, me=IsAuthenticated, update/delete=IsAuthenticated+IsOwnerUser
-- `/me` 엔드포인트: `@action(detail=False)` — request.user 반환
+- ViewSet inherits from `apps.core.views.ApiViewSet`
+- Serializer inherits from `HookableSerializerMixin` as first parent
+- CoC pattern: `serializer_class`, `filterset_class`, `queryset` are auto-inferred from app path and model name
+- User extends Django's AbstractUser (first_name, last_name, username, password inherited)
+- Custom fields: email (unique), nickname, bio, avatar_url, status
+- User.save() calls full_clean() unless update_fields specified, ensuring validation always runs
+- User.nickname is stripped of whitespace on save
+
+### Model Lifecycle
+- **Create**: inherit AbstractUser behavior; full_clean validates all fields
+- **Status**: ACTIVE (0), SUSPENDED (1), WITHDRAWN (2) for account lifecycle
+- **Validation**: email unique (enforced by DB unique constraint); nickname required if provided (min 2 chars)
+- **Display**: __str__ returns nickname if set, else username
+
+### Permissions
+- **list/retrieve**: AllowAny (public user profiles)
+- **me**: IsAuthenticated (get current user)
+- **update/delete**: IsAuthenticated + IsOwnerUser (users can only modify their own profile)
+- IsOwnerUser permission: allows GET/HEAD/OPTIONS for all; write access only for own user ID
+
+### Actions
+- **list**: `GET /users/` — list all users (paginated)
+- **retrieve**: `GET /users/{id}/` — get single user
+- **me**: `GET /users/me/` — get current authenticated user (requires IsAuthenticated)
+- **create**: `POST /users/` — register new user (handled by built-in create)
+- **update**: `PATCH /users/{id}/` — update own profile only
+- **partial_update**: `PATCH /users/{id}/` — partial update
+- **destroy**: `DELETE /users/{id}/` — delete own account only
+
+### Includes/Relationships
+- No includes configured (User is leaf; other models FK to User)
 
 <!-- MANUAL: -->
