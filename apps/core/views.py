@@ -268,24 +268,19 @@ class ApiViewSet(ModelViewSet):
             else:
                 prefetch.append(name)
 
-    def _get_requested_includes(self):
-        """요청의 ?include 파라미터에서 실제 요청된 include 목록 추출."""
-        include_param = self.request.query_params.get("include", "")
-        return {inc.strip() for inc in include_param.split(",") if inc.strip()}
-
     def get_queryset(self):
         """Build optimized queryset via CoC: auto select_related/prefetch_related from allowed_includes.
 
         FK relations (many_to_one, one_to_one) are always select_related (cheap JOIN).
-        Reverse FK/M2M (one_to_many, many_to_many) are only prefetched when actually
-        requested via ?include parameter to avoid unnecessary queries.
+        Reverse FK/M2M (one_to_many, many_to_many) are always prefetched to prevent N+1
+        queries from ResourceRelatedField serialization (which accesses relationship
+        data for type/id pairs regardless of ?include parameter).
         """
         model = self.get_serializer_class().Meta.model
         qs = model.objects.all()
 
         select = list(self.select_related_extra)
         prefetch = list(self.prefetch_related_extra)
-        requested = self._get_requested_includes()
 
         for name in self.allowed_includes:
             try:
@@ -294,7 +289,7 @@ class ApiViewSet(ModelViewSet):
                 continue
             if field.many_to_one or field.one_to_one:
                 select.append(name)
-            elif name in requested:
+            else:
                 self._add_prefetch(model, name, prefetch)
 
         if select:
