@@ -153,17 +153,25 @@ class TestExplicitSerializerPriority:
 
 @pytest.mark.django_db
 class TestFiltersetClassInference:
-    """filterset_class 자동 추론 테스트"""
+    """filterset_class 동적 생성 테스트 (allowed_filters dict → FilterSet)"""
 
-    def test_posts_viewset_infers_post_filter(self, mock_authenticated):
-        from apps.posts.filters import PostFilter
+    def test_posts_viewset_generates_filterset(self):
+        import django_filters
+
         from apps.posts.views import PostsViewSet
 
         if hasattr(PostsViewSet, "_coc_filterset_class"):
             delattr(PostsViewSet, "_coc_filterset_class")
 
         viewset = PostsViewSet()
-        assert viewset.filterset_class is PostFilter
+        result = viewset.filterset_class
+        assert result is not None
+        assert issubclass(result, django_filters.FilterSet)
+        assert "title" in result.Meta.fields
+        assert "status" in result.Meta.fields
+        assert "user" in result.Meta.fields
+        assert "created_at" in result.Meta.fields
+        assert "updated_at" in result.Meta.fields
 
     def test_core_viewset_returns_none(self):
         from apps.core.views import ApiViewSet
@@ -175,7 +183,7 @@ class TestFiltersetClassInference:
         assert viewset.filterset_class is None
 
     def test_missing_filter_returns_none(self):
-        """filters 모듈에 해당 클래스 없으면 None 반환."""
+        """allowed_filters가 비어있으면 None 반환."""
         from apps.core.views import ApiViewSet
 
         class NoFilterViewSet(ApiViewSet):
@@ -188,6 +196,82 @@ class TestFiltersetClassInference:
 
         viewset = NoFilterViewSet()
         assert viewset.filterset_class is None
+
+    def test_schema_generation_without_request(self):
+        """filterset_class는 request 없이도 동작해야 함 (schema generation 경로)."""
+        import django_filters
+
+        from apps.core.views import ApiViewSet
+
+        class SchemaTestViewSet(ApiViewSet):
+            @property
+            def allowed_filters(self):
+                return {"title": ["exact", "icontains"]}
+
+        SchemaTestViewSet.__module__ = "apps.posts.views"
+
+        if "_coc_filterset_class" in SchemaTestViewSet.__dict__:
+            delattr(SchemaTestViewSet, "_coc_filterset_class")
+
+        viewset = SchemaTestViewSet()
+        # No request, no kwargs — simulates schema generation context
+        result = viewset.filterset_class
+        assert result is not None
+        assert issubclass(result, django_filters.FilterSet)
+        assert "title" in result.Meta.fields
+
+    def test_custom_filter_instance_in_allowed_filters(self):
+        """dict value가 Filter 인스턴스이면 클래스 속성으로 부착."""
+        import django_filters
+
+        from apps.core.views import ApiViewSet
+
+        custom_filter = django_filters.CharFilter(lookup_expr="icontains")
+
+        class CustomFilterViewSet(ApiViewSet):
+            @property
+            def allowed_filters(self):
+                return {
+                    "title": ["exact"],
+                    "custom_search": custom_filter,
+                }
+
+        CustomFilterViewSet.__module__ = "apps.posts.views"
+
+        if "_coc_filterset_class" in CustomFilterViewSet.__dict__:
+            delattr(CustomFilterViewSet, "_coc_filterset_class")
+
+        viewset = CustomFilterViewSet()
+        result = viewset.filterset_class
+        assert result is not None
+        assert "title" in result.Meta.fields
+        # FilterSet metaclass moves Filter instances to declared_filters
+        assert "custom_search" in result.declared_filters
+
+    def test_explicit_filterset_class_override(self):
+        """_filterset_class 명시적 선언이 allowed_filters보다 우선."""
+        import django_filters
+
+        from apps.core.views import ApiViewSet
+
+        class MyFilter(django_filters.FilterSet):
+            class Meta:
+                from apps.posts.models import Post
+
+                model = Post
+                fields = {"title": ["exact"]}
+
+        class OverrideViewSet(ApiViewSet):
+            _filterset_class = MyFilter
+
+            @property
+            def allowed_filters(self):
+                return {"status": ["exact"]}
+
+        OverrideViewSet.__module__ = "apps.posts.views"
+
+        viewset = OverrideViewSet()
+        assert viewset.filterset_class is MyFilter
 
 
 @pytest.mark.django_db

@@ -11,9 +11,8 @@
 | File | Purpose |
 |------|---------|
 | `models.py` | Comment 모델 — post FK, content (validators: min 1, max 2000), user FK, parent self-FK (replies). Indexes: (post, created_at). Validation: parent must belong to same post. |
-| `views.py` | CommentsViewSet (CoC pattern) — no explicit serializer_class/filterset_class. Permissions: AllowAny for list/retrieve, IsAuthenticated for create, IsOwnerOrReadOnly for update/delete. select_related_extra: ["user"]. allowed_includes: ["post"]. create_after_init sets user. |
+| `views.py` | CommentsViewSet (CoC pattern) — serializer_class CoC auto-inferred; filterset_class dynamically generated from allowed_filters dict. Permissions: AllowAny for list/retrieve, IsAuthenticated for create, IsOwnerOrReadOnly for update/delete. select_related_extra: ["user"]. allowed_includes: ["post"]. create_after_init sets user. |
 | `serializers.py` | Serializer (HookableSerializerMixin). Auto-generated from models. |
-| `filters.py` | FilterSet (django_filters). Auto-generated from models. |
 | `urls.py` | URL routing via make_urlpatterns() — auto-generated. |
 | `migrations/` | Django database migrations (see `migrations/AGENTS.md`). |
 
@@ -22,7 +21,8 @@
 ### Working In This Directory
 - ViewSet inherits from `apps.core.views.ApiViewSet`
 - Serializer inherits from `HookableSerializerMixin` as first parent
-- CoC pattern: `serializer_class`, `filterset_class`, `queryset` are auto-inferred from app path and model name
+- CoC pattern: `serializer_class`, `queryset` are auto-inferred from app path and model name
+- `filterset_class` is dynamically generated from the `allowed_filters` dict defined on the ViewSet
 - select_related_extra = ["user"] optimizes queries to fetch user in one DB call
 - Comment.parent is optional (null/blank) for top-level comments
 - Nested replies: child comments have parent pointing to top-level or another reply

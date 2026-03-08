@@ -1,5 +1,6 @@
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
+from apps.core.filters import TIMESTAMP_LOOKUPS
 from apps.core.permissions import IsOwnerOrReadOnly
 from apps.core.views import ApiViewSet
 
@@ -18,6 +19,16 @@ class PostsViewSet(ApiViewSet):
     @property
     def allowed_includes(self):
         return ["user", "comments"]
+
+    @property
+    def allowed_filters(self):
+        return {
+            "title": ["exact", "icontains", "istartswith", "iendswith"],
+            "status": ["exact", "in"],
+            "user": ["exact", "in"],
+            "created_at": TIMESTAMP_LOOKUPS,
+            "updated_at": TIMESTAMP_LOOKUPS,
+        }
 
     def get_index_scope(self):
         """인증된 사용자는 자신의 글만 조회 (내 글 목록).

@@ -11,7 +11,7 @@
 | File | Description |
 |------|-------------|
 | `__init__.py` | 패키지 초기화 |
-| `generate_resource.py` | **generate_resource** — 리소스 스캐폴딩 생성기. 복수형 snake_case 이름으로 모델, 뷰, 시리얼라이저, 필터, URL, 테스트 파일 자동 생성. `--user-scoped`, `--fields`, `--model-name`, `--no-tests` 옵션 지원. `config/settings/base.py`와 `config/urls.py`에 자동 등록 |
+| `generate_resource.py` | **generate_resource** — 리소스 스캐폴딩 생성기. 복수형 snake_case 이름으로 모델, 뷰(allowed_filters dict 포함), 시리얼라이저, URL, 테스트 파일 자동 생성. `--user-scoped`, `--fields`, `--model-name`, `--no-tests` 옵션 지원. `config/settings/base.py`와 `config/urls.py`에 자동 등록 |
 | `seed.py` | **seed** — 데이터베이스 시딩 명령어 |
 
 ## For AI Agents
@@ -26,8 +26,8 @@
 ### generate_resource 생성 파일
 ```
 apps/{name}/
-├── __init__.py, apps.py, models.py, views.py
-├── serializers.py, filters.py, urls.py
+├── __init__.py, apps.py, models.py, views.py (allowed_filters dict 포함)
+├── serializers.py, urls.py
 └── migrations/__init__.py
 
 tests/{name}/

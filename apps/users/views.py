@@ -2,6 +2,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.response import Response
 
+from apps.core.filters import TIMESTAMP_LOOKUPS
 from apps.core.views import ApiViewSet
 
 
@@ -16,6 +17,14 @@ class IsOwnerUser(BasePermission):
 
 class UsersViewSet(ApiViewSet):
     ordering = ["-date_joined"]
+
+    @property
+    def allowed_filters(self):
+        return {
+            "nickname": ["exact", "icontains", "istartswith", "iendswith"],
+            "status": ["exact", "in"],
+            "date_joined": TIMESTAMP_LOOKUPS,
+        }
 
     def get_permissions(self):
         if self.action in ("list", "retrieve"):

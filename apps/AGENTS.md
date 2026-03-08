@@ -21,7 +21,7 @@ Django 애플리케이션 모듈 모음. `core` 앱이 공통 인프라(ApiViewS
 - 새 앱 추가 시 `make generate name=앱이름 fields="필드:타입"` 사용
 - 모든 앱의 ViewSet은 `apps.core.views.ApiViewSet`을 상속
 - 모든 Serializer는 `HookableSerializerMixin`을 첫 번째 부모로 상속
-- CoC 패턴: serializer_class, filterset_class 명시 불필요 (자동 추론)
+- CoC 패턴: serializer_class, filterset_class 모두 자동 추론; filterset_class는 각 ViewSet의 allowed_filters dict에서 동적 생성
 - 앱 등록: `config/settings/base.py` INSTALLED_APPS + `config/urls.py` urlpatterns
 - **마이그레이션**: 모델 변경 후 `make makemigrations`로 생성, `make migrate`로 적용. 마이그레이션 파일을 직접 작성하거나 수정하지 마라.
 
@@ -32,9 +32,8 @@ apps/{name}/
 ├── __init__.py
 ├── apps.py          # AppConfig
 ├── models.py        # 모델 (BaseModel 상속)
-├── views.py         # ViewSet (ApiViewSet 상속)
+├── views.py         # ViewSet (ApiViewSet 상속, allowed_filters로 필터 선언)
 ├── serializers.py   # Serializer (HookableSerializerMixin 상속)
-├── filters.py       # FilterSet (django_filters)
 ├── urls.py          # make_urlpatterns() 사용
 └── migrations/      # Django 마이그레이션
 ```

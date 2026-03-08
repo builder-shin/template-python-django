@@ -11,9 +11,8 @@
 | File | Purpose |
 |------|---------|
 | `models.py` | User model (extends AbstractUser) — email unique, nickname (validators: min 2, max 50), bio (TextField), avatar_url (URLField), status (ACTIVE/SUSPENDED/WITHDRAWN). Indexes: status. full_clean on save, strips nickname. |
-| `views.py` | UsersViewSet (CoC pattern) — no explicit serializer_class/filterset_class. Permissions: AllowAny for list/retrieve, IsAuthenticated for me, IsOwnerUser for update/delete. ordering: -date_joined. /me action returns current authenticated user. |
+| `views.py` | UsersViewSet (CoC pattern) — serializer_class CoC auto-inferred; filterset_class dynamically generated from allowed_filters dict. Permissions: AllowAny for list/retrieve, IsAuthenticated for me, IsOwnerUser for update/delete. ordering: -date_joined. /me action returns current authenticated user. |
 | `serializers.py` | Serializer (HookableSerializerMixin). Auto-generated from models. |
-| `filters.py` | FilterSet (django_filters). Auto-generated from models. |
 | `urls.py` | URL routing via make_urlpatterns() — auto-generated. |
 | `migrations/` | Django database migrations (see `migrations/AGENTS.md`). |
 
@@ -22,7 +21,8 @@
 ### Working In This Directory
 - ViewSet inherits from `apps.core.views.ApiViewSet`
 - Serializer inherits from `HookableSerializerMixin` as first parent
-- CoC pattern: `serializer_class`, `filterset_class`, `queryset` are auto-inferred from app path and model name
+- CoC pattern: `serializer_class`, `queryset` are auto-inferred from app path and model name
+- `filterset_class` is dynamically generated from the `allowed_filters` dict defined on the ViewSet
 - User extends Django's AbstractUser (first_name, last_name, username, password inherited)
 - Custom fields: email (unique), nickname, bio, avatar_url, status
 - User.save() calls full_clean() unless update_fields specified, ensuring validation always runs

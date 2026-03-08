@@ -1,5 +1,6 @@
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
+from apps.core.filters import TIMESTAMP_LOOKUPS
 from apps.core.permissions import IsOwnerOrReadOnly
 from apps.core.views import ApiViewSet
 
@@ -22,3 +23,14 @@ class CommentsViewSet(ApiViewSet):
     @property
     def allowed_includes(self):
         return ["post"]
+
+    @property
+    def allowed_filters(self):
+        return {
+            "content": ["exact", "icontains"],
+            "user": ["exact", "in"],
+            "post": ["exact", "in"],
+            "parent": ["exact", "isnull"],
+            "created_at": TIMESTAMP_LOOKUPS,
+            "updated_at": TIMESTAMP_LOOKUPS,
+        }

@@ -6,7 +6,7 @@ generate_resource — Django 리소스 스캐폴드 생성기
         --fields "name:CharField content:TextField price:IntegerField status:IntegerChoices" \
         --user-scoped
 
-복수형 snake_case 리소스 이름을 받아 모델, 뷰, 시리얼라이저, 필터, URL, 테스트 파일을 자동 생성합니다.
+복수형 snake_case 리소스 이름을 받아 모델, 뷰(필터 포함), 시리얼라이저, URL, 테스트 파일을 자동 생성합니다.
 """
 
 import os
@@ -140,18 +140,31 @@ def _gen_views_py(
     singular_pascal: str,
     plural_pascal: str,
     singular_snake: str,
+    fields: list[tuple[str, str]],
     user_scoped: bool,
 ) -> str:
+    # Map field types to appropriate lookups
+    FIELD_LOOKUPS = {  # noqa: N806
+        "CharField": '["exact", "icontains", "istartswith", "iendswith"]',
+        "TextField": '["exact", "icontains"]',
+        "IntegerField": '["exact", "in", "gt", "gte", "lt", "lte"]',
+        "BooleanField": '["exact"]',
+        "DateTimeField": "TIMESTAMP_LOOKUPS",
+        "DateField": "TIMESTAMP_LOOKUPS",
+        "DecimalField": '["exact", "gt", "gte", "lt", "lte"]',
+        "FloatField": '["exact", "gt", "gte", "lt", "lte"]',
+        "IntegerChoices": '["exact", "in"]',
+    }
+
     lines = []
 
     # Imports
+    lines.append("from apps.core.filters import TIMESTAMP_LOOKUPS")
     lines.append("from apps.core.views import ApiViewSet")
-    lines.append("")
-    lines.append(f"from .models import {singular_pascal}")
     lines.append("")
     lines.append("")
 
-    # ViewSet 클래스
+    # ViewSet 클래스 (filterset_class는 allowed_filters dict에서 동적 생성)
     lines.append(f"class {plural_pascal}ViewSet(ApiViewSet):")
     lines.append("")
 
@@ -165,6 +178,24 @@ def _gen_views_py(
     lines.append("    def allowed_includes(self):")
     lines.append("        # TODO: 관계 필드는 수동으로 추가하세요 (참고: apps/comments/)")
     lines.append("        return []")
+    lines.append("")
+
+    # allowed_filters
+    lines.append("    @property")
+    lines.append("    def allowed_filters(self):")
+    lines.append("        return {")
+
+    for fname, ftype in fields:
+        lookups = FIELD_LOOKUPS.get(ftype, '["exact"]')
+        lines.append(f'            "{fname}": {lookups},')
+
+    lines.append('            "created_at": TIMESTAMP_LOOKUPS,')
+    lines.append('            "updated_at": TIMESTAMP_LOOKUPS,')
+
+    if user_scoped:
+        lines.append('            "user": ["exact", "in"],')
+
+    lines.append("        }")
     lines.append("")
 
     # get_index_scope
@@ -220,53 +251,6 @@ def _gen_serializers_py(
     ro_fields = ["created_at", "updated_at"]
     ro_str = "[" + ", ".join(f'"{f}"' for f in ro_fields) + "]"
     lines.append(f"        read_only_fields = {ro_str}")
-
-    return "\n".join(lines) + "\n"
-
-
-def _gen_filters_py(
-    singular_pascal: str,
-    fields: list[tuple[str, str]],
-    user_scoped: bool,
-) -> str:
-    lines = []
-    lines.append("import django_filters")
-    lines.append("")
-    lines.append("from apps.core.filters import TIMESTAMP_LOOKUPS")
-    lines.append("")
-    lines.append(f"from .models import {singular_pascal}")
-    lines.append("")
-    lines.append("")
-    lines.append(f"class {singular_pascal}Filter(django_filters.FilterSet):")
-    lines.append("    class Meta:")
-    lines.append(f"        model = {singular_pascal}")
-    lines.append("        fields = {")
-
-    # Map field types to appropriate lookups
-    FIELD_LOOKUPS = {  # noqa: N806
-        "CharField": '["exact", "icontains", "istartswith", "iendswith"]',
-        "TextField": '["exact", "icontains"]',
-        "IntegerField": '["exact", "in", "gt", "gte", "lt", "lte"]',
-        "BooleanField": '["exact"]',
-        "DateTimeField": "TIMESTAMP_LOOKUPS",
-        "DateField": "TIMESTAMP_LOOKUPS",
-        "DecimalField": '["exact", "gt", "gte", "lt", "lte"]',
-        "FloatField": '["exact", "gt", "gte", "lt", "lte"]',
-        "IntegerChoices": '["exact", "in"]',
-    }
-
-    for fname, ftype in fields:
-        lookups = FIELD_LOOKUPS.get(ftype, '["exact"]')
-        lines.append(f'            "{fname}": {lookups},')
-
-    # Add timestamp fields
-    lines.append('            "created_at": TIMESTAMP_LOOKUPS,')
-    lines.append('            "updated_at": TIMESTAMP_LOOKUPS,')
-
-    if user_scoped:
-        lines.append('            "user": ["exact", "in"],')
-
-    lines.append("        }")
 
     return "\n".join(lines) + "\n"
 
@@ -483,7 +467,7 @@ def _auto_register_urls(base_dir: str, resource_name: str) -> bool:
 
 
 class Command(BaseCommand):
-    help = "새 API 리소스(모델, 뷰, 시리얼라이저, 필터, URL, 테스트)를 자동 생성합니다."
+    help = "새 API 리소스(모델, 뷰, 시리얼라이저, URL, 테스트)를 자동 생성합니다."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -556,7 +540,6 @@ class Command(BaseCommand):
         self.stdout.write(f"  모델: {singular_pascal}")
         self.stdout.write(f"  뷰셋: {plural_pascal}ViewSet")
         self.stdout.write(f"  시리얼라이저: {singular_pascal}Serializer")
-        self.stdout.write(f"  필터: {singular_pascal}Filter")
         self.stdout.write(f"  User-scoped: {user_scoped}")
         self.stdout.write(f"  필드: {fields if fields else '(없음)'}")
         self.stdout.write("")
@@ -631,6 +614,7 @@ class Command(BaseCommand):
                 singular_pascal,
                 plural_pascal,
                 singular_snake,
+                fields,
                 user_scoped,
             ),
         )
@@ -638,7 +622,6 @@ class Command(BaseCommand):
             os.path.join(apps_dir, "serializers.py"),
             _gen_serializers_py(singular_pascal, fields, user_scoped),
         )
-        self._write_file(os.path.join(apps_dir, "filters.py"), _gen_filters_py(singular_pascal, fields, user_scoped))
         self._write_file(os.path.join(apps_dir, "urls.py"), _gen_urls_py(resource_name, singular_snake, plural_pascal))
 
     def _generate_test_files(self, tests_dir, resource_name, singular_pascal, singular_snake, fields, user_scoped):

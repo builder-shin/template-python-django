@@ -11,9 +11,8 @@
 | File | Purpose |
 |------|---------|
 | `models.py` | Post 모델 — title, content, view_count, status (DRAFT/PUBLISHED/ARCHIVED), published_at, user FK, external_id unique. Indexes: status. Constraints: unique title per user (case-insensitive). pre_save: strips title, sets published_at on first publish. |
-| `views.py` | PostsViewSet (CoC pattern) — no explicit serializer_class/filterset_class. Permissions: AllowAny for list/retrieve, IsAuthenticated for create, IsOwnerOrReadOnly for update/delete. get_index_scope filters by current user. allowed_includes: user, comments. upsert by external_id. create_after_init sets user. |
+| `views.py` | PostsViewSet (CoC pattern) — serializer_class CoC auto-inferred; filterset_class dynamically generated from allowed_filters dict. Permissions: AllowAny for list/retrieve, IsAuthenticated for create, IsOwnerOrReadOnly for update/delete. get_index_scope filters by current user. allowed_includes: user, comments. upsert by external_id. create_after_init sets user. |
 | `serializers.py` | Serializer (HookableSerializerMixin). Auto-generated from models. |
-| `filters.py` | FilterSet (django_filters). Auto-generated from models. |
 | `urls.py` | URL routing via make_urlpatterns() — auto-generated. |
 | `migrations/` | Django database migrations (see `migrations/AGENTS.md`). |
 
@@ -22,8 +21,8 @@
 ### Working In This Directory
 - ViewSet inherits from `apps.core.views.ApiViewSet`
 - Serializer inherits from `HookableSerializerMixin` as first parent
-- CoC pattern: `serializer_class`, `filterset_class`, `queryset` are auto-inferred from app path and model name
-- No need to explicitly define these in the ViewSet
+- CoC pattern: `serializer_class`, `queryset` are auto-inferred from app path and model name
+- `filterset_class` is dynamically generated from the `allowed_filters` dict defined on the ViewSet
 - Post.pre_save() is called on save (via BaseModel)
 - Post status choices: DRAFT (0), PUBLISHED (1), ARCHIVED (2)
 - published_at is set automatically on first PUBLISHED transition

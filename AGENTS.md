@@ -49,7 +49,7 @@ Django REST Framework 기반 JSON:API 템플릿 프로젝트. Convention over Co
 - 커버리지: `make test-cov`
 
 ### Common Patterns
-- **CoC 패턴**: ViewSet → serializer_class, filterset_class, queryset 자동 추론 (앱 경로 기반)
+- **CoC 패턴**: ViewSet → serializer_class, queryset, filterset_class 자동 추론 (앱 경로 기반); filterset_class는 각 ViewSet의 allowed_filters dict에서 동적 생성
 - **BaseModel**: `created_at`, `updated_at` 타임스탬프, `save()` 시 `full_clean()` 자동 호출
 - **HookableSerializerMixin**: 모든 Serializer에 필수 — ViewSet lifecycle hooks 연결
 - **ApiViewSet**: CRUD + lifecycle hooks + upsert + CoC 자동 추론

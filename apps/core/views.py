@@ -2,6 +2,7 @@ import importlib
 import json as _json
 import logging
 
+import django_filters
 from django.core.cache import cache
 from django.core.exceptions import FieldDoesNotExist, ImproperlyConfigured, ValidationError
 from django.db import connection, models, transaction
@@ -77,6 +78,20 @@ class ApiViewSet(ModelViewSet):
         캐싱되므로, 동적(런타임 의존) 값을 반환하면 안 됩니다.
         """
         return []
+
+    @property
+    def allowed_filters(self):
+        """Declarative filter specification. Keys are field names, values are
+        either a list of lookup expressions (e.g. ``["exact", "icontains"]``)
+        or a ``django_filters.Filter`` instance for custom filters.
+
+        The base ``filterset_class`` property dynamically generates a
+        ``django_filters.FilterSet`` from this dict.
+
+        NOTE: 반환값은 정적 dict여야 합니다. 첫 호출 시 클래스 레벨에
+        캐싱되므로, 동적(런타임 의존) 값을 반환하면 안 됩니다.
+        """
+        return {}
 
     # ==================== CoC 자동 추론 ====================
 
@@ -205,9 +220,8 @@ class ApiViewSet(ModelViewSet):
 
     @property
     def filterset_class(self):
-        """컨벤션 기반 FilterSet 자동 추론.
+        """allowed_filters dict에서 FilterSet을 동적 생성.
 
-        CoC 규칙: apps.<app_name>.filters.<SingularPascal>Filter
         명시적 override: 클래스 body에서 _filterset_class = MyFilter 선언.
         DRF 내부에서 None 할당을 시도하므로 setter에서 None은 무시됨.
         """
@@ -215,26 +229,44 @@ class ApiViewSet(ModelViewSet):
             return self.__class__.__dict__["_filterset_class"]
 
         cache_key = "_coc_filterset_class"
-        if hasattr(self.__class__, cache_key):
-            return getattr(self.__class__, cache_key)
+        if cache_key in self.__class__.__dict__:
+            return self.__class__.__dict__[cache_key]
 
+        filters = self.allowed_filters
+        if not filters:
+            setattr(self.__class__, cache_key, None)
+            return None
+
+        # Resolve model via CoC import (not get_queryset — works during schema generation)
         app_label = self._get_app_label()
         if not app_label:
-            # Benign race: concurrent threads compute identical values.
             setattr(self.__class__, cache_key, None)
             return None
 
         singular = singularize(app_label)
-        class_name = f"{to_pascal(singular)}Filter"
-        module_path = f"apps.{app_label}.filters"
-
         try:
-            module = importlib.import_module(module_path)
-            klass = getattr(module, class_name)
+            models_module = importlib.import_module(f"apps.{app_label}.models")
+            model = getattr(models_module, to_pascal(singular))
         except (ImportError, AttributeError):
-            logger.debug("%s을 %s에서 찾을 수 없습니다. 필터 없이 동작합니다.", class_name, module_path)
-            klass = None
+            logger.debug("apps.%s.models.%s를 찾을 수 없습니다. 필터 없이 동작합니다.", app_label, to_pascal(singular))
+            setattr(self.__class__, cache_key, None)
+            return None
 
+        attrs = {}
+        meta_fields = {}
+        for field_name, spec in filters.items():
+            if isinstance(spec, django_filters.Filter):
+                attrs[field_name] = spec
+            else:
+                meta_fields[field_name] = spec
+
+        meta_cls = type("Meta", (), {"model": model, "fields": meta_fields})
+        attrs["Meta"] = meta_cls
+
+        cls_name = f"{to_pascal(singular)}DynamicFilterSet"
+        klass = type(cls_name, (django_filters.FilterSet,), attrs)
+
+        # Benign race: concurrent threads compute identical values.
         setattr(self.__class__, cache_key, klass)
         return klass
 

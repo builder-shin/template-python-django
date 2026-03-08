@@ -10,7 +10,7 @@ Core 인프라 테스트. CoC 자동 추론, CrudActions 라이프사이클 훅,
 
 | File | Description |
 |------|-------------|
-| `test_coc_inference.py` | **CoC 추론 테스트** — serializer_class, filterset_class, included_serializers 자동 추론, 캐싱, 에러 케이스 |
+| `test_coc_inference.py` | **CoC 추론 테스트** — serializer_class, included_serializers 자동 추론, filterset_class CoC 자동 추론(allowed_filters dict에서 동적 생성, TestFiltersetClassCoC), 캐싱, 에러 케이스 |
 | `test_crud_actions.py` | **CrudActions 테스트** — create/update/destroy 라이프사이클 훅 호출 순서, HookableSerializerMixin 동작, M2M 필드 처리 |
 | `test_auth.py` | **JWT 인증 테스트** — login, refresh (토큰 로테이션), logout, logout-all, 토큰 만료/무효화 |
 

@@ -35,7 +35,12 @@
 
 ### Working In This Directory
 - **ApiViewSet 수정 시 주의**: 모든 도메인 앱이 의존하므로 하위 호환성 유지 필수
-- **CoC 자동 추론**: `get_serializer_class()`, `filterset_class` property, `get_queryset()`이 앱 경로에서 자동으로 Serializer/Filter/queryset 최적화
+- **CoC 자동 추론**: `get_serializer_class()`, `get_queryset()`, `filterset_class` 모두 앱 경로에서 자동 추론; `filterset_class`는 각 ViewSet의 `allowed_filters` dict에서 동적 생성
+- **커스텀 필터**: 기본 `allowed_filters`로 커버되지 않는 경우(method=, 다중 필드 등) `_filterset_class`를 직접 지정:
+  ```python
+  class MyViewSet(ApiViewSet):
+      _filterset_class = MyCustomFilter
+  ```
 - **라이프사이클 훅 체인**: create/update 훅은 HookableSerializerMixin이 호출, destroy/show/new/upsert 훅은 ApiViewSet이 직접 호출
 - **예외 처리**: 모든 커스텀 에러는 `JsonApiError(title, detail, status_code)`로 발생
 
@@ -49,7 +54,7 @@ ViewSet._get_app_label() → "posts"
   → singularize("posts") → "post"
   → to_pascal("post") → "Post"
   → get_serializer_class() → apps.posts.serializers.PostSerializer
-  → filterset_class → apps.posts.filters.PostFilter
+  → filterset_class → allowed_filters dict → dynamic FilterSet generation
   → get_queryset() → auto select_related/prefetch_related from allowed_includes
   → _infer_included_serializers() → allowed_includes + model introspection
 ```
