@@ -10,8 +10,10 @@ class CommentsViewSet(ApiViewSet):
     def get_permissions(self):
         if self.action in ("list", "retrieve"):
             return [AllowAny()]
+
         if self.action == "create":
             return [IsAuthenticated()]
+
         return [IsAuthenticated(), IsOwnerOrReadOnly()]
 
     def create_after_init(self, instance) -> None:

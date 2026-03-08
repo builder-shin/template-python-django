@@ -136,7 +136,11 @@ class ApiViewSet(ModelViewSet):
 
         inferred = self._infer_included_serializers(serializer_class)
         if inferred:
-            klass = type(f"{serializer_class.__name__}WithIncludes", (serializer_class,), {"included_serializers": inferred})
+            klass = type(
+                f"{serializer_class.__name__}WithIncludes",
+                (serializer_class,),
+                {"included_serializers": inferred},
+            )
         else:
             klass = serializer_class
 
@@ -258,13 +262,12 @@ class ApiViewSet(ModelViewSet):
         if field.one_to_many or field.many_to_many:
             related_model = field.related_model
             related_fks = [
-                f.name for f in related_model._meta.get_fields()
+                f.name
+                for f in related_model._meta.get_fields()
                 if hasattr(f, "related_model") and (f.many_to_one or f.one_to_one)
             ]
             if related_fks:
-                prefetch.append(
-                    models.Prefetch(name, queryset=related_model.objects.select_related(*related_fks))
-                )
+                prefetch.append(models.Prefetch(name, queryset=related_model.objects.select_related(*related_fks)))
             else:
                 prefetch.append(name)
 

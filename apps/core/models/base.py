@@ -5,7 +5,6 @@ class BaseQuerySet(models.QuerySet):
     """도메인 QuerySet의 공통 메서드를 제공하는 베이스 QuerySet."""
 
 
-
 class BaseModel(models.Model):
     """공통 타임스탬프 필드와 save 시 full_clean 호출을 제공하는 추상 기본 모델."""
 

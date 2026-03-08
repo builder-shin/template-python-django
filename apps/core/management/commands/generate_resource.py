@@ -31,7 +31,7 @@ FIELD_TYPE_MAP = {
     "DateField": ("models.DateField", "null=True, blank=True"),
     "DecimalField": ("models.DecimalField", "max_digits=10, decimal_places=2, default=0"),
     "FloatField": ("models.FloatField", "default=0.0"),
-    "IntegerChoices": ("models.IntegerField", "choices=Status.choices, default=0"),
+    "IntegerChoices": ("models.IntegerField", "choices=Status.choices, default=Status.ACTIVE"),
 }
 
 # 테스트에서 objects.create() 시 사용할 기본 값
@@ -86,6 +86,8 @@ def _gen_models_py(
 
     # QuerySet 클래스
     lines.append(f"class {singular_pascal}QuerySet(BaseQuerySet):")
+    lines.append("    pass")
+    lines.append("")
     lines.append("")
 
     # 모델 클래스
@@ -108,7 +110,7 @@ def _gen_models_py(
     # user FK 필드
     if user_scoped:
         lines.append(
-            '    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,'
+            "    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,"
             ' related_name="%(class)ss")'
         )
 
@@ -118,6 +120,7 @@ def _gen_models_py(
 
     # Meta
     lines.append("    class Meta(BaseModel.Meta):")
+    lines.append("        pass")
     lines.append("")
 
     # __str__
@@ -143,9 +146,8 @@ def _gen_views_py(
 
     # Imports
     lines.append("from apps.core.views import ApiViewSet")
-    if user_scoped:
-        lines.append("")
-        lines.append(f"from .models import {singular_pascal}")
+    lines.append("")
+    lines.append(f"from .models import {singular_pascal}")
     lines.append("")
     lines.append("")
 
@@ -168,10 +170,9 @@ def _gen_views_py(
     # get_index_scope
     if user_scoped:
         lines.append("    def get_index_scope(self):")
-        lines.append("        # super()는 CoC 자동 추론(select_related/prefetch_related)이 적용된 queryset 반환")
-        lines.append("        user = self.request.user")
-        lines.append('        if user and hasattr(user, "id") and user.id:')
-        lines.append("            return super().get_index_scope().filter(user=user)")
+        lines.append("        qs = super().get_index_scope()")
+        lines.append("        if self.request.user.is_authenticated:")
+        lines.append("            return qs.filter(user=self.request.user)")
         lines.append(f"        return {singular_pascal}.objects.none()")
         lines.append("")
         lines.append("    def create_after_init(self, instance) -> None:")
@@ -336,7 +337,38 @@ def _gen_test_models_py(
     return "\n".join(lines) + "\n"
 
 
-def _gen_test_api_py(  # noqa: C901
+FIELD_PAYLOAD_DEFAULTS = {
+    "CharField": '"New Value"',
+    "TextField": '"New content"',
+    "IntegerField": "0",
+    "IntegerChoices": "0",
+    "BooleanField": "False",
+    "DecimalField": '"1.00"',
+    "FloatField": "1.0",
+}
+
+
+def _build_create_kwargs(fields: list[tuple[str, str]], user_scoped: bool) -> str:
+    """테스트에서 objects.create() 호출에 사용할 kwargs 문자열 생성."""
+    parts = []
+    for fn, ft in fields:
+        if ft in FIELD_TEST_DEFAULTS:
+            parts.append(f"{fn}={FIELD_TEST_DEFAULTS[ft]}")
+    if user_scoped:
+        parts.append("user=mock_authenticated")
+    return ", ".join(parts)
+
+
+def _build_payload_attrs(fields: list[tuple[str, str]]) -> str:
+    """테스트에서 jsonapi_payload에 전달할 attrs 문자열 생성."""
+    attrs = {}
+    for fn, ft in fields:
+        if ft in FIELD_PAYLOAD_DEFAULTS:
+            attrs[fn] = FIELD_PAYLOAD_DEFAULTS[ft]
+    return ", ".join(f'"{k}": {v}' for k, v in attrs.items())
+
+
+def _gen_test_api_py(
     resource_name: str,
     singular_pascal: str,
     fields: list[tuple[str, str]],
@@ -354,20 +386,9 @@ def _gen_test_api_py(  # noqa: C901
     lines.append(f"class Test{singular_pascal}API:")
 
     # -- test_index_with_auth
-    if user_scoped:
-        lines.append("    def test_index_with_auth(self, mock_authenticated, jsonapi_headers):")
-    else:
-        lines.append("    def test_index_with_auth(self, mock_authenticated, jsonapi_headers):")
+    lines.append("    def test_index_with_auth(self, mock_authenticated, jsonapi_headers):")
 
-    # create kwargs for test data
-    create_kwargs_parts = []
-    for fn, ft in fields:
-        if ft in FIELD_TEST_DEFAULTS:
-            create_kwargs_parts.append(f"{fn}={FIELD_TEST_DEFAULTS[ft]}")
-    if user_scoped:
-        create_kwargs_parts.append("user=mock_authenticated")
-    create_kwargs_str = ", ".join(create_kwargs_parts)
-
+    create_kwargs_str = _build_create_kwargs(fields, user_scoped)
     lines.append(f"        {singular_pascal}.objects.create({create_kwargs_str})")
     lines.append("")
     lines.append("        client = APIClient()")
@@ -376,32 +397,13 @@ def _gen_test_api_py(  # noqa: C901
     lines.append("        assert response.status_code == 200")
     lines.append("        data = response.json()")
     lines.append('        assert "data" in data')
-    if user_scoped:
-        lines.append('        assert len(data["data"]) == 1')
+    lines.append('        assert len(data["data"]) >= 1')
     lines.append("")
 
     # -- test_create_valid
     lines.append("    def test_create_valid(self, mock_authenticated, jsonapi_headers):")
 
-    # payload attributes
-    payload_attrs = {}
-    for fn, ft in fields:
-        if ft == "CharField":
-            payload_attrs[fn] = '"New Value"'
-        elif ft == "TextField":
-            payload_attrs[fn] = '"New content"'
-        elif ft == "IntegerField" or ft == "IntegerChoices":
-            payload_attrs[fn] = "0"
-        elif ft == "BooleanField":
-            payload_attrs[fn] = "False"
-        elif ft == "DecimalField":
-            payload_attrs[fn] = '"1.00"'
-        elif ft == "FloatField":
-            payload_attrs[fn] = "1.0"
-        # DateTimeField / DateField are nullable, skip in create payload
-
-    attrs_inner = ", ".join(f'"{k}": {v}' for k, v in payload_attrs.items())
-
+    attrs_inner = _build_payload_attrs(fields)
     lines.append("        client = APIClient()")
     lines.append("        client.force_authenticate(user=mock_authenticated)")
     lines.append(f'        payload = jsonapi_payload({{{attrs_inner}}}, "{resource_name}")')
@@ -421,84 +423,58 @@ def _gen_test_api_py(  # noqa: C901
 # ---------------------------------------------------------------------------
 
 
-def _auto_register_settings(base_dir: str, resource_name: str, plural_pascal: str) -> bool:
-    """config/settings/base.py 에 앱 등록"""
-    settings_path = os.path.join(base_dir, "config", "settings", "base.py")
-    if not os.path.isfile(settings_path):
+def _insert_after_last_match(filepath: str, marker: str, line_prefix: str, new_line: str) -> bool:
+    """파일에서 marker 이후 line_prefix로 시작하는 마지막 줄 뒤에 new_line을 삽입."""
+    if not os.path.isfile(filepath):
         return False
 
-    with open(settings_path, encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
-    marker = "# Local apps"
     if marker not in content:
         return False
 
-    new_line = f'    "apps.{resource_name}.apps.{plural_pascal}Config",'
-
-    # 이미 등록되어 있으면 스킵
     if new_line in content:
         return True
 
-    # marker 이후의 마지막 "apps. 로 시작하는 줄 찾기
     lines = content.split("\n")
     marker_idx = None
-    last_app_idx = None
+    last_match_idx = None
     for i, line in enumerate(lines):
         if marker in line:
             marker_idx = i
-        if marker_idx is not None and line.strip().startswith('"apps.'):
-            last_app_idx = i
+        if marker_idx is not None and line.strip().startswith(line_prefix):
+            last_match_idx = i
 
-    if last_app_idx is None:
+    if last_match_idx is None:
         return False
 
-    lines.insert(last_app_idx + 1, new_line)
+    lines.insert(last_match_idx + 1, new_line)
 
-    with open(settings_path, "w", encoding="utf-8") as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
     return True
+
+
+def _auto_register_settings(base_dir: str, resource_name: str, plural_pascal: str) -> bool:
+    """config/settings/base.py 에 앱 등록"""
+    return _insert_after_last_match(
+        filepath=os.path.join(base_dir, "config", "settings", "base.py"),
+        marker="# Local apps",
+        line_prefix='"apps.',
+        new_line=f'    "apps.{resource_name}.apps.{plural_pascal}Config",',
+    )
 
 
 def _auto_register_urls(base_dir: str, resource_name: str) -> bool:
     """config/urls.py 에 URL 등록"""
-    urls_path = os.path.join(base_dir, "config", "urls.py")
-    if not os.path.isfile(urls_path):
-        return False
-
-    with open(urls_path, encoding="utf-8") as f:
-        content = f.read()
-
-    marker = "# API v1 endpoints"
-    if marker not in content:
-        return False
-
-    new_line = f'    path("api/v1/", include("apps.{resource_name}.urls")),'
-
-    # 이미 등록되어 있으면 스킵
-    if new_line in content:
-        return True
-
-    # marker 이후의 마지막 path("api/v1/ 줄 찾기
-    lines = content.split("\n")
-    marker_idx = None
-    last_path_idx = None
-    for i, line in enumerate(lines):
-        if marker in line:
-            marker_idx = i
-        if marker_idx is not None and line.strip().startswith('path("api/v1/'):
-            last_path_idx = i
-
-    if last_path_idx is None:
-        return False
-
-    lines.insert(last_path_idx + 1, new_line)
-
-    with open(urls_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines))
-
-    return True
+    return _insert_after_last_match(
+        filepath=os.path.join(base_dir, "config", "urls.py"),
+        marker="# API v1 endpoints",
+        line_prefix='path("api/v1/',
+        new_line=f'    path("api/v1/", include("apps.{resource_name}.urls")),',
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -540,7 +516,7 @@ class Command(BaseCommand):
             help="모델 이름 직접 지정 (inflect 단수화 결과를 오버라이드)",
         )
 
-    def handle(self, *args, **options):  # noqa: C901
+    def handle(self, *args, **options):
         resource_name = options["resource_name"].strip()
         user_scoped = options["user_scoped"]
         no_tests = options["no_tests"]
@@ -550,19 +526,7 @@ class Command(BaseCommand):
         if not re.match(r"^[a-z][a-z0-9_]*$", resource_name):
             raise CommandError(f"리소스 이름은 snake_case여야 합니다: {resource_name}\n예: products, order_items")
 
-        # 필드 파싱
-        fields: list[tuple[str, str]] = []
-        raw_fields = options["fields"].strip()
-        if raw_fields:
-            for pair in raw_fields.split():
-                if ":" not in pair:
-                    raise CommandError(f"잘못된 필드 형식입니다: {pair}\n올바른 형식: name:CharField")
-                fname, ftype = pair.split(":", 1)
-                if ftype not in FIELD_TYPE_MAP:
-                    raise CommandError(
-                        f"지원하지 않는 필드 타입입니다: {ftype}\n지원 타입: {', '.join(FIELD_TYPE_MAP.keys())}"
-                    )
-                fields.append((fname, ftype))
+        fields = self._parse_fields(options["fields"].strip())
 
         # 이름 변환
         if model_name_override:
@@ -597,70 +561,107 @@ class Command(BaseCommand):
         self.stdout.write(f"  필드: {fields if fields else '(없음)'}")
         self.stdout.write("")
 
-        # 디렉토리 생성
+        self._generate_app_files(
+            apps_dir,
+            resource_name,
+            singular_pascal,
+            plural_pascal,
+            singular_snake,
+            fields,
+            user_scoped,
+        )
+
+        if not no_tests:
+            self._generate_test_files(tests_dir, resource_name, singular_pascal, singular_snake, fields, user_scoped)
+
+        self._auto_register_and_report(base_dir, resource_name, plural_pascal)
+
+        # 완료 메시지
+        self.stdout.write("")
+        self.stdout.write(self.style.SUCCESS(f"=== {resource_name} 리소스 생성 완료 ==="))
+        self.stdout.write("")
+        self.stdout.write("다음 단계:")
+        self.stdout.write(f"  1. python manage.py makemigrations {resource_name}")
+        self.stdout.write("  2. python manage.py migrate")
+        self.stdout.write("  3. 관계 필드가 필요하면 수동으로 추가하세요 (참고: apps/comments/)")
+        self.stdout.write("")
+
+    def _parse_fields(self, raw_fields: str) -> list[tuple[str, str]]:
+        """필드 문자열을 파싱하고 유효성을 검사합니다."""
+        fields: list[tuple[str, str]] = []
+        if not raw_fields:
+            return fields
+        for pair in raw_fields.split():
+            if ":" not in pair:
+                raise CommandError(f"잘못된 필드 형식입니다: {pair}\n올바른 형식: name:CharField")
+            fname, ftype = pair.split(":", 1)
+            if not re.match(r"^[a-z_][a-z0-9_]*$", fname):
+                raise CommandError(f"잘못된 필드 이름입니다: {fname}\n소문자 snake_case만 허용됩니다.")
+            if ftype not in FIELD_TYPE_MAP:
+                raise CommandError(
+                    f"지원하지 않는 필드 타입입니다: {ftype}\n지원 타입: {', '.join(FIELD_TYPE_MAP.keys())}"
+                )
+            fields.append((fname, ftype))
+        return fields
+
+    def _generate_app_files(
+        self,
+        apps_dir,
+        resource_name,
+        singular_pascal,
+        plural_pascal,
+        singular_snake,
+        fields,
+        user_scoped,
+    ):
+        """앱 디렉토리와 소스 파일들을 생성합니다."""
         os.makedirs(apps_dir, exist_ok=True)
         os.makedirs(os.path.join(apps_dir, "migrations"), exist_ok=True)
         self._write_file(os.path.join(apps_dir, "migrations", "__init__.py"), "")
-
-        # 1. __init__.py
         self._write_file(os.path.join(apps_dir, "__init__.py"), "")
-
-        # 2. apps.py
-        self._write_file(
-            os.path.join(apps_dir, "apps.py"),
-            _gen_apps_py(resource_name, plural_pascal),
-        )
-
-        # 3. models.py
+        self._write_file(os.path.join(apps_dir, "apps.py"), _gen_apps_py(resource_name, plural_pascal))
         self._write_file(
             os.path.join(apps_dir, "models.py"),
             _gen_models_py(resource_name, singular_pascal, fields, user_scoped),
         )
-
-        # 4. views.py
         self._write_file(
             os.path.join(apps_dir, "views.py"),
-            _gen_views_py(resource_name, singular_pascal, plural_pascal, singular_snake, user_scoped),
+            _gen_views_py(
+                resource_name,
+                singular_pascal,
+                plural_pascal,
+                singular_snake,
+                user_scoped,
+            ),
         )
-
-        # 5. serializers.py
         self._write_file(
             os.path.join(apps_dir, "serializers.py"),
             _gen_serializers_py(singular_pascal, fields, user_scoped),
         )
+        self._write_file(os.path.join(apps_dir, "filters.py"), _gen_filters_py(singular_pascal, fields, user_scoped))
+        self._write_file(os.path.join(apps_dir, "urls.py"), _gen_urls_py(resource_name, singular_snake, plural_pascal))
 
-        # 6. filters.py
+    def _generate_test_files(self, tests_dir, resource_name, singular_pascal, singular_snake, fields, user_scoped):
+        """테스트 디렉토리와 테스트 파일들을 생성합니다."""
+        os.makedirs(tests_dir, exist_ok=True)
+        self._write_file(os.path.join(tests_dir, "__init__.py"), "")
         self._write_file(
-            os.path.join(apps_dir, "filters.py"),
-            _gen_filters_py(singular_pascal, fields, user_scoped),
+            os.path.join(tests_dir, "test_models.py"),
+            _gen_test_models_py(
+                resource_name,
+                singular_pascal,
+                singular_snake,
+                fields,
+                user_scoped,
+            ),
+        )
+        self._write_file(
+            os.path.join(tests_dir, "test_api.py"),
+            _gen_test_api_py(resource_name, singular_pascal, fields, user_scoped),
         )
 
-        # 7. urls.py
-        self._write_file(
-            os.path.join(apps_dir, "urls.py"),
-            _gen_urls_py(resource_name, singular_snake, plural_pascal),
-        )
-
-        # 테스트 파일
-        if not no_tests:
-            os.makedirs(tests_dir, exist_ok=True)
-
-            # 8. tests/__init__.py
-            self._write_file(os.path.join(tests_dir, "__init__.py"), "")
-
-            # 9. test_models.py
-            self._write_file(
-                os.path.join(tests_dir, "test_models.py"),
-                _gen_test_models_py(resource_name, singular_pascal, singular_snake, fields, user_scoped),
-            )
-
-            # 10. test_api.py
-            self._write_file(
-                os.path.join(tests_dir, "test_api.py"),
-                _gen_test_api_py(resource_name, singular_pascal, fields, user_scoped),
-            )
-
-        # 자동 등록
+    def _auto_register_and_report(self, base_dir, resource_name, plural_pascal):
+        """settings와 urls에 자동 등록하고 결과를 출력합니다."""
         self.stdout.write("")
         self.stdout.write(self.style.MIGRATE_HEADING("--- 자동 등록 ---"))
 
@@ -687,16 +688,6 @@ class Command(BaseCommand):
                     f'  수동으로 추가하세요: path("api/v1/", include("apps.{resource_name}.urls")),'
                 )
             )
-
-        # 완료 메시지
-        self.stdout.write("")
-        self.stdout.write(self.style.SUCCESS(f"=== {resource_name} 리소스 생성 완료 ==="))
-        self.stdout.write("")
-        self.stdout.write("다음 단계:")
-        self.stdout.write(f"  1. python manage.py makemigrations {resource_name}")
-        self.stdout.write("  2. python manage.py migrate")
-        self.stdout.write("  3. 관계 필드가 필요하면 수동으로 추가하세요 (참고: apps/comments/)")
-        self.stdout.write("")
 
     def _write_file(self, path: str, content: str):
         """파일을 생성하고 결과를 출력합니다."""

@@ -23,6 +23,7 @@ Django 애플리케이션 모듈 모음. `core` 앱이 공통 인프라(ApiViewS
 - 모든 Serializer는 `HookableSerializerMixin`을 첫 번째 부모로 상속
 - CoC 패턴: serializer_class, filterset_class 명시 불필요 (자동 추론)
 - 앱 등록: `config/settings/base.py` INSTALLED_APPS + `config/urls.py` urlpatterns
+- **마이그레이션**: 모델 변경 후 `make makemigrations`로 생성, `make migrate`로 적용. 마이그레이션 파일을 직접 작성하거나 수정하지 마라.
 
 ### App Structure Convention
 각 앱의 표준 파일 구조:

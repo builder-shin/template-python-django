@@ -2,6 +2,10 @@ from .base import *  # noqa: F403
 
 DEBUG = False
 
+# Use a sufficiently long SECRET_KEY (>=32 bytes) to silence PyJWT InsecureKeyLengthWarning
+SECRET_KEY = "test-secret-key-that-is-at-least-32-bytes-long!"
+JWT_AUTH["SIGNING_KEY"] = SECRET_KEY  # noqa: F405
+
 # Use in-memory cache for tests
 CACHES = {
     "default": {

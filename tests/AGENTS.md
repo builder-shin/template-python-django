@@ -26,7 +26,7 @@ pytest 기반 테스트 스위트. 앱별 디렉토리로 구성되며, conftest
 
 ### Working In This Directory
 - 설정: `config.settings.test`
-- 실행: `pytest` 또는 `make test`, 커버리지: `make test-cov`
+- 실행: `make test` (권장), 커버리지: `make test-cov`. 반드시 `uv run`으로 실행하라 (`uv run pytest`).
 - 모든 HTTP 호출 차단: `respx.mock` autouse fixture
 - JSON:API 페이로드: `jsonapi_payload(attributes, resource_type)` 헬퍼 사용
 - 인증 테스트: `mock_authenticated` + `force_authenticate()` 또는 `jwt_authenticated_client` (JWT Bearer)

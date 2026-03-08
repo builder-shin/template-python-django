@@ -15,7 +15,8 @@
 ## For AI Agents
 
 ### Working In This Directory
-- `make setup`으로 실행
+- `make setup`으로 실행 (Make 명령어 우선 사용)
+- 스크립트 내에서 Python 실행 시 반드시 `uv run`을 사용하라
 - 스크립트 추가 시 실행 권한 부여: `chmod +x script.sh`
 - 기존 setup.sh 패턴을 참고하여 작성
 

@@ -8,9 +8,7 @@ from apps.posts.models import Post
 @pytest.mark.django_db
 class TestCommentsAPI:
     def _create_post(self, user):
-        return Post.objects.create(
-            title="Test Post", content="Content", user=user, status=Post.Status.PUBLISHED
-        )
+        return Post.objects.create(title="Test Post", content="Content", user=user, status=Post.Status.PUBLISHED)
 
     def test_index_with_auth(self, mock_authenticated, other_user, jsonapi_headers):
         post = self._create_post(mock_authenticated)

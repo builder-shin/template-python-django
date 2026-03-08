@@ -30,6 +30,11 @@ Django REST Framework 기반 JSON:API 템플릿 프로젝트. Convention over Co
 
 ## For AI Agents
 
+### Critical Rules
+- **패키지 매니저**: 반드시 `uv`를 사용한다. `pip install` 대신 `uv add`, `pip run` 대신 `uv run`을 사용하라.
+- **Make 명령어 우선**: Makefile에 이미 정의된 명령어가 있으면 반드시 `make <target>`을 사용하라. 직접 명령어를 조합하지 마라. (`make test`, `make lint`, `make format`, `make migrate`, `make makemigrations`, `make generate` 등)
+- **마이그레이션 파일 직접 생성/수정 금지**: 마이그레이션 파일(.py)을 직접 작성하거나 편집하지 마라. 모델 변경 후 반드시 `make makemigrations`로 자동 생성하고, `make migrate`로 적용하라.
+
 ### Working In This Directory
 - Python 3.12 필수, uv 패키지 매니저 사용 (`uv sync`, `uv run`)
 - JSON:API 스펙 준수 — 모든 응답은 `{ "data": ..., "meta": ..., "links": ... }` 형태
@@ -40,7 +45,7 @@ Django REST Framework 기반 JSON:API 템플릿 프로젝트. Convention over Co
 
 ### Testing Requirements
 - `pytest` 사용, 설정: `config.settings.test`
-- 실행: `pytest` 또는 `make test`
+- 실행: `make test` (권장) 또는 `uv run pytest`
 - 커버리지: `make test-cov`
 
 ### Common Patterns

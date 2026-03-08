@@ -18,8 +18,8 @@
 
 ### Working In This Directory
 - 새 명령어: `BaseCommand` 상속, `handle()` 메서드 구현
-- 생성기 사용: `python manage.py generate_resource products --fields "name:CharField price:IntegerField" --user-scoped`
-- 단축: `make generate name=products fields="name:CharField price:IntegerField"`
+- 생성기 사용: `make generate name=products fields="name:CharField price:IntegerField"` (Make 명령어 우선 사용)
+- 직접 실행이 필요한 경우: `uv run python manage.py generate_resource products --fields "name:CharField price:IntegerField" --user-scoped`
 - 지원 필드 타입: CharField, TextField, IntegerField, BooleanField, DateTimeField, DateField, DecimalField, FloatField, IntegerChoices
 - 생성기가 자동으로 apps/ + tests/ 디렉토리에 파일 생성, settings + urls 등록
 
