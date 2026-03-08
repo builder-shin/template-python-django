@@ -98,9 +98,8 @@ apps/<name>/
 ├── __init__.py
 ├── apps.py              # AppConfig
 ├── models.py            # Model + QuerySet
-├── views.py             # ViewSet (ApiViewSet)
+├── views.py             # ViewSet (ApiViewSet) + FilterSet (django-filter) 인라인 정의
 ├── serializers.py       # Serializer (HookableSerializerMixin)
-├── filters.py           # django-filter FilterSet
 ├── urls.py              # URL 라우팅
 └── migrations/
     └── __init__.py
