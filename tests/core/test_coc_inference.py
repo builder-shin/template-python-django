@@ -66,6 +66,54 @@ class TestSingularizeAndToPascal:
         assert to_pascal("user_profile") == "UserProfile"
 
 
+class TestSingularizeFallback:
+    """inflect 미설치 시 fallback singularize 로직 테스트."""
+
+    def test_fallback_ies_suffix(self):
+        """categories → category (ies → y)."""
+        import apps.core.utils as utils_mod
+
+        with patch.object(utils_mod, "_inflect_engine", None):
+            assert utils_mod.singularize("categories") == "category"
+            assert utils_mod.singularize("companies") == "company"
+
+    def test_fallback_ses_suffix(self):
+        """addresses → address (ses → s)."""
+        import apps.core.utils as utils_mod
+
+        with patch.object(utils_mod, "_inflect_engine", None):
+            assert utils_mod.singularize("addresses") == "address"
+
+    def test_fallback_xes_suffix(self):
+        """boxes → box (xes → x)."""
+        import apps.core.utils as utils_mod
+
+        with patch.object(utils_mod, "_inflect_engine", None):
+            assert utils_mod.singularize("boxes") == "box"
+
+    def test_fallback_regular_s(self):
+        """posts → post (s 제거)."""
+        import apps.core.utils as utils_mod
+
+        with patch.object(utils_mod, "_inflect_engine", None):
+            assert utils_mod.singularize("posts") == "post"
+            assert utils_mod.singularize("users") == "user"
+
+    def test_fallback_ss_not_stripped(self):
+        """class → class (ss로 끝나면 s 제거 안 함)."""
+        import apps.core.utils as utils_mod
+
+        with patch.object(utils_mod, "_inflect_engine", None):
+            assert utils_mod.singularize("class") == "class"
+
+    def test_fallback_no_plural_suffix(self):
+        """이미 단수인 단어는 그대로 반환."""
+        import apps.core.utils as utils_mod
+
+        with patch.object(utils_mod, "_inflect_engine", None):
+            assert utils_mod.singularize("child") == "child"
+
+
 @pytest.mark.django_db
 class TestSerializerClassInference:
     """serializer_class 자동 추론 테스트"""
@@ -128,6 +176,90 @@ class TestSerializerClassInference:
             viewset.get_serializer_class()
 
         mock_import.assert_not_called()
+
+
+@pytest.mark.django_db
+class TestInferIncludedSerializersEdgeCases:
+    """_infer_included_serializers 방어 경로 테스트."""
+
+    def test_nonexistent_field_in_allowed_includes(self, mock_authenticated):
+        """allowed_includes에 존재하지 않는 필드 → 경고 후 스킵."""
+        from apps.core.views import ApiViewSet
+
+        class BadIncludeViewSet(ApiViewSet):
+            @property
+            def allowed_includes(self):
+                return ["nonexistent_field"]
+
+        BadIncludeViewSet.__module__ = "apps.posts.views"
+        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
+            if hasattr(BadIncludeViewSet, key):
+                delattr(BadIncludeViewSet, key)
+
+        viewset = BadIncludeViewSet()
+        viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
+        viewset.kwargs = {}
+        viewset.format_kwarg = None
+
+        result = viewset.get_serializer_class()
+        included = getattr(result, "included_serializers", None)
+        # 존재하지 않는 필드는 스킵되므로 빈 dict 또는 없음
+        assert not included or "nonexistent_field" not in included
+
+    def test_non_relation_field_in_allowed_includes(self, mock_authenticated):
+        """allowed_includes에 관계가 아닌 필드(e.g. title) → 경고 후 스킵."""
+        from apps.core.views import ApiViewSet
+
+        class NonRelIncludeViewSet(ApiViewSet):
+            @property
+            def allowed_includes(self):
+                return ["title"]
+
+        NonRelIncludeViewSet.__module__ = "apps.posts.views"
+        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
+            if hasattr(NonRelIncludeViewSet, key):
+                delattr(NonRelIncludeViewSet, key)
+
+        viewset = NonRelIncludeViewSet()
+        viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
+        viewset.kwargs = {}
+        viewset.format_kwarg = None
+
+        result = viewset.get_serializer_class()
+        included = getattr(result, "included_serializers", None)
+        assert not included or "title" not in included
+
+    def test_infer_without_serializer_cls_fallback(self, mock_authenticated):
+        """serializer_cls=None으로 _infer_included_serializers 호출 시 CoC fallback."""
+        from apps.core.views import ApiViewSet
+
+        class FallbackViewSet(ApiViewSet):
+            @property
+            def allowed_includes(self):
+                return ["comments"]
+
+        FallbackViewSet.__module__ = "apps.posts.views"
+        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
+            if hasattr(FallbackViewSet, key):
+                delattr(FallbackViewSet, key)
+
+        viewset = FallbackViewSet()
+        result = viewset._infer_included_serializers(None)
+        assert "comments" in result
+
+    def test_infer_with_no_app_label_returns_empty(self):
+        """app_label 추론 불가 시 빈 dict 반환."""
+        from apps.core.views import ApiViewSet
+
+        class CoreViewSet(ApiViewSet):
+            @property
+            def allowed_includes(self):
+                return ["something"]
+
+        # core 앱은 app_label 추론 불가
+        viewset = CoreViewSet()
+        result = viewset._infer_included_serializers(None)
+        assert result == {}
 
 
 @pytest.mark.django_db

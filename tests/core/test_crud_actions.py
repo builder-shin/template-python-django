@@ -140,6 +140,45 @@ class TestCrudActionsAPI:
         assert "data" in data
 
 
+@pytest.mark.django_db
+class TestDestroyErrorPaths:
+    def test_destroy_protected_error_returns_409(self, mock_authenticated, jsonapi_headers):
+        """ProtectedError 발생 시 409 반환."""
+        from unittest.mock import patch
+
+        from django.db.models import ProtectedError
+
+        from apps.posts.models import Post
+
+        client = APIClient()
+        client.force_authenticate(user=mock_authenticated)
+        post = Post.objects.create(title="Protected", content="Content", user=mock_authenticated)
+
+        with patch.object(Post, "delete", side_effect=ProtectedError("protected", set())):
+            response = client.delete(f"/api/v1/posts/{post.id}", **jsonapi_headers)
+
+        assert response.status_code == 409
+        data = response.json()
+        assert "errors" in data
+
+    def test_destroy_unexpected_error_returns_422(self, mock_authenticated, jsonapi_headers):
+        """예상치 못한 삭제 에러 시 422 반환."""
+        from unittest.mock import patch
+
+        from apps.posts.models import Post
+
+        client = APIClient()
+        client.force_authenticate(user=mock_authenticated)
+        post = Post.objects.create(title="Error", content="Content", user=mock_authenticated)
+
+        with patch.object(Post, "delete", side_effect=RuntimeError("unexpected")):
+            response = client.delete(f"/api/v1/posts/{post.id}", **jsonapi_headers)
+
+        assert response.status_code == 422
+        data = response.json()
+        assert "errors" in data
+
+
 class TestAllowedIncludesFilter:
     def test_rejects_disallowed_includes(self):
         factory = RequestFactory()
