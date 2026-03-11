@@ -26,7 +26,7 @@
 | Directory | Purpose |
 |-----------|---------|
 | `auth/` | JWT 인증 — 토큰 생성/검증, Redis 토큰 스토어, login/refresh/logout 뷰 (see `auth/AGENTS.md`) |
-| `middleware/` | HTTP 미들웨어 — IP 차단(Allow2Ban), JWT 유저 추출 (see `middleware/AGENTS.md`) |
+| `middleware/` | HTTP 미들웨어 — JWT 유저 추출 (see `middleware/AGENTS.md`) |
 | `management/` | Django 관리 명령어 (see `management/AGENTS.md`) |
 | `mixins/` | 재사용 가능한 클래스 믹스인 (see `mixins/AGENTS.md`) |
 | `models/` | 공통 베이스 모델 (see `models/AGENTS.md`) |

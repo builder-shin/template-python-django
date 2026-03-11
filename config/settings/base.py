@@ -36,7 +36,6 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "csp.middleware.CSPMiddleware",
-    "apps.core.middleware.allow2ban.Allow2BanMiddleware",
     "django.middleware.common.CommonMiddleware",
     "apps.core.middleware.jwt_user.JWTUserMiddleware",
     "django_structlog.middlewares.RequestMiddleware",
@@ -95,9 +94,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 APPEND_SLASH = False
 
 AUTH_USER_MODEL = "users.User"
-
-# IP Blocklist
-BLOCKED_IPS = [ip.strip() for ip in os.environ.get("BLOCKED_IPS", "").split(",") if ip.strip()]
 
 # REST Framework + JSON:API
 REST_FRAMEWORK = {

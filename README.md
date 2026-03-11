@@ -142,7 +142,7 @@ docker-compose up
 ```
 ├── apps/
 │   ├── core/                  # 핵심 인프라
-│   │   ├── middleware/        # 미들웨어 (인증, 로깅, Allow2Ban)
+│   │   ├── middleware/        # 미들웨어 (인증, 로깅)
 │   │   ├── mixins/            # HookableSerializer, OwnedResource 등 공통 믹스인
 │   │   ├── management/        # 커스텀 관리 명령어 (seed, generate_resource)
 │   │   ├── authentication.py  # JWT Bearer token 인증 백엔드

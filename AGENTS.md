@@ -57,7 +57,7 @@ Django REST Framework 기반 JSON:API 템플릿 프로젝트. Convention over Co
 
 ### Architecture Overview
 ```
-Request → Allow2BanMiddleware → JWTUserMiddleware (structlog용 경량 user)
+Request → JWTUserMiddleware (structlog용 경량 user)
         → DRF JWTAuthentication (Bearer token 검증 + Redis jti 확인)
         → ApiViewSet (CoC: auto serializer/filter/queryset)
         → HookableSerializerMixin (lifecycle hooks)
