@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-03-08 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-12 -->
 
 # core
 
@@ -18,6 +18,7 @@
 | `authentication.py` | **JWTAuthentication** — DRF auth backend, Bearer token 검증 + Redis jti 확인 |
 | `permissions.py` | **IsOwnerOrReadOnly** — 객체 소유자만 변경 허용 (user_id 기반) |
 | `throttles.py` | **AuthRateThrottle** — 인증 엔드포인트 IP 기반 10/min 제한 |
+| `tasks.py` | **send_notification** — 예제 Celery 태스크. shared_task, bind=True, max_retries=3. config/celery.py에서 autodiscover |
 | `urls.py` | `make_urlpatterns()` — URL 보일러플레이트 축소 유틸리티 |
 | `apps.py` | CoreConfig |
 

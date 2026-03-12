@@ -60,6 +60,7 @@ make dev      # 개발 서버 실행 (http://localhost:4000)
 | `make beat` | Celery Beat 스케줄러 실행 |
 | `make dev-all` | 전체 개발 스택 실행 (web + celery worker + beat) |
 | `make pre-commit` | 전체 파일에 pre-commit 실행 |
+| `make update-schema` | API 스키마 스냅샷 갱신 (tests/snapshots/api_schema.json) |
 | `make docker-up` | Docker Compose 백그라운드 실행 |
 | `make docker-down` | Docker Compose 중지 |
 

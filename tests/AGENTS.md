@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-03-08 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-12 -->
 
 # tests
 
@@ -21,6 +21,7 @@ pytest 기반 테스트 스위트. 앱별 디렉토리로 구성되며, conftest
 | `users/` | User 모델/API 테스트 (see `users/AGENTS.md`) |
 | `posts/` | Post 모델/API 테스트 (see `posts/AGENTS.md`) |
 | `comments/` | Comment 모델/API 테스트 (see `comments/AGENTS.md`) |
+| `snapshots/` | API 스키마 스냅샷 (`api_schema.json`) — `make update-schema`로 갱신, `test_schema_snapshot.py`에서 비교 |
 
 ## For AI Agents
 
