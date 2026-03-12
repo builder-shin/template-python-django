@@ -1,4 +1,4 @@
-.PHONY: help setup dev server shell test test-cov lint format migrate makemigrations seed generate clean worker beat dev-all pre-commit docker-up docker-down
+.PHONY: help setup dev server shell test test-cov lint format migrate makemigrations seed generate update-schema clean worker beat dev-all pre-commit docker-up docker-down
 
 .DEFAULT_GOAL := help
 
@@ -44,6 +44,10 @@ ifndef name
 	$(error name 인자가 필요합니다. 예: make generate name=products fields="title:CharField")
 endif
 	uv run python manage.py generate_resource $(name) $(if $(fields),--fields $(fields),)
+
+update-schema: ## API 스키마 스냅샷 갱신
+	mkdir -p tests/snapshots
+	DJANGO_SETTINGS_MODULE=config.settings.test uv run python manage.py spectacular --format openapi-json | uv run python -c "import sys,json; print(json.dumps(json.load(sys.stdin), sort_keys=True, indent=2))" > tests/snapshots/api_schema.json
 
 clean: ## 캐시, pyc, __pycache__ 정리
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

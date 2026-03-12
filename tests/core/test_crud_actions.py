@@ -4,6 +4,7 @@ from rest_framework.test import APIClient
 
 from apps.core.exceptions import JsonApiError, NotFound
 from apps.core.filters import AllowedIncludesFilter
+from tests.factories import CommentFactory, PostFactory
 
 
 class TestJsonApiError:
@@ -69,15 +70,9 @@ class TestCrudActionsAPI:
         assert data["data"]["attributes"]["title"] == "Test Post"
 
     def test_show_returns_200(self, mock_authenticated, jsonapi_headers):
-        from apps.posts.models import Post
-
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
-        post = Post.objects.create(
-            title="Show Test",
-            content="Content",
-            user=mock_authenticated,
-        )
+        post = PostFactory(title="Show Test", content="Content", user=mock_authenticated)
         response = client.get(f"/api/v1/posts/{post.id}", **jsonapi_headers)
         assert response.status_code == 200
 
@@ -90,15 +85,9 @@ class TestCrudActionsAPI:
         assert "errors" in data
 
     def test_update_returns_200(self, mock_authenticated, jsonapi_headers):
-        from apps.posts.models import Post
-
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
-        post = Post.objects.create(
-            title="Update Test",
-            content="Content",
-            user=mock_authenticated,
-        )
+        post = PostFactory(title="Update Test", content="Content", user=mock_authenticated)
         payload = {
             "data": {
                 "type": "posts",
@@ -119,15 +108,9 @@ class TestCrudActionsAPI:
         assert data["data"]["attributes"]["title"] == "Updated Title"
 
     def test_destroy_returns_204(self, mock_authenticated, jsonapi_headers):
-        from apps.posts.models import Post
-
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
-        post = Post.objects.create(
-            title="Delete Test",
-            content="Content",
-            user=mock_authenticated,
-        )
+        post = PostFactory(title="Delete Test", content="Content", user=mock_authenticated)
         response = client.delete(f"/api/v1/posts/{post.id}", **jsonapi_headers)
         assert response.status_code == 204
 
@@ -152,7 +135,7 @@ class TestDestroyErrorPaths:
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
-        post = Post.objects.create(title="Protected", content="Content", user=mock_authenticated)
+        post = PostFactory(title="Protected", content="Content", user=mock_authenticated)
 
         with patch.object(Post, "delete", side_effect=ProtectedError("protected", set())):
             response = client.delete(f"/api/v1/posts/{post.id}", **jsonapi_headers)
@@ -169,7 +152,7 @@ class TestDestroyErrorPaths:
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
-        post = Post.objects.create(title="Error", content="Content", user=mock_authenticated)
+        post = PostFactory(title="Error", content="Content", user=mock_authenticated)
 
         with patch.object(Post, "delete", side_effect=RuntimeError("unexpected")):
             response = client.delete(f"/api/v1/posts/{post.id}", **jsonapi_headers)
@@ -214,6 +197,17 @@ class TestAllowedIncludesFilter:
         result = f.filter_queryset(request, "queryset", MockView())
         assert result == "queryset"
 
+    def test_empty_allowed_includes_returns_queryset(self):
+        factory = RequestFactory()
+        request = factory.get("/?include=something")
+
+        class MockView:
+            allowed_includes = []
+
+        f = AllowedIncludesFilter()
+        result = f.filter_queryset(request, "queryset", MockView())
+        assert result == "queryset"
+
 
 @pytest.mark.django_db
 class TestAutoPrefetchIntegration:
@@ -221,12 +215,9 @@ class TestAutoPrefetchIntegration:
 
     def test_include_triggers_prefetch_on_list(self, mock_authenticated, jsonapi_headers):
         """?include=post 요청 시 prefetch_related가 적용되어 N+1 방지."""
-        from apps.comments.models import Comment
-        from apps.posts.models import Post
-
-        post = Post.objects.create(title="Prefetch Test", content="Content", user=mock_authenticated)
-        Comment.objects.create(post=post, content="c1", user=mock_authenticated)
-        Comment.objects.create(post=post, content="c2", user=mock_authenticated)
+        post = PostFactory(title="Prefetch Test", content="Content", user=mock_authenticated)
+        CommentFactory(post=post, content="c1", user=mock_authenticated)
+        CommentFactory(post=post, content="c2", user=mock_authenticated)
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
@@ -239,9 +230,7 @@ class TestAutoPrefetchIntegration:
 
     def test_no_include_no_included_data(self, mock_authenticated, jsonapi_headers):
         """include 없을 때 included 데이터가 없음."""
-        from apps.posts.models import Post
-
-        Post.objects.create(title="No Include", content="Content", user=mock_authenticated)
+        PostFactory(title="No Include", content="Content", user=mock_authenticated)
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
@@ -250,11 +239,8 @@ class TestAutoPrefetchIntegration:
 
     def test_detail_include_triggers_prefetch(self, mock_authenticated, jsonapi_headers):
         """detail 엔드포인트에서도 include prefetch가 작동."""
-        from apps.comments.models import Comment
-        from apps.posts.models import Post
-
-        post = Post.objects.create(title="Detail Prefetch", content="Content", user=mock_authenticated)
-        comment = Comment.objects.create(post=post, content="c1", user=mock_authenticated)
+        post = PostFactory(title="Detail Prefetch", content="Content", user=mock_authenticated)
+        comment = CommentFactory(post=post, content="c1", user=mock_authenticated)
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
@@ -266,11 +252,8 @@ class TestAutoPrefetchIntegration:
 
     def test_comment_include_post(self, mock_authenticated, jsonapi_headers):
         """comments에서 ?include=post 요청 시 post가 포함됨."""
-        from apps.comments.models import Comment
-        from apps.posts.models import Post
-
-        post = Post.objects.create(title="Comment Include", content="Content", user=mock_authenticated)
-        Comment.objects.create(post=post, content="c1", user=mock_authenticated)
+        post = PostFactory(title="Comment Include", content="Content", user=mock_authenticated)
+        CommentFactory(post=post, content="c1", user=mock_authenticated)
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)

@@ -38,3 +38,6 @@ class AllowedIncludesFilter:
             )
 
         return queryset
+
+    def get_schema_operation_parameters(self, view):
+        return []

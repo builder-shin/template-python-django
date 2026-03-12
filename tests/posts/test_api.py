@@ -2,13 +2,14 @@ import pytest
 from rest_framework.test import APIClient
 
 from apps.posts.models import Post
+from tests.factories import PostFactory
 
 
 @pytest.mark.django_db
 class TestPostsAPI:
     def test_index_with_auth(self, mock_authenticated, jsonapi_headers):
-        Post.objects.create(title="Test 1", content="Content 1", user=mock_authenticated)
-        Post.objects.create(title="Test 2", content="Content 2", user=mock_authenticated)
+        PostFactory(title="Test 1", content="Content 1", user=mock_authenticated)
+        PostFactory(title="Test 2", content="Content 2", user=mock_authenticated)
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
@@ -24,8 +25,8 @@ class TestPostsAPI:
         assert response.status_code == 200
 
     def test_index_only_own_posts(self, mock_authenticated, other_user, jsonapi_headers):
-        Post.objects.create(title="My Post", content="Mine", user=mock_authenticated)
-        Post.objects.create(title="Other Post", content="Other", user=other_user)
+        PostFactory(title="My Post", content="Mine", user=mock_authenticated)
+        PostFactory(title="Other Post", content="Other", user=other_user)
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
@@ -53,7 +54,7 @@ class TestPostsAPI:
         assert data["data"]["attributes"]["title"] == "New Post"
 
     def test_show_existing(self, mock_authenticated, jsonapi_headers):
-        post = Post.objects.create(title="Show Me", content="Content", user=mock_authenticated)
+        post = PostFactory(title="Show Me", content="Content", user=mock_authenticated)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         response = client.get(f"/api/v1/posts/{post.id}", **jsonapi_headers)
@@ -68,7 +69,7 @@ class TestPostsAPI:
         assert response.status_code == 404
 
     def test_update_own(self, mock_authenticated, jsonapi_headers):
-        post = Post.objects.create(title="Old Title", content="Content", user=mock_authenticated)
+        post = PostFactory(title="Old Title", content="Content", user=mock_authenticated)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         payload = {
@@ -84,7 +85,7 @@ class TestPostsAPI:
         assert post.title == "New Title"
 
     def test_destroy_own(self, mock_authenticated, jsonapi_headers):
-        post = Post.objects.create(title="Delete Me", content="Content", user=mock_authenticated)
+        post = PostFactory(title="Delete Me", content="Content", user=mock_authenticated)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         response = client.delete(f"/api/v1/posts/{post.id}", **jsonapi_headers)
@@ -117,7 +118,7 @@ class TestPostsAPI:
         assert Post.objects.filter(external_id="ext-001").exists()
 
     def test_upsert_updates_existing(self, mock_authenticated, jsonapi_headers):
-        Post.objects.create(title="Existing", content="Old content", user=mock_authenticated, external_id="ext-002")
+        PostFactory(title="Existing", content="Old content", user=mock_authenticated, external_id="ext-002")
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         payload = {

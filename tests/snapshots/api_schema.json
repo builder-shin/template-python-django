@@ -1,0 +1,1831 @@
+{
+  "components": {
+    "schemas": {
+      "CommentSerializerWithIncludes": {
+        "description": "REQUIRED mixin for serializers used with ApiViewSet.\n\nBridges DRF's serializer.save() flow with ApiViewSet lifecycle hooks.\nWithout this mixin, create_after_init, create_after_save, update_after_assign,\nand update_after_save hooks will NOT be called.\n\nUsage:\n    class MySerializer(HookableSerializerMixin, serializers.ModelSerializer):\n        class Meta:\n            model = MyModel\n            fields = [...]",
+        "properties": {
+          "content": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "parent": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "post": {
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "user": {
+            "readOnly": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "content",
+          "created_at",
+          "post",
+          "updated_at",
+          "user"
+        ],
+        "type": "object"
+      },
+      "PaginatedCommentSerializerWithIncludesList": {
+        "properties": {
+          "count": {
+            "example": 123,
+            "type": "integer"
+          },
+          "next": {
+            "example": "http://api.example.org/accounts/?page[number]=4",
+            "format": "uri",
+            "nullable": true,
+            "type": "string"
+          },
+          "previous": {
+            "example": "http://api.example.org/accounts/?page[number]=2",
+            "format": "uri",
+            "nullable": true,
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "count",
+          "results"
+        ],
+        "type": "object"
+      },
+      "PaginatedPostSerializerWithIncludesList": {
+        "properties": {
+          "count": {
+            "example": 123,
+            "type": "integer"
+          },
+          "next": {
+            "example": "http://api.example.org/accounts/?page[number]=4",
+            "format": "uri",
+            "nullable": true,
+            "type": "string"
+          },
+          "previous": {
+            "example": "http://api.example.org/accounts/?page[number]=2",
+            "format": "uri",
+            "nullable": true,
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/PostSerializerWithIncludes"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "count",
+          "results"
+        ],
+        "type": "object"
+      },
+      "PaginatedUserList": {
+        "properties": {
+          "count": {
+            "example": 123,
+            "type": "integer"
+          },
+          "next": {
+            "example": "http://api.example.org/accounts/?page[number]=4",
+            "format": "uri",
+            "nullable": true,
+            "type": "string"
+          },
+          "previous": {
+            "example": "http://api.example.org/accounts/?page[number]=2",
+            "format": "uri",
+            "nullable": true,
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/User"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "count",
+          "results"
+        ],
+        "type": "object"
+      },
+      "PatchedCommentSerializerWithIncludes": {
+        "description": "REQUIRED mixin for serializers used with ApiViewSet.\n\nBridges DRF's serializer.save() flow with ApiViewSet lifecycle hooks.\nWithout this mixin, create_after_init, create_after_save, update_after_assign,\nand update_after_save hooks will NOT be called.\n\nUsage:\n    class MySerializer(HookableSerializerMixin, serializers.ModelSerializer):\n        class Meta:\n            model = MyModel\n            fields = [...]",
+        "properties": {
+          "content": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "parent": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "post": {
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "user": {
+            "readOnly": true,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "PatchedPostSerializerWithIncludes": {
+        "description": "REQUIRED mixin for serializers used with ApiViewSet.\n\nBridges DRF's serializer.save() flow with ApiViewSet lifecycle hooks.\nWithout this mixin, create_after_init, create_after_save, update_after_assign,\nand update_after_save hooks will NOT be called.\n\nUsage:\n    class MySerializer(HookableSerializerMixin, serializers.ModelSerializer):\n        class Meta:\n            model = MyModel\n            fields = [...]",
+        "properties": {
+          "comments": {
+            "items": {
+              "type": "integer"
+            },
+            "readOnly": true,
+            "type": "array"
+          },
+          "content": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "external_id": {
+            "maxLength": 255,
+            "nullable": true,
+            "type": "string"
+          },
+          "published_at": {
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true,
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PostSerializerWithIncludesStatusEnum"
+              }
+            ],
+            "maximum": 2147483647,
+            "minimum": -2147483648
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 2,
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "user": {
+            "readOnly": true,
+            "type": "integer"
+          },
+          "view_count": {
+            "readOnly": true,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "PatchedUser": {
+        "description": "REQUIRED mixin for serializers used with ApiViewSet.\n\nBridges DRF's serializer.save() flow with ApiViewSet lifecycle hooks.\nWithout this mixin, create_after_init, create_after_save, update_after_assign,\nand update_after_save hooks will NOT be called.\n\nUsage:\n    class MySerializer(HookableSerializerMixin, serializers.ModelSerializer):\n        class Meta:\n            model = MyModel\n            fields = [...]",
+        "properties": {
+          "avatar_url": {
+            "format": "uri",
+            "maxLength": 200,
+            "nullable": true,
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "date_joined": {
+            "format": "date-time",
+            "readOnly": true,
+            "title": "\ub4f1\ub85d\uc77c",
+            "type": "string"
+          },
+          "nickname": {
+            "maxLength": 50,
+            "minLength": 2,
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserStatusEnum"
+              }
+            ],
+            "readOnly": true
+          }
+        },
+        "type": "object"
+      },
+      "PostSerializerWithIncludes": {
+        "description": "REQUIRED mixin for serializers used with ApiViewSet.\n\nBridges DRF's serializer.save() flow with ApiViewSet lifecycle hooks.\nWithout this mixin, create_after_init, create_after_save, update_after_assign,\nand update_after_save hooks will NOT be called.\n\nUsage:\n    class MySerializer(HookableSerializerMixin, serializers.ModelSerializer):\n        class Meta:\n            model = MyModel\n            fields = [...]",
+        "properties": {
+          "comments": {
+            "items": {
+              "type": "integer"
+            },
+            "readOnly": true,
+            "type": "array"
+          },
+          "content": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "external_id": {
+            "maxLength": 255,
+            "nullable": true,
+            "type": "string"
+          },
+          "published_at": {
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true,
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PostSerializerWithIncludesStatusEnum"
+              }
+            ],
+            "maximum": 2147483647,
+            "minimum": -2147483648
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 2,
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "user": {
+            "readOnly": true,
+            "type": "integer"
+          },
+          "view_count": {
+            "readOnly": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "comments",
+          "created_at",
+          "published_at",
+          "title",
+          "updated_at",
+          "user",
+          "view_count"
+        ],
+        "type": "object"
+      },
+      "PostSerializerWithIncludesStatusEnum": {
+        "description": "* `0` - draft\n* `1` - published\n* `2` - archived",
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer"
+      },
+      "User": {
+        "description": "REQUIRED mixin for serializers used with ApiViewSet.\n\nBridges DRF's serializer.save() flow with ApiViewSet lifecycle hooks.\nWithout this mixin, create_after_init, create_after_save, update_after_assign,\nand update_after_save hooks will NOT be called.\n\nUsage:\n    class MySerializer(HookableSerializerMixin, serializers.ModelSerializer):\n        class Meta:\n            model = MyModel\n            fields = [...]",
+        "properties": {
+          "avatar_url": {
+            "format": "uri",
+            "maxLength": 200,
+            "nullable": true,
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "date_joined": {
+            "format": "date-time",
+            "readOnly": true,
+            "title": "\ub4f1\ub85d\uc77c",
+            "type": "string"
+          },
+          "nickname": {
+            "maxLength": 50,
+            "minLength": 2,
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserStatusEnum"
+              }
+            ],
+            "readOnly": true
+          }
+        },
+        "required": [
+          "date_joined",
+          "status"
+        ],
+        "type": "object"
+      },
+      "UserStatusEnum": {
+        "description": "* `0` - active\n* `1` - suspended\n* `2` - withdrawn",
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer"
+      }
+    }
+  },
+  "info": {
+    "description": "Django REST Framework API Template with JSON:API",
+    "title": "Template API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.0.3",
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "POST /api/v1/auth/login -- email + password -> token pair",
+        "operationId": "auth_login_create",
+        "responses": {
+          "200": {
+            "description": "No response body"
+          }
+        },
+        "security": [
+          {}
+        ],
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "description": "POST /api/v1/auth/logout -- revoke current access token and optional refresh token",
+        "operationId": "auth_logout_create",
+        "responses": {
+          "200": {
+            "description": "No response body"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout-all": {
+      "post": {
+        "description": "POST /api/v1/auth/logout-all -- revoke all user sessions",
+        "operationId": "auth_logout_all_create",
+        "responses": {
+          "200": {
+            "description": "No response body"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "description": "POST /api/v1/auth/refresh -- refresh token -> new token pair (with rotation)",
+        "operationId": "auth_refresh_create",
+        "responses": {
+          "200": {
+            "description": "No response body"
+          }
+        },
+        "security": [
+          {}
+        ],
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/comments": {
+      "get": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "comments_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "content",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "content__icontains",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_at",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_at__gt",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_at__gte",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_at__lt",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_at__lte",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "\uac80\uc0c9\uc5b4.",
+            "in": "query",
+            "name": "filter[search]",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "\ud398\uc774\uc9c0\ub124\uc774\uc158\ub41c \uacb0\uacfc \uc9d1\ud569 \ub0b4\uc758 \ud398\uc774\uc9c0 \ubc88\ud638.",
+            "in": "query",
+            "name": "page[number]",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "\ud398\uc774\uc9c0\ub2f9 \ubc18\ud658\ud560 \uacb0\uacfc \uc218.",
+            "in": "query",
+            "name": "page[size]",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "parent",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "parent__isnull",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "post",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Multiple values may be separated by commas.",
+            "explode": false,
+            "in": "query",
+            "name": "post__in",
+            "schema": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "[list of fields to sort by](https://jsonapi.org/format/#fetching-sorting)",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_at",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_at__gt",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_at__gte",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_at__lt",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_at__lte",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "user",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Multiple values may be separated by commas.",
+            "explode": false,
+            "in": "query",
+            "name": "user__in",
+            "schema": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedCommentSerializerWithIncludesList"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {}
+        ],
+        "tags": [
+          "comments"
+        ]
+      },
+      "post": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "comments_create",
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "comments"
+        ]
+      }
+    },
+    "/api/v1/comments/new": {
+      "get": {
+        "description": "Instantiate a blank model and return its serialized form.\nEquivalent to Rails CrudActions `new` action.",
+        "operationId": "comments_new_retrieve",
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "comments"
+        ]
+      }
+    },
+    "/api/v1/comments/upsert": {
+      "put": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "comments_upsert_update",
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "comments"
+        ]
+      }
+    },
+    "/api/v1/comments/{id}": {
+      "delete": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "comments_destroy",
+        "parameters": [
+          {
+            "description": "comment\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
+          }
+        },
+        "tags": [
+          "comments"
+        ]
+      },
+      "get": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "comments_retrieve",
+        "parameters": [
+          {
+            "description": "comment\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {}
+        ],
+        "tags": [
+          "comments"
+        ]
+      },
+      "patch": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "comments_partial_update",
+        "parameters": [
+          {
+            "description": "comment\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedCommentSerializerWithIncludes"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedCommentSerializerWithIncludes"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedCommentSerializerWithIncludes"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "comments"
+        ]
+      },
+      "put": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "comments_update",
+        "parameters": [
+          {
+            "description": "comment\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "comments"
+        ]
+      }
+    },
+    "/api/v1/posts": {
+      "get": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "posts_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "created_at",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_at__gt",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_at__gte",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_at__lt",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_at__lte",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "\uac80\uc0c9\uc5b4.",
+            "in": "query",
+            "name": "filter[search]",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "\ud398\uc774\uc9c0\ub124\uc774\uc158\ub41c \uacb0\uacfc \uc9d1\ud569 \ub0b4\uc758 \ud398\uc774\uc9c0 \ubc88\ud638.",
+            "in": "query",
+            "name": "page[number]",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "\ud398\uc774\uc9c0\ub2f9 \ubc18\ud658\ud560 \uacb0\uacfc \uc218.",
+            "in": "query",
+            "name": "page[size]",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "[list of fields to sort by](https://jsonapi.org/format/#fetching-sorting)",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "* `0` - draft\n* `1` - published\n* `2` - archived",
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "enum": [
+                0,
+                1,
+                2
+              ],
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Multiple values may be separated by commas.",
+            "explode": false,
+            "in": "query",
+            "name": "status__in",
+            "schema": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "in": "query",
+            "name": "title",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "title__icontains",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "title__iendswith",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "title__istartswith",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_at",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_at__gt",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_at__gte",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_at__lt",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_at__lte",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "user",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Multiple values may be separated by commas.",
+            "explode": false,
+            "in": "query",
+            "name": "user__in",
+            "schema": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedPostSerializerWithIncludesList"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {}
+        ],
+        "tags": [
+          "posts"
+        ]
+      },
+      "post": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "posts_create",
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostSerializerWithIncludes"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PostSerializerWithIncludes"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PostSerializerWithIncludes"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostSerializerWithIncludes"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "posts"
+        ]
+      }
+    },
+    "/api/v1/posts/new": {
+      "get": {
+        "description": "Instantiate a blank model and return its serialized form.\nEquivalent to Rails CrudActions `new` action.",
+        "operationId": "posts_new_retrieve",
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostSerializerWithIncludes"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "posts"
+        ]
+      }
+    },
+    "/api/v1/posts/upsert": {
+      "put": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "posts_upsert_update",
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostSerializerWithIncludes"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PostSerializerWithIncludes"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PostSerializerWithIncludes"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostSerializerWithIncludes"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "posts"
+        ]
+      }
+    },
+    "/api/v1/posts/{id}": {
+      "delete": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "posts_destroy",
+        "parameters": [
+          {
+            "description": "post\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
+          }
+        },
+        "tags": [
+          "posts"
+        ]
+      },
+      "get": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "posts_retrieve",
+        "parameters": [
+          {
+            "description": "post\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostSerializerWithIncludes"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {}
+        ],
+        "tags": [
+          "posts"
+        ]
+      },
+      "patch": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "posts_partial_update",
+        "parameters": [
+          {
+            "description": "post\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedPostSerializerWithIncludes"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedPostSerializerWithIncludes"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedPostSerializerWithIncludes"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostSerializerWithIncludes"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "posts"
+        ]
+      },
+      "put": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "posts_update",
+        "parameters": [
+          {
+            "description": "post\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostSerializerWithIncludes"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PostSerializerWithIncludes"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PostSerializerWithIncludes"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostSerializerWithIncludes"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "posts"
+        ]
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "users_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_joined",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_joined__gt",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_joined__gte",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_joined__lt",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_joined__lte",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "\uac80\uc0c9\uc5b4.",
+            "in": "query",
+            "name": "filter[search]",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "nickname",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "nickname__icontains",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "nickname__iendswith",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "nickname__istartswith",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "\ud398\uc774\uc9c0\ub124\uc774\uc158\ub41c \uacb0\uacfc \uc9d1\ud569 \ub0b4\uc758 \ud398\uc774\uc9c0 \ubc88\ud638.",
+            "in": "query",
+            "name": "page[number]",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "\ud398\uc774\uc9c0\ub2f9 \ubc18\ud658\ud560 \uacb0\uacfc \uc218.",
+            "in": "query",
+            "name": "page[size]",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "[list of fields to sort by](https://jsonapi.org/format/#fetching-sorting)",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "* `0` - active\n* `1` - suspended\n* `2` - withdrawn",
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "enum": [
+                0,
+                1,
+                2
+              ],
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Multiple values may be separated by commas.",
+            "explode": false,
+            "in": "query",
+            "name": "status__in",
+            "schema": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedUserList"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {}
+        ],
+        "tags": [
+          "users"
+        ]
+      },
+      "post": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "users_create",
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "users_me_retrieve",
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/new": {
+      "get": {
+        "description": "Instantiate a blank model and return its serialized form.\nEquivalent to Rails CrudActions `new` action.",
+        "operationId": "users_new_retrieve",
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/upsert": {
+      "put": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "users_upsert_update",
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/{id}": {
+      "delete": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "users_destroy",
+        "parameters": [
+          {
+            "description": "\uc0ac\uc6a9\uc790\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      },
+      "get": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "users_retrieve",
+        "parameters": [
+          {
+            "description": "\uc0ac\uc6a9\uc790\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {}
+        ],
+        "tags": [
+          "users"
+        ]
+      },
+      "patch": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "users_partial_update",
+        "parameters": [
+          {
+            "description": "\uc0ac\uc6a9\uc790\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedUser"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedUser"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedUser"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      },
+      "put": {
+        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "operationId": "users_update",
+        "parameters": [
+          {
+            "description": "\uc0ac\uc6a9\uc790\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      }
+    }
+  }
+}

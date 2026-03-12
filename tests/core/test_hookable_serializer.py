@@ -52,10 +52,11 @@ class TestHookableSerializerCreate:
         view_with_hooks.create_after_init.assert_called_once_with(instance)
         view_with_hooks.create_after_save.assert_called_once_with(instance, True)
 
-    def test_create_django_validation_error_calls_hook_with_false(self, view_with_hooks):
+    def test_create_django_validation_error_calls_hook_with_false(self, view_with_hooks, monkeypatch):
         """create 시 DjangoValidationError 발생 → after_save(False) 호출."""
         _FakeModel._meta.many_to_many = []
-        _FakeModel.save = MagicMock(side_effect=DjangoValidationError({"name": ["필수 필드입니다."]}))
+        error = DjangoValidationError({"name": ["필수 필드입니다."]})
+        monkeypatch.setattr(_FakeModel, "save", MagicMock(side_effect=error))
         serializer = _FakeSerializer(context={"view": view_with_hooks})
 
         with pytest.raises(DRFValidationError):
@@ -64,13 +65,10 @@ class TestHookableSerializerCreate:
         view_with_hooks.create_after_save.assert_called_once()
         assert view_with_hooks.create_after_save.call_args[0][1] is False
 
-        # 복원
-        _FakeModel.save = lambda self: None
-
-    def test_create_generic_exception_calls_hook_with_false(self, view_with_hooks):
+    def test_create_generic_exception_calls_hook_with_false(self, view_with_hooks, monkeypatch):
         """create 시 일반 예외 → after_save(False) 호출."""
         _FakeModel._meta.many_to_many = []
-        _FakeModel.save = MagicMock(side_effect=RuntimeError("DB error"))
+        monkeypatch.setattr(_FakeModel, "save", MagicMock(side_effect=RuntimeError("DB error")))
         serializer = _FakeSerializer(context={"view": view_with_hooks})
 
         with pytest.raises(RuntimeError, match="DB error"):
@@ -78,8 +76,6 @@ class TestHookableSerializerCreate:
 
         view_with_hooks.create_after_save.assert_called_once()
         assert view_with_hooks.create_after_save.call_args[0][1] is False
-
-        _FakeModel.save = lambda self: None
 
 
 class TestHookableSerializerUpdate:
@@ -95,10 +91,11 @@ class TestHookableSerializerUpdate:
         view_with_hooks.update_after_assign.assert_called_once_with(instance)
         view_with_hooks.update_after_save.assert_called_once_with(instance, True)
 
-    def test_update_django_validation_error_calls_hook_with_false(self, view_with_hooks):
+    def test_update_django_validation_error_calls_hook_with_false(self, view_with_hooks, monkeypatch):
         """update 시 DjangoValidationError → after_save(False) 호출."""
         _FakeModel._meta.many_to_many = []
-        _FakeModel.save = MagicMock(side_effect=DjangoValidationError({"name": ["이미 존재합니다."]}))
+        error = DjangoValidationError({"name": ["이미 존재합니다."]})
+        monkeypatch.setattr(_FakeModel, "save", MagicMock(side_effect=error))
         serializer = _FakeSerializer(context={"view": view_with_hooks})
         instance = _FakeModel(name="old")
 
@@ -108,12 +105,10 @@ class TestHookableSerializerUpdate:
         view_with_hooks.update_after_save.assert_called_once()
         assert view_with_hooks.update_after_save.call_args[0][1] is False
 
-        _FakeModel.save = lambda self: None
-
-    def test_update_generic_exception_calls_hook_with_false(self, view_with_hooks):
+    def test_update_generic_exception_calls_hook_with_false(self, view_with_hooks, monkeypatch):
         """update 시 일반 예외 → after_save(False) 호출."""
         _FakeModel._meta.many_to_many = []
-        _FakeModel.save = MagicMock(side_effect=RuntimeError("DB error"))
+        monkeypatch.setattr(_FakeModel, "save", MagicMock(side_effect=RuntimeError("DB error")))
         serializer = _FakeSerializer(context={"view": view_with_hooks})
         instance = _FakeModel(name="old")
 
@@ -122,5 +117,3 @@ class TestHookableSerializerUpdate:
 
         view_with_hooks.update_after_save.assert_called_once()
         assert view_with_hooks.update_after_save.call_args[0][1] is False
-
-        _FakeModel.save = lambda self: None

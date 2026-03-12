@@ -1,8 +1,7 @@
 import pytest
-from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-User = get_user_model()
+from tests.factories import UserFactory
 
 
 @pytest.fixture(autouse=True)
@@ -22,20 +21,18 @@ def block_outbound_http():
 
 @pytest.fixture
 def auth_user(db):
-    return User.objects.create_user(
+    return UserFactory(
         username="testuser",
         email="test@example.com",
-        password="testpass123",
         nickname="Test User",
     )
 
 
 @pytest.fixture
 def other_user(db):
-    return User.objects.create_user(
+    return UserFactory(
         username="otheruser",
         email="other@example.com",
-        password="otherpass123",
         nickname="Other User",
     )
 

@@ -3,17 +3,15 @@ from rest_framework.test import APIClient
 
 from apps.comments.models import Comment
 from apps.posts.models import Post
+from tests.factories import CommentFactory, PostFactory
 
 
 @pytest.mark.django_db
 class TestCommentsAPI:
-    def _create_post(self, user):
-        return Post.objects.create(title="Test Post", content="Content", user=user, status=Post.Status.PUBLISHED)
-
     def test_index_with_auth(self, mock_authenticated, other_user, jsonapi_headers):
-        post = self._create_post(mock_authenticated)
-        Comment.objects.create(post=post, content="Comment 1", user=mock_authenticated)
-        Comment.objects.create(post=post, content="Comment 2", user=other_user)
+        post = PostFactory(user=mock_authenticated, status=Post.Status.PUBLISHED)
+        CommentFactory(post=post, content="Comment 1", user=mock_authenticated)
+        CommentFactory(post=post, content="Comment 2", user=other_user)
 
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
@@ -29,7 +27,7 @@ class TestCommentsAPI:
         assert response.status_code == 200
 
     def test_create_valid(self, mock_authenticated, jsonapi_headers):
-        post = self._create_post(mock_authenticated)
+        post = PostFactory(user=mock_authenticated, status=Post.Status.PUBLISHED)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         payload = {
@@ -47,8 +45,8 @@ class TestCommentsAPI:
         assert data["data"]["attributes"]["content"] == "Great post!"
 
     def test_create_reply(self, mock_authenticated, other_user, jsonapi_headers):
-        post = self._create_post(mock_authenticated)
-        parent = Comment.objects.create(post=post, content="Parent", user=other_user)
+        post = PostFactory(user=mock_authenticated, status=Post.Status.PUBLISHED)
+        parent = CommentFactory(post=post, content="Parent", user=other_user)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         payload = {
@@ -69,16 +67,16 @@ class TestCommentsAPI:
         assert data["data"]["relationships"]["parent"]["data"] is not None
 
     def test_show_existing(self, mock_authenticated, jsonapi_headers):
-        post = self._create_post(mock_authenticated)
-        comment = Comment.objects.create(post=post, content="Show Me", user=mock_authenticated)
+        post = PostFactory(user=mock_authenticated, status=Post.Status.PUBLISHED)
+        comment = CommentFactory(post=post, content="Show Me", user=mock_authenticated)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         response = client.get(f"/api/v1/comments/{comment.id}", **jsonapi_headers)
         assert response.status_code == 200
 
     def test_update_own(self, mock_authenticated, jsonapi_headers):
-        post = self._create_post(mock_authenticated)
-        comment = Comment.objects.create(post=post, content="Old Content", user=mock_authenticated)
+        post = PostFactory(user=mock_authenticated, status=Post.Status.PUBLISHED)
+        comment = CommentFactory(post=post, content="Old Content", user=mock_authenticated)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         payload = {
@@ -96,8 +94,8 @@ class TestCommentsAPI:
         assert comment.content == "Updated Content"
 
     def test_destroy_own(self, mock_authenticated, jsonapi_headers):
-        post = self._create_post(mock_authenticated)
-        comment = Comment.objects.create(post=post, content="Delete Me", user=mock_authenticated)
+        post = PostFactory(user=mock_authenticated, status=Post.Status.PUBLISHED)
+        comment = CommentFactory(post=post, content="Delete Me", user=mock_authenticated)
         client = APIClient()
         client.force_authenticate(user=mock_authenticated)
         response = client.delete(f"/api/v1/comments/{comment.id}", **jsonapi_headers)

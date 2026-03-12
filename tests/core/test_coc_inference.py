@@ -1,8 +1,22 @@
+import contextlib
 import importlib
 from unittest.mock import patch
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
+
+from apps.comments.views import CommentsViewSet
+from apps.posts.views import PostsViewSet
+from apps.users.views import UsersViewSet
+
+
+@pytest.fixture(autouse=True)
+def _clear_coc_caches():
+    yield
+    for cls in (PostsViewSet, UsersViewSet, CommentsViewSet):
+        for key in ("_coc_serializer_class", "_coc_serializer_with_includes", "_coc_filterset_class"):
+            with contextlib.suppress(AttributeError):
+                delattr(cls, key)
 
 
 class TestGetAppLabel:
@@ -123,11 +137,6 @@ class TestSerializerClassInference:
         from apps.posts.serializers import PostSerializer
         from apps.posts.views import PostsViewSet
 
-        # Clean up any cached values from previous tests
-        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
-            if hasattr(PostsViewSet, key):
-                delattr(PostsViewSet, key)
-
         viewset = PostsViewSet()
         viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
         viewset.kwargs = {}
@@ -142,10 +151,6 @@ class TestSerializerClassInference:
         from apps.users.serializers import UserSerializer
         from apps.users.views import UsersViewSet
 
-        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
-            if hasattr(UsersViewSet, key):
-                delattr(UsersViewSet, key)
-
         viewset = UsersViewSet()
         viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
         viewset.kwargs = {}
@@ -158,10 +163,6 @@ class TestSerializerClassInference:
     def test_caching_avoids_repeated_import(self, mock_authenticated):
         """추론 결과가 캐싱되어 두 번째 호출 시 importlib 미사용."""
         from apps.users.views import UsersViewSet
-
-        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
-            if hasattr(UsersViewSet, key):
-                delattr(UsersViewSet, key)
 
         viewset = UsersViewSet()
         viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
@@ -192,9 +193,6 @@ class TestInferIncludedSerializersEdgeCases:
                 return ["nonexistent_field"]
 
         BadIncludeViewSet.__module__ = "apps.posts.views"
-        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
-            if hasattr(BadIncludeViewSet, key):
-                delattr(BadIncludeViewSet, key)
 
         viewset = BadIncludeViewSet()
         viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
@@ -216,9 +214,6 @@ class TestInferIncludedSerializersEdgeCases:
                 return ["title"]
 
         NonRelIncludeViewSet.__module__ = "apps.posts.views"
-        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
-            if hasattr(NonRelIncludeViewSet, key):
-                delattr(NonRelIncludeViewSet, key)
 
         viewset = NonRelIncludeViewSet()
         viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
@@ -239,9 +234,6 @@ class TestInferIncludedSerializersEdgeCases:
                 return ["comments"]
 
         FallbackViewSet.__module__ = "apps.posts.views"
-        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
-            if hasattr(FallbackViewSet, key):
-                delattr(FallbackViewSet, key)
 
         viewset = FallbackViewSet()
         result = viewset._infer_included_serializers(None)
@@ -292,9 +284,6 @@ class TestFiltersetClassInference:
 
         from apps.posts.views import PostsViewSet
 
-        if hasattr(PostsViewSet, "_coc_filterset_class"):
-            delattr(PostsViewSet, "_coc_filterset_class")
-
         viewset = PostsViewSet()
         result = viewset.filterset_class
         assert result is not None
@@ -308,9 +297,6 @@ class TestFiltersetClassInference:
     def test_core_viewset_returns_none(self):
         from apps.core.views import ApiViewSet
 
-        if hasattr(ApiViewSet, "_coc_filterset_class"):
-            delattr(ApiViewSet, "_coc_filterset_class")
-
         viewset = ApiViewSet()
         assert viewset.filterset_class is None
 
@@ -322,9 +308,6 @@ class TestFiltersetClassInference:
             pass
 
         NoFilterViewSet.__module__ = "apps.nonexistent.views"
-
-        if "_coc_filterset_class" in NoFilterViewSet.__dict__:
-            delattr(NoFilterViewSet, "_coc_filterset_class")
 
         viewset = NoFilterViewSet()
         assert viewset.filterset_class is None
@@ -341,9 +324,6 @@ class TestFiltersetClassInference:
                 return {"title": ["exact", "icontains"]}
 
         SchemaTestViewSet.__module__ = "apps.posts.views"
-
-        if "_coc_filterset_class" in SchemaTestViewSet.__dict__:
-            delattr(SchemaTestViewSet, "_coc_filterset_class")
 
         viewset = SchemaTestViewSet()
         # No request, no kwargs — simulates schema generation context
@@ -369,9 +349,6 @@ class TestFiltersetClassInference:
                 }
 
         CustomFilterViewSet.__module__ = "apps.posts.views"
-
-        if "_coc_filterset_class" in CustomFilterViewSet.__dict__:
-            delattr(CustomFilterViewSet, "_coc_filterset_class")
 
         viewset = CustomFilterViewSet()
         result = viewset.filterset_class
@@ -415,10 +392,6 @@ class TestIncludedSerializersInference:
         from apps.comments.views import CommentsViewSet
         from apps.posts.serializers import PostSerializer
 
-        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
-            if hasattr(CommentsViewSet, key):
-                delattr(CommentsViewSet, key)
-
         viewset = CommentsViewSet()
         viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
         viewset.kwargs = {}
@@ -436,10 +409,6 @@ class TestIncludedSerializersInference:
         from apps.comments.serializers import CommentSerializer
         from apps.posts.views import PostsViewSet
 
-        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
-            if hasattr(PostsViewSet, key):
-                delattr(PostsViewSet, key)
-
         viewset = PostsViewSet()
         viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
         viewset.kwargs = {}
@@ -456,10 +425,6 @@ class TestIncludedSerializersInference:
         """allowed_includes = [] → included_serializers 없음."""
         from apps.users.serializers import UserSerializer
         from apps.users.views import UsersViewSet
-
-        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
-            if hasattr(UsersViewSet, key):
-                delattr(UsersViewSet, key)
 
         viewset = UsersViewSet()
         viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
@@ -521,10 +486,6 @@ class TestInferenceFailure:
             pass
 
         BadViewSet.__module__ = "apps.nonexistent.views"
-
-        for key in ("_coc_serializer_class", "_coc_serializer_with_includes"):
-            if hasattr(BadViewSet, key):
-                delattr(BadViewSet, key)
 
         viewset = BadViewSet()
         viewset.request = type("Request", (), {"user": mock_authenticated, "query_params": {}})()
