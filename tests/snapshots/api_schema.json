@@ -40,6 +40,23 @@
         ],
         "type": "object"
       },
+      "Login": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
       "PaginatedCommentSerializerWithIncludesList": {
         "properties": {
           "count": {
@@ -335,6 +352,35 @@
         ],
         "type": "integer"
       },
+      "Refresh": {
+        "properties": {
+          "refresh": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "refresh"
+        ],
+        "type": "object"
+      },
+      "TokenResponse": {
+        "description": "\uc751\ub2f5 \uc804\uc6a9 -- Swagger/drf-spectacular \ubb38\uc11c\ud654\uc6a9.",
+        "properties": {
+          "access": {
+            "readOnly": true,
+            "type": "string"
+          },
+          "refresh": {
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "access",
+          "refresh"
+        ],
+        "type": "object"
+      },
       "User": {
         "description": "REQUIRED mixin for serializers used with ApiViewSet.\n\nBridges DRF's serializer.save() flow with ApiViewSet lifecycle hooks.\nWithout this mixin, create_after_init, create_after_save, update_after_assign,\nand update_after_save hooks will NOT be called.\n\nUsage:\n    class MySerializer(HookableSerializerMixin, serializers.ModelSerializer):\n        class Meta:\n            model = MyModel\n            fields = [...]",
         "properties": {
@@ -382,6 +428,13 @@
         ],
         "type": "integer"
       }
+    },
+    "securitySchemes": {
+      "JWTAuthentication": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      }
     }
   },
   "info": {
@@ -395,12 +448,32 @@
       "post": {
         "description": "POST /api/v1/auth/login -- email + password -> token pair",
         "operationId": "auth_login_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Login"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
-            "description": "No response body"
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": ""
           }
         },
         "security": [
+          {
+            "JWTAuthentication": []
+          },
           {}
         ],
         "tags": [
@@ -413,10 +486,15 @@
         "description": "POST /api/v1/auth/logout -- revoke current access token and optional refresh token",
         "operationId": "auth_logout_create",
         "responses": {
-          "200": {
+          "204": {
             "description": "No response body"
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "auth"
         ]
@@ -427,10 +505,15 @@
         "description": "POST /api/v1/auth/logout-all -- revoke all user sessions",
         "operationId": "auth_logout_all_create",
         "responses": {
-          "200": {
+          "204": {
             "description": "No response body"
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "auth"
         ]
@@ -440,12 +523,32 @@
       "post": {
         "description": "POST /api/v1/auth/refresh -- refresh token -> new token pair (with rotation)",
         "operationId": "auth_refresh_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Refresh"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
-            "description": "No response body"
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": ""
           }
         },
         "security": [
+          {
+            "JWTAuthentication": []
+          },
           {}
         ],
         "tags": [
@@ -656,6 +759,9 @@
           }
         },
         "security": [
+          {
+            "JWTAuthentication": []
+          },
           {}
         ],
         "tags": [
@@ -697,6 +803,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "comments"
         ]
@@ -718,6 +829,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "comments"
         ]
@@ -759,6 +875,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "comments"
         ]
@@ -784,6 +905,11 @@
             "description": "No response body"
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "comments"
         ]
@@ -815,6 +941,9 @@
           }
         },
         "security": [
+          {
+            "JWTAuthentication": []
+          },
           {}
         ],
         "tags": [
@@ -866,6 +995,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "comments"
         ]
@@ -916,6 +1050,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "comments"
         ]
@@ -1130,6 +1269,9 @@
           }
         },
         "security": [
+          {
+            "JWTAuthentication": []
+          },
           {}
         ],
         "tags": [
@@ -1171,6 +1313,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "posts"
         ]
@@ -1192,6 +1339,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "posts"
         ]
@@ -1233,6 +1385,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "posts"
         ]
@@ -1258,6 +1415,11 @@
             "description": "No response body"
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "posts"
         ]
@@ -1289,6 +1451,9 @@
           }
         },
         "security": [
+          {
+            "JWTAuthentication": []
+          },
           {}
         ],
         "tags": [
@@ -1340,6 +1505,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "posts"
         ]
@@ -1390,6 +1560,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "posts"
         ]
@@ -1544,6 +1719,9 @@
           }
         },
         "security": [
+          {
+            "JWTAuthentication": []
+          },
           {}
         ],
         "tags": [
@@ -1584,6 +1762,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "users"
         ]
@@ -1605,6 +1788,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "users"
         ]
@@ -1626,6 +1814,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "users"
         ]
@@ -1666,6 +1859,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "users"
         ]
@@ -1691,6 +1889,11 @@
             "description": "No response body"
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "users"
         ]
@@ -1722,6 +1925,9 @@
           }
         },
         "security": [
+          {
+            "JWTAuthentication": []
+          },
           {}
         ],
         "tags": [
@@ -1773,6 +1979,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "users"
         ]
@@ -1822,6 +2033,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
         "tags": [
           "users"
         ]

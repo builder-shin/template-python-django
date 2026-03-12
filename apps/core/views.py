@@ -15,6 +15,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_json_api.django_filters import DjangoFilterBackend
 from rest_framework_json_api.filters import OrderingFilter, QueryParameterValidationFilter
+from rest_framework_json_api.relations import ResourceRelatedField
 from rest_framework_json_api.views import ModelViewSet
 
 from apps.core.exceptions import JsonApiError, NotFound
@@ -285,7 +286,16 @@ class ApiViewSet(ModelViewSet):
     prefetch_related_extra: list[str] = []
 
     @staticmethod
-    def _add_prefetch(model, name, prefetch):
+    def _is_forward_fk(model, name):
+        """Return True if *name* is a FK or OneToOne field on *model*."""
+        try:
+            field = model._meta.get_field(name)
+        except FieldDoesNotExist:
+            return False
+        return field.many_to_one or field.one_to_one
+
+    @staticmethod
+    def _add_prefetch(model, name, prefetch: list) -> None:
         """Add a reverse FK / M2M relation to the prefetch list with nested select_related."""
         try:
             field = model._meta.get_field(name)
@@ -303,29 +313,40 @@ class ApiViewSet(ModelViewSet):
             else:
                 prefetch.append(name)
 
-    def get_queryset(self):
-        """Build optimized queryset via CoC: auto select_related/prefetch_related from allowed_includes.
+    def _collect_serializer_fk_fields(self, serializer_class, model, select: list) -> None:
+        """Auto-detect FK/OneToOne fields from serializer's ResourceRelatedField declarations."""
+        for field_name, field in serializer_class._declared_fields.items():
+            if not isinstance(field, ResourceRelatedField):
+                continue
+            if self._is_forward_fk(model, field_name) and field_name not in select:
+                select.append(field_name)
 
-        FK relations (many_to_one, one_to_one) are always select_related (cheap JOIN).
-        Reverse FK/M2M (one_to_many, many_to_many) are always prefetched to prevent N+1
-        queries from ResourceRelatedField serialization (which accesses relationship
-        data for type/id pairs regardless of ?include parameter).
+    def _collect_include_fields(self, model, select: list, prefetch: list) -> None:
+        """Collect select_related/prefetch_related from allowed_includes."""
+        for name in self.allowed_includes:
+            if name in select:
+                continue
+            if self._is_forward_fk(model, name):
+                select.append(name)
+            else:
+                self._add_prefetch(model, name, prefetch)
+
+    def get_queryset(self):
+        """Build optimized queryset via CoC: auto select_related/prefetch_related.
+
+        1. Serializer의 ResourceRelatedField 중 FK/OneToOne인 것은 자동 select_related.
+        2. allowed_includes의 FK는 select_related, 역참조/M2M은 prefetch_related.
+        이 두 경로를 합산하여 N+1 쿼리를 자동 방지한다.
         """
-        model = self.get_serializer_class().Meta.model
+        serializer_class = self.get_serializer_class()
+        model = serializer_class.Meta.model
         qs = model.objects.all()
 
         select = list(self.select_related_extra)
         prefetch = list(self.prefetch_related_extra)
 
-        for name in self.allowed_includes:
-            try:
-                field = model._meta.get_field(name)
-            except FieldDoesNotExist:
-                continue
-            if field.many_to_one or field.one_to_one:
-                select.append(name)
-            else:
-                self._add_prefetch(model, name, prefetch)
+        self._collect_serializer_fk_fields(serializer_class, model, select)
+        self._collect_include_fields(model, select, prefetch)
 
         if select:
             qs = qs.select_related(*select)

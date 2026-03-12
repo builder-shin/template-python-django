@@ -168,11 +168,6 @@ def _gen_views_py(
     lines.append(f"class {plural_pascal}ViewSet(ApiViewSet):")
     lines.append("")
 
-    # select_related_extra for user-scoped resources
-    if user_scoped:
-        lines.append('    select_related_extra = ["user"]')
-        lines.append("")
-
     # allowed_includes
     lines.append("    @property")
     lines.append("    def allowed_includes(self):")

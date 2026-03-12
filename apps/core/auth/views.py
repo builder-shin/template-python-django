@@ -2,6 +2,7 @@ import logging
 
 import jwt
 from django.contrib.auth import get_user_model
+from drf_spectacular.utils import extend_schema
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -10,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.auth.jwt_utils import generate_token_pair, refresh_access_token
-from apps.core.auth.serializers import LoginSerializer, RefreshSerializer
+from apps.core.auth.serializers import LoginSerializer, RefreshSerializer, TokenResponseSerializer
 from apps.core.auth.token_store import TokenStore
 from apps.core.throttles import AuthRateThrottle
 
@@ -26,6 +27,7 @@ class LoginView(APIView):
     renderer_classes = [JSONRenderer]
     parser_classes = [JSONParser]
 
+    @extend_schema(request=LoginSerializer, responses={200: TokenResponseSerializer})
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -56,6 +58,7 @@ class RefreshView(APIView):
     renderer_classes = [JSONRenderer]
     parser_classes = [JSONParser]
 
+    @extend_schema(request=RefreshSerializer, responses={200: TokenResponseSerializer})
     def post(self, request):
         serializer = RefreshSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -77,6 +80,7 @@ class LogoutView(APIView):
     renderer_classes = [JSONRenderer]
     parser_classes = [JSONParser]
 
+    @extend_schema(request=None, responses={204: None})
     def post(self, request):
         payload = request.auth
         if payload and "jti" in payload:
@@ -103,6 +107,7 @@ class LogoutAllView(APIView):
     renderer_classes = [JSONRenderer]
     parser_classes = [JSONParser]
 
+    @extend_schema(request=None, responses={204: None})
     def post(self, request):
         TokenStore.revoke_all_user_tokens(request.user.id)
         return Response(status=204)

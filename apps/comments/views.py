@@ -6,8 +6,6 @@ from apps.core.views import ApiViewSet
 
 
 class CommentsViewSet(ApiViewSet):
-    select_related_extra = ["user"]
-
     def get_permissions(self):
         if self.action in ("list", "retrieve"):
             return [AllowAny()]

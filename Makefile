@@ -1,4 +1,4 @@
-.PHONY: help setup dev server shell test test-cov lint format migrate makemigrations seed generate update-schema clean worker beat dev-all pre-commit docker-up docker-down
+.PHONY: help setup dev server shell test test-cov test-cov-html lint format migrate makemigrations seed generate update-schema clean worker beat dev-all pre-commit docker-up docker-down
 
 .DEFAULT_GOAL := help
 
@@ -22,6 +22,9 @@ test: ## 테스트 실행
 
 test-cov: ## 커버리지 포함 테스트 실행
 	uv run pytest --cov=apps --cov-report=term-missing
+
+test-cov-html: ## 커버리지 HTML 리포트 생성 (htmlcov/)
+	uv run pytest --cov=apps --cov-report=term-missing --cov-report=html
 
 lint: ## 코드 린트 (Ruff)
 	uv run ruff check .
