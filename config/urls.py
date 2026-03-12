@@ -17,7 +17,9 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += [
         path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+        path("api/schema", SpectacularAPIView.as_view(), name="schema-no-slash"),
         path("api-docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+        path("api-docs", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui-no-slash"),
     ]
     try:
         import debug_toolbar
