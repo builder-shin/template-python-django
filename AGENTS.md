@@ -1,4 +1,4 @@
-<!-- Generated: 2026-02-28 | Updated: 2026-03-08 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-12 -->
 
 # template-python-django
 
@@ -14,7 +14,7 @@ Django REST Framework 기반 JSON:API 템플릿 프로젝트. Convention over Co
 | `uv.lock` | uv 패키지 매니저 잠금 파일 |
 | `Dockerfile` | Multi-stage 빌드 (Python 3.12-slim, 포트 4000, gunicorn) |
 | `docker-compose.yml` | PostgreSQL 16 + Redis 7 + Web + Celery + Celery Beat 구성 |
-| `gunicorn.conf.py` | Gunicorn 설정 (gthread worker, 4 workers, 2 threads) |
+| `gunicorn.conf.py` | Gunicorn 설정 (gthread worker, GUNICORN_WORKERS 환경변수로 조정, 2 threads) |
 | `Makefile` | 개발 명령어 모음 (`make dev`, `make test`, `make generate` 등) |
 | `Procfile.dev` | honcho용 개발 프로세스 정의 (web + celery worker + beat) |
 

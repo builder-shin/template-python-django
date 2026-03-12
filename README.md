@@ -133,7 +133,7 @@ docker run -p 4000:4000 --env-file .env template-python-django
 ```bash
 make server
 # 또는
-docker-compose up
+docker compose up
 # PostgreSQL, Redis, Web, Celery Worker, Celery Beat 모두 실행
 ```
 
@@ -142,17 +142,17 @@ docker-compose up
 ```
 ├── apps/
 │   ├── core/                  # 핵심 인프라
-│   │   ├── middleware/        # 미들웨어 (인증, 로깅)
-│   │   ├── mixins/            # HookableSerializer, OwnedResource 등 공통 믹스인
+│   │   ├── auth/              # JWT 인증 엔드포인트 (login, refresh, logout)
+│   │   ├── middleware/        # 미들웨어 (JWT user 추출)
+│   │   ├── mixins/            # HookableSerializerMixin 공통 믹스인
 │   │   ├── management/        # 커스텀 관리 명령어 (seed, generate_resource)
 │   │   ├── authentication.py  # JWT Bearer token 인증 백엔드
 │   │   ├── exceptions.py      # JSON:API 에러 핸들러
 │   │   ├── filters.py         # AllowedIncludesFilter
 │   │   ├── pagination.py      # JSON:API 페이지네이션
 │   │   ├── permissions.py     # 권한 클래스
-│   │   ├── serializers.py     # 베이스 시리얼라이저
 │   │   ├── throttles.py       # 요청 제한
-│   │   └── views.py           # API 베이스 뷰셋
+│   │   └── views.py           # API 베이스 뷰셋 + health check 엔드포인트
 │   ├── users/                 # 사용자 리소스
 │   ├── posts/                 # 게시글 리소스
 │   └── comments/              # 댓글 리소스
