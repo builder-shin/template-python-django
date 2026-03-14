@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-03-08 | Updated: 2026-03-08 -->
+<!-- Generated: 2026-03-08 | Updated: 2026-03-14 -->
 
 # users
 
@@ -11,7 +11,7 @@
 | File | Purpose |
 |------|---------|
 | `models.py` | User model (extends AbstractUser) — email unique, nickname (validators: min 2, max 50), bio (TextField), avatar_url (URLField), status (ACTIVE/SUSPENDED/WITHDRAWN). Indexes: status. full_clean on save, strips nickname. |
-| `views.py` | UsersViewSet (CoC pattern) — serializer_class CoC auto-inferred; filterset_class dynamically generated from allowed_filters dict. Permissions: AllowAny for list/retrieve, IsAuthenticated for me, IsOwnerUser for update/delete. ordering: -date_joined. /me action returns current authenticated user. |
+| `views.py` | UsersViewSet (CoC pattern) — serializer_class CoC auto-inferred; filterset_class dynamically generated from allowed_filters dict. `owner_field = "id"` (User owns themselves). Permissions: AllowAny for retrieve, IsAuthenticated for list/me, IsOwnerOrReadOnly for update/delete. ordering: -date_joined. /me action returns current authenticated user. |
 | `serializers.py` | Serializer (HookableSerializerMixin). Auto-generated from models. |
 | `urls.py` | URL routing via make_urlpatterns() — auto-generated. |
 | `migrations/` | Django database migrations (see `migrations/AGENTS.md`). |
@@ -27,6 +27,7 @@
 - Custom fields: email (unique), nickname, bio, avatar_url, status
 - User.save() calls full_clean() unless update_fields specified, ensuring validation always runs
 - User.nickname is stripped of whitespace on save
+- `owner_field = "id"` — IsOwnerOrReadOnly compares `obj.id == request.user.id` (User owns themselves)
 
 ### Model Lifecycle
 - **Create**: inherit AbstractUser behavior; full_clean validates all fields
@@ -35,19 +36,18 @@
 - **Display**: __str__ returns nickname if set, else username
 
 ### Permissions
-- **list/retrieve**: AllowAny (public user profiles)
+- **retrieve**: AllowAny (public user profiles)
+- **list**: IsAuthenticated (authenticated users only)
 - **me**: IsAuthenticated (get current user)
-- **update/delete**: IsAuthenticated + IsOwnerUser (users can only modify their own profile)
-- IsOwnerUser permission: allows GET/HEAD/OPTIONS for all; write access only for own user ID
+- **update/delete**: IsAuthenticated + IsOwnerOrReadOnly with `owner_field="id"` (users can only modify their own profile)
 
 ### Actions
-- **list**: `GET /users/` — list all users (paginated)
-- **retrieve**: `GET /users/{id}/` — get single user
-- **me**: `GET /users/me/` — get current authenticated user (requires IsAuthenticated)
-- **create**: `POST /users/` — register new user (handled by built-in create)
-- **update**: `PATCH /users/{id}/` — update own profile only
-- **partial_update**: `PATCH /users/{id}/` — partial update
-- **destroy**: `DELETE /users/{id}/` — delete own account only
+- **list**: `GET /users` — list all users (paginated, requires auth)
+- **retrieve**: `GET /users/{id}` — get single user (public)
+- **me**: `GET /users/me` — get current authenticated user (requires IsAuthenticated)
+- **create**: `POST /users` — register new user (handled by built-in create)
+- **update**: `PATCH /users/{id}` — update own profile only
+- **destroy**: `DELETE /users/{id}` — delete own account only
 
 ### Includes/Relationships
 - No includes configured (User is leaf; other models FK to User)

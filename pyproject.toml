@@ -88,6 +88,10 @@ ignore = [
 [tool.ruff.lint.isort]
 known-first-party = ["apps", "config"]
 
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101"]  # assert used in tests
+
 [tool.ruff.lint.mccabe]
 max-complexity = 10
 

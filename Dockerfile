@@ -1,7 +1,7 @@
 # Stage 1: Builder
-FROM python:3.12-slim AS builder
+FROM python:3.12-slim@sha256:ccc7089399c8bb65dd1fb3ed6d55efa538a3f5e7fca3f5988ac3b5b87e593bf0 AS builder
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:latest@sha256:cbe0a44ba994e327b8fe7ed72beef1aaa7d2c4c795fd406d1dbf328bacb2f1c5 /uv /uvx /bin/
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -16,7 +16,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY . .
 
 # Stage 2: Runtime
-FROM python:3.12-slim
+FROM python:3.12-slim@sha256:ccc7089399c8bb65dd1fb3ed6d55efa538a3f5e7fca3f5988ac3b5b87e593bf0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \

@@ -18,3 +18,9 @@ SECURE_HSTS_PRELOAD = True
 
 # Health check path exclusion from SSL redirect
 SECURE_REDIRECT_EXEMPT = [r"^health/"]
+
+# Security headers
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"

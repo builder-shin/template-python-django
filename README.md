@@ -99,7 +99,7 @@ apps/<name>/
 ├── __init__.py
 ├── apps.py              # AppConfig
 ├── models.py            # Model + QuerySet
-├── views.py             # ViewSet (ApiViewSet) + FilterSet (django-filter) 인라인 정의
+├── views.py             # ViewSet (ApiViewSet) + allowed_filters dict 정의
 ├── serializers.py       # Serializer (HookableSerializerMixin)
 ├── urls.py              # URL 라우팅
 └── migrations/
@@ -145,15 +145,17 @@ docker compose up
 │   ├── core/                  # 핵심 인프라
 │   │   ├── auth/              # JWT 인증 엔드포인트 (login, refresh, logout)
 │   │   ├── middleware/        # 미들웨어 (JWT user 추출)
-│   │   ├── mixins/            # HookableSerializerMixin 공통 믹스인
+│   │   ├── mixins/            # ViewSet 믹스인 (CoC, AutoPrefetch, Lifecycle, Upsert, HookableSerializer)
 │   │   ├── management/        # 커스텀 관리 명령어 (seed, generate_resource)
+│   │   ├── models/            # BaseModel, BaseQuerySet
 │   │   ├── authentication.py  # JWT Bearer token 인증 백엔드
 │   │   ├── exceptions.py      # JSON:API 에러 핸들러
-│   │   ├── filters.py         # AllowedIncludesFilter
+│   │   ├── filters.py         # AllowedIncludesFilter, TIMESTAMP_LOOKUPS
+│   │   ├── health.py          # Health check 엔드포인트 (live, ready)
 │   │   ├── pagination.py      # JSON:API 페이지네이션
-│   │   ├── permissions.py     # 권한 클래스
+│   │   ├── permissions.py     # IsOwnerOrReadOnly (owner_field 설정 가능)
 │   │   ├── throttles.py       # 요청 제한
-│   │   └── views.py           # API 베이스 뷰셋 + health check 엔드포인트
+│   │   └── views.py           # ApiViewSet (4 mixin 합성)
 │   ├── users/                 # 사용자 리소스
 │   ├── posts/                 # 게시글 리소스
 │   └── comments/              # 댓글 리소스
@@ -176,13 +178,13 @@ docker compose up
 ├── uv.lock                    # uv 락파일 (재현 가능한 빌드)
 ├── .github/
 │   └── workflows/ci.yml       # GitHub Actions CI
-├── Dockerfile                 # Docker 빌드 설정
-├── docker-compose.yml         # Docker Compose 설정
+├── Dockerfile                 # Multi-stage Docker 빌드 (digest-pinned, non-root)
+├── docker-compose.yml         # Docker Compose 설정 (리소스 제한 + healthcheck)
 ├── Makefile                   # 개발 명령어 통합
 ├── Procfile.dev               # 멀티 프로세스 개발 실행
 ├── gunicorn.conf.py           # Gunicorn 서버 설정
 ├── manage.py                  # Django 관리 스크립트
-├── .pre-commit-config.yaml    # pre-commit 훅 설정
+├── .pre-commit-config.yaml    # pre-commit 훅 (Ruff, bandit, detect-secrets)
 └── .env.example               # 환경 변수 템플릿
 ```
 
@@ -212,12 +214,20 @@ permission_classes = [IsAuthenticated]     # 인증 필수
 
 ### ApiViewSet 라이프사이클 훅
 
-`ApiViewSet`은 CRUD + upsert 기능과 라이프사이클 훅을 내장하고 있습니다. Serializer에는 `HookableSerializerMixin`을 함께 사용해야 훅이 정상 동작합니다:
+`ApiViewSet`은 4개 Mixin으로 구성됩니다 (LifecycleHookMixin + UpsertMixin + AutoPrefetchMixin + CoCSerializerMixin). Serializer에는 `HookableSerializerMixin`을 함께 사용해야 훅이 정상 동작합니다:
 
 ```python
 class MyViewSet(ApiViewSet):
-    serializer_class = MySerializer
-    filterset_class = MyFilterSet
+    # serializer_class — CoC 자동 추론 (명시 불필요)
+    # filterset_class — allowed_filters dict에서 동적 생성
+
+    @property
+    def allowed_filters(self):
+        return {"name": ["exact", "icontains"], "status": ["exact", "in"]}
+
+    @property
+    def allowed_includes(self):
+        return ["user", "comments"]
 
     def create_after_init(self, instance):
         instance.user_id = self.request.user.id
@@ -231,7 +241,8 @@ class MyViewSet(ApiViewSet):
 
 ```python
 class MyViewSet(ApiViewSet):
-    serializer_class = MySerializer
+    # IsOwnerOrReadOnly는 기본적으로 obj.user_id == request.user.id 비교
+    # User 모델처럼 obj.id를 비교하려면: owner_field = "id"
 
     def _check_ownership(self, instance, action_label: str) -> None:
         if str(instance.user_id) != str(self.request.user.id):
@@ -279,7 +290,18 @@ posts = PostFactory.create_batch(5)  # 5개 일괄 생성
 
 ### Pre-commit 훅
 
-커밋 시 자동으로 Ruff (lint + format)가 실행됩니다:
+커밋 시 자동으로 실행되는 훅:
+
+| 훅 | 설명 |
+|----|------|
+| `ruff` | Ruff 린트 (--fix 자동 수정) |
+| `ruff-format` | Ruff 코드 포맷팅 |
+| `trailing-whitespace` | 줄 끝 공백 제거 |
+| `end-of-file-fixer` | 파일 끝 개행 보장 |
+| `check-yaml` | YAML 문법 검증 |
+| `check-added-large-files` | 대용량 파일 추가 방지 |
+| `bandit` | 보안 취약점 정적 분석 |
+| `detect-secrets` | 시크릿/비밀키 커밋 방지 |
 
 ```bash
 # 수동 실행
@@ -301,7 +323,7 @@ make format   # Ruff fix + format
 GitHub Actions가 push/PR 시 자동으로 실행됩니다:
 
 - **Lint**: Ruff check + format 검증
-- **Test**: PostgreSQL 16 + Redis 7 환경에서 pytest 실행 (커버리지 포함)
+- **Test**: PostgreSQL 16 + Redis 7 환경에서 pytest 실행 (커버리지 80% 이상 필수)
 
 워크플로우 설정: `.github/workflows/ci.yml`
 

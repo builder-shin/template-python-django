@@ -50,7 +50,7 @@ class JWTUserMiddleware:
                 token,
                 conf["SIGNING_KEY"],
                 algorithms=[conf["ALGORITHM"]],
-                options={"verify_exp": False},
+                options={"verify_exp": True},
             )
             user_id = payload.get("user_id")
             if not user_id:

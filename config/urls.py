@@ -2,7 +2,7 @@ from django.conf import settings
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from apps.core.views import health_live, health_ready
+from apps.core.health import health_live, health_ready
 
 urlpatterns = [
     path("health/live", health_live),

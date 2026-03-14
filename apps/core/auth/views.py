@@ -94,8 +94,12 @@ class LogoutView(APIView):
 
                 refresh_payload = decode_token(refresh_token, expected_type="refresh")
                 TokenStore.revoke_token(refresh_payload["jti"])
-            except Exception:
+            except (jwt.InvalidTokenError, ValueError):
                 pass  # Best-effort; access token already revoked
+                # Note: KeyError is not caught here because decode_token()
+                # uses dict.get() for payload fields, so KeyError cannot arise
+                # from token decoding. Only jwt.InvalidTokenError (malformed/
+                # expired tokens) and ValueError (from revoke logic) are expected.
 
         return Response(status=204)
 

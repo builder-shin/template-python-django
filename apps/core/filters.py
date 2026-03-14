@@ -19,8 +19,17 @@ class AllowedIncludesFilter:
         requested = [inc.strip() for inc in include_param.split(",") if inc.strip()]
 
         def _is_include_allowed(inc, allowed_list):
-            # Check if include path is allowed.
-            # Supports nested paths (e.g. user.consents passes if user is allowed).
+            """Check if include path is allowed.
+
+            Strategy: A nested path like "user.consents" is allowed if "user"
+            is in the allowed list. This is intentionally permissive --
+            deeper nesting is controlled by the related serializer's
+            included_serializers, not by this filter.
+
+            To restrict specific nested paths, add them explicitly to
+            allowed_includes (e.g., ["user", "user.consents"]) and change
+            this check to require exact matches for dotted paths.
+            """
             if inc in allowed_list:
                 return True
             # Nested path: check if top-level is allowed

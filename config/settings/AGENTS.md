@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-03-08 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-14 -->
 
 # settings
 
@@ -13,7 +13,7 @@
 | `__init__.py` | 패키지 초기화 |
 | `base.py` | **공통 설정** — INSTALLED_APPS, MIDDLEWARE, REST_FRAMEWORK(JSON:API), DATABASES(PostgreSQL), CACHES(Redis), Celery, CORS, JWT_AUTH, Sentry, CSP, S3, Logging |
 | `development.py` | 개발 환경 — DEBUG=True, django-debug-toolbar, 완화된 보안 설정 |
-| `production.py` | 프로덕션 환경 — DEBUG=False, 강화된 보안, Sentry 활성화 |
+| `production.py` | 프로덕션 환경 — DEBUG=False, 강화된 보안 (HSTS, SSL redirect), Sentry 활성화, `SECURE_REDIRECT_EXEMPT = [r"^health/"]` (health check SSL 제외) |
 | `test.py` | 테스트 환경 — 빠른 실행을 위한 간소화 설정 |
 
 ## For AI Agents
@@ -24,6 +24,7 @@
 - REST_FRAMEWORK 설정: JSON:API 파서/렌더러, 페이지네이션, 예외 핸들러, JWT 인증, 스로틀링
 - JSON_API_FORMAT_FIELD_NAMES = "underscore", JSON_API_PLURALIZE_TYPES = True
 - APPEND_SLASH = False (trailing_slash=False와 일치)
+- production.py: health check 경로는 SSL redirect에서 제외 (`SECURE_REDIRECT_EXEMPT`)
 
 ### Key Settings
 ```python

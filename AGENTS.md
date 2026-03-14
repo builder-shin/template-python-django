@@ -1,4 +1,4 @@
-<!-- Generated: 2026-02-28 | Updated: 2026-03-12 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-14 -->
 
 # template-python-django
 
@@ -12,11 +12,12 @@ Django REST Framework 기반 JSON:API 템플릿 프로젝트. Convention over Co
 | `manage.py` | Django CLI 진입점 (기본 settings: `config.settings.development`) |
 | `pyproject.toml` | 프로젝트 메타데이터, 의존성, Ruff/pytest/coverage 설정 (Python 3.12, line-length 120) |
 | `uv.lock` | uv 패키지 매니저 잠금 파일 |
-| `Dockerfile` | Multi-stage 빌드 (Python 3.12-slim, 포트 4000, gunicorn) |
-| `docker-compose.yml` | PostgreSQL 16 + Redis 7 + Web + Celery + Celery Beat 구성 |
-| `gunicorn.conf.py` | Gunicorn 설정 (gthread worker, GUNICORN_WORKERS 환경변수로 조정, 2 threads) |
+| `Dockerfile` | Multi-stage 빌드 (Python 3.12-slim digest-pinned, non-root user, 포트 4000, gunicorn) |
+| `docker-compose.yml` | PostgreSQL 16 + Redis 7 + Web + Celery + Celery Beat 구성 (리소스 제한 + healthcheck 포함) |
+| `gunicorn.conf.py` | Gunicorn 설정 (gthread worker, GUNICORN_WORKERS/GUNICORN_THREADS/GUNICORN_TIMEOUT 환경변수) |
 | `Makefile` | 개발 명령어 모음 (`make dev`, `make test`, `make generate` 등) |
 | `Procfile.dev` | honcho용 개발 프로세스 정의 (web + celery worker + beat) |
+| `.pre-commit-config.yaml` | pre-commit 훅 설정 — Ruff (lint+format), trailing-whitespace, end-of-file-fixer, check-yaml, check-added-large-files, bandit (보안), detect-secrets (시크릿 감지) |
 
 ## Subdirectories
 
@@ -46,20 +47,25 @@ Django REST Framework 기반 JSON:API 템플릿 프로젝트. Convention over Co
 ### Testing Requirements
 - `pytest` 사용, 설정: `config.settings.test`
 - 실행: `make test` (권장) 또는 `uv run pytest`
-- 커버리지: `make test-cov`
+- 커버리지: `make test-cov`, CI에서 최소 80% (`--cov-fail-under=80`)
 
 ### Common Patterns
 - **CoC 패턴**: ViewSet → serializer_class, queryset, filterset_class 자동 추론 (앱 경로 기반); filterset_class는 각 ViewSet의 allowed_filters dict에서 동적 생성
 - **BaseModel**: `created_at`, `updated_at` 타임스탬프, `save()` 시 `full_clean()` 자동 호출
 - **HookableSerializerMixin**: 모든 Serializer에 필수 — ViewSet lifecycle hooks 연결
-- **ApiViewSet**: CRUD + lifecycle hooks + upsert + CoC 자동 추론
+- **ApiViewSet**: 4개 Mixin 합성 (LifecycleHookMixin + UpsertMixin + AutoPrefetchMixin + CoCSerializerMixin + ModelViewSet)
+- **IsOwnerOrReadOnly**: `owner_field` 속성으로 소유권 비교 필드 설정 (기본: `"user_id"`, User 모델: `"id"`)
 - **URL 패턴**: `api/v1/<resource_name>` (trailing slash 없음)
 
 ### Architecture Overview
 ```
 Request → JWTUserMiddleware (structlog용 경량 user)
         → DRF JWTAuthentication (Bearer token 검증 + Redis jti 확인)
-        → ApiViewSet (CoC: auto serializer/filter/queryset)
+        → ApiViewSet = LifecycleHookMixin
+                     + UpsertMixin
+                     + AutoPrefetchMixin (auto select_related/prefetch_related)
+                     + CoCSerializerMixin (auto serializer/filter/queryset)
+                     + ModelViewSet
         → HookableSerializerMixin (lifecycle hooks)
         → BaseModel (full_clean on save)
         → JSON:API Response

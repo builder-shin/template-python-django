@@ -31,12 +31,15 @@ class PostsViewSet(ApiViewSet):
         }
 
     def get_index_scope(self):
-        """인증된 사용자는 자신의 글만 조회 (내 글 목록).
-        비인증 사용자에게는 전체 공개 글이 노출됨 (list permission이 AllowAny이므로).
-        전체 글 목록이 필요하면 별도 action을 추가할 것."""
+        """Authenticated users see their own posts (all statuses).
+        Unauthenticated users see only published posts."""
         qs = super().get_index_scope()
         if self.request.user.is_authenticated:
             qs = qs.filter(user=self.request.user)
+        else:
+            from apps.posts.models import Post
+
+            qs = qs.filter(status=Post.Status.PUBLISHED)
         return qs
 
     def upsert_after_init(self, instance):

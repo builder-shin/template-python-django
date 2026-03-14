@@ -82,8 +82,11 @@ def refresh_access_token(refresh_token_str: str) -> dict:
     payload = decode_token(refresh_token_str, expected_type="refresh")
 
     # Atomic revoke: only proceed if we were the one to revoke it
-    if not TokenStore.atomic_revoke(payload["jti"]):
+    if not TokenStore.revoke_if_valid(payload["jti"]):
         raise ValueError("Token has already been used")
 
-    user = User.objects.get(id=payload["user_id"])
+    try:
+        user = User.objects.get(id=payload["user_id"])
+    except User.DoesNotExist:
+        raise ValueError("User not found") from None
     return generate_token_pair(user)

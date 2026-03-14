@@ -558,7 +558,7 @@
     },
     "/api/v1/comments": {
       "get": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "comments_list",
         "parameters": [
           {
@@ -769,7 +769,7 @@
         ]
       },
       "post": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "comments_create",
         "requestBody": {
           "content": {
@@ -815,7 +815,7 @@
     },
     "/api/v1/comments/new": {
       "get": {
-        "description": "Instantiate a blank model and return its serialized form.\nEquivalent to Rails CrudActions `new` action.",
+        "description": "Instantiate a blank model and return its serialized form.",
         "operationId": "comments_new_retrieve",
         "responses": {
           "200": {
@@ -841,7 +841,7 @@
     },
     "/api/v1/comments/upsert": {
       "put": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "comments_upsert_update",
         "requestBody": {
           "content": {
@@ -887,7 +887,7 @@
     },
     "/api/v1/comments/{id}": {
       "delete": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "comments_destroy",
         "parameters": [
           {
@@ -915,7 +915,7 @@
         ]
       },
       "get": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "comments_retrieve",
         "parameters": [
           {
@@ -951,7 +951,7 @@
         ]
       },
       "patch": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "comments_partial_update",
         "parameters": [
           {
@@ -1005,7 +1005,7 @@
         ]
       },
       "put": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "comments_update",
         "parameters": [
           {
@@ -1062,7 +1062,7 @@
     },
     "/api/v1/posts": {
       "get": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "posts_list",
         "parameters": [
           {
@@ -1279,7 +1279,7 @@
         ]
       },
       "post": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "posts_create",
         "requestBody": {
           "content": {
@@ -1325,7 +1325,7 @@
     },
     "/api/v1/posts/new": {
       "get": {
-        "description": "Instantiate a blank model and return its serialized form.\nEquivalent to Rails CrudActions `new` action.",
+        "description": "Instantiate a blank model and return its serialized form.",
         "operationId": "posts_new_retrieve",
         "responses": {
           "200": {
@@ -1351,7 +1351,7 @@
     },
     "/api/v1/posts/upsert": {
       "put": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "posts_upsert_update",
         "requestBody": {
           "content": {
@@ -1397,7 +1397,7 @@
     },
     "/api/v1/posts/{id}": {
       "delete": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "posts_destroy",
         "parameters": [
           {
@@ -1425,7 +1425,7 @@
         ]
       },
       "get": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "posts_retrieve",
         "parameters": [
           {
@@ -1461,7 +1461,7 @@
         ]
       },
       "patch": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "posts_partial_update",
         "parameters": [
           {
@@ -1515,7 +1515,7 @@
         ]
       },
       "put": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "posts_update",
         "parameters": [
           {
@@ -1572,7 +1572,7 @@
     },
     "/api/v1/users": {
       "get": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "users_list",
         "parameters": [
           {
@@ -1721,15 +1721,14 @@
         "security": [
           {
             "JWTAuthentication": []
-          },
-          {}
+          }
         ],
         "tags": [
           "users"
         ]
       },
       "post": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "users_create",
         "requestBody": {
           "content": {
@@ -1774,7 +1773,7 @@
     },
     "/api/v1/users/me": {
       "get": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "users_me_retrieve",
         "responses": {
           "200": {
@@ -1800,7 +1799,7 @@
     },
     "/api/v1/users/new": {
       "get": {
-        "description": "Instantiate a blank model and return its serialized form.\nEquivalent to Rails CrudActions `new` action.",
+        "description": "Instantiate a blank model and return its serialized form.",
         "operationId": "users_new_retrieve",
         "responses": {
           "200": {
@@ -1826,7 +1825,7 @@
     },
     "/api/v1/users/upsert": {
       "put": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "users_upsert_update",
         "requestBody": {
           "content": {
@@ -1871,7 +1870,7 @@
     },
     "/api/v1/users/{id}": {
       "delete": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "users_destroy",
         "parameters": [
           {
@@ -1899,7 +1898,7 @@
         ]
       },
       "get": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "users_retrieve",
         "parameters": [
           {
@@ -1935,7 +1934,7 @@
         ]
       },
       "patch": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "users_partial_update",
         "parameters": [
           {
@@ -1989,7 +1988,7 @@
         ]
       },
       "put": {
-        "description": "Base ViewSet that includes authentication, standard filter backends,\nand full CRUD lifecycle hooks.\nEquivalent to Rails ApiController + CrudActions concern.",
+        "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "users_update",
         "parameters": [
           {

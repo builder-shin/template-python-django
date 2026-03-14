@@ -55,12 +55,16 @@ class TokenStore:
             cls._remove_from_user_tokens(data["user_id"], jti)
 
     @classmethod
-    def atomic_revoke(cls, jti: str) -> bool:
-        """Check-and-delete. Returns True if token was valid and is now revoked.
+    def revoke_if_valid(cls, jti: str) -> bool:
+        """Check-and-delete with best-effort atomicity.
 
-        NOTE: get+delete 사이에 미세한 TOCTOU gap이 존재하나,
-        동시 refresh 시도는 극히 드물고 cache.delete()의 반환값으로
-        실제 삭제 여부를 확인하여 이중 사용을 방어합니다.
+        Uses cache.delete() return value to prevent double-use:
+        if two concurrent callers both cache.get() the same jti,
+        only one cache.delete() returns True (Redis DEL is atomic).
+
+        For true atomicity, use Redis GETDEL (Redis 6.2+) via raw client.
+        The current approach is sufficient for refresh token rotation
+        where double-use is the primary threat model.
         """
         key = f"{cls.JTI_PREFIX}{jti}"
         data = cache.get(key)

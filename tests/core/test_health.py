@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 from django.test import RequestFactory
 
-from apps.core.views import health_live, health_ready
+from apps.core.health import health_live, health_ready
 
 
 class TestHealthLive:
@@ -29,7 +29,7 @@ class TestHealthReady:
         factory = RequestFactory()
         request = factory.get("/health/ready")
 
-        with patch("apps.core.views.connection") as mock_conn:
+        with patch("apps.core.health.connection") as mock_conn:
             mock_conn.ensure_connection.side_effect = Exception("DB down")
             response = health_ready(request)
 
@@ -41,7 +41,7 @@ class TestHealthReady:
         factory = RequestFactory()
         request = factory.get("/health/ready")
 
-        with patch("apps.core.views.cache") as mock_cache:
+        with patch("apps.core.health.cache") as mock_cache:
             mock_cache.set.side_effect = Exception("Cache down")
             response = health_ready(request)
 
@@ -53,7 +53,7 @@ class TestHealthReady:
         factory = RequestFactory()
         request = factory.get("/health/ready")
 
-        with patch("apps.core.views.cache") as mock_cache:
+        with patch("apps.core.health.cache") as mock_cache:
             mock_cache.set.return_value = None
             mock_cache.get.return_value = "wrong"
             response = health_ready(request)

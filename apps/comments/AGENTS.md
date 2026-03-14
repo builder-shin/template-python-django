@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-03-08 | Updated: 2026-03-08 -->
+<!-- Generated: 2026-03-08 | Updated: 2026-03-14 -->
 
 # comments
 
@@ -23,7 +23,7 @@
 - Serializer inherits from `HookableSerializerMixin` as first parent
 - CoC pattern: `serializer_class`, `queryset` are auto-inferred from app path and model name
 - `filterset_class` is dynamically generated from the `allowed_filters` dict defined on the ViewSet
-- select_related_extra = ["user"] optimizes queries to fetch user in one DB call
+- `select_related_extra = ["user"]` — AutoPrefetchMixin이 user FK를 자동 select_related에 추가
 - Comment.parent is optional (null/blank) for top-level comments
 - Nested replies: child comments have parent pointing to top-level or another reply
 - Validation enforces parent.post_id == comment.post_id (no cross-post replies)

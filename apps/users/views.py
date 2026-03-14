@@ -1,22 +1,15 @@
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.core.filters import TIMESTAMP_LOOKUPS
+from apps.core.permissions import IsOwnerOrReadOnly
 from apps.core.views import ApiViewSet
-
-
-class IsOwnerUser(BasePermission):
-    """Users can only update their own profile."""
-
-    def has_object_permission(self, request, view, obj):
-        if request.method in ("GET", "HEAD", "OPTIONS"):
-            return True
-        return obj.id == request.user.id
 
 
 class UsersViewSet(ApiViewSet):
     ordering = ["-date_joined"]
+    owner_field = "id"  # User owns themselves (obj.id == request.user.id)
 
     @property
     def allowed_filters(self):
@@ -27,11 +20,11 @@ class UsersViewSet(ApiViewSet):
         }
 
     def get_permissions(self):
-        if self.action in ("list", "retrieve"):
+        if self.action == "retrieve":
             return [AllowAny()]
-        if self.action == "me":
+        if self.action in ("list", "me"):
             return [IsAuthenticated()]
-        return [IsAuthenticated(), IsOwnerUser()]
+        return [IsAuthenticated(), IsOwnerOrReadOnly()]
 
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request, *args, **kwargs):

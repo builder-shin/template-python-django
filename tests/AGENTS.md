@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-03-12 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-14 -->
 
 # tests
 
@@ -17,7 +17,7 @@ pytest 기반 테스트 스위트. 앱별 디렉토리로 구성되며, conftest
 
 | Directory | Purpose |
 |-----------|---------|
-| `core/` | Core 인프라 테스트 — CoC 추론, CrudActions, auth (see `core/AGENTS.md`) |
+| `core/` | Core 인프라 테스트 — CoC 추론, CrudActions, auth, health (see `core/AGENTS.md`) |
 | `users/` | User 모델/API 테스트 (see `users/AGENTS.md`) |
 | `posts/` | Post 모델/API 테스트 (see `posts/AGENTS.md`) |
 | `comments/` | Comment 모델/API 테스트 (see `comments/AGENTS.md`) |
@@ -28,6 +28,7 @@ pytest 기반 테스트 스위트. 앱별 디렉토리로 구성되며, conftest
 ### Working In This Directory
 - 설정: `config.settings.test`
 - 실행: `make test` (권장), 커버리지: `make test-cov`. 반드시 `uv run`으로 실행하라 (`uv run pytest`).
+- CI 커버리지 최소: 80% (`--cov-fail-under=80`)
 - 모든 HTTP 호출 차단: `respx.mock` autouse fixture
 - JSON:API 페이로드: `jsonapi_payload(attributes, resource_type)` 헬퍼 사용
 - 인증 테스트: `mock_authenticated` + `force_authenticate()` 또는 `jwt_authenticated_client` (JWT Bearer)

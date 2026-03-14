@@ -212,12 +212,12 @@ class TestTokenStore:
         """get_token_data returns None for missing jti."""
         assert TokenStore.get_token_data("nonexistent-jti") is None
 
-    def test_atomic_revoke_success(self):
-        """atomic_revoke returns True for valid token."""
+    def test_revoke_if_valid_success(self):
+        """revoke_if_valid returns True for valid token."""
         TokenStore.store_token("atomic-jti", 42, "access", 900)
-        assert TokenStore.atomic_revoke("atomic-jti") is True
+        assert TokenStore.revoke_if_valid("atomic-jti") is True
         assert TokenStore.is_token_valid("atomic-jti") is False
 
-    def test_atomic_revoke_missing(self):
-        """atomic_revoke returns False for nonexistent token."""
-        assert TokenStore.atomic_revoke("missing-jti") is False
+    def test_revoke_if_valid_missing(self):
+        """revoke_if_valid returns False for nonexistent token."""
+        assert TokenStore.revoke_if_valid("missing-jti") is False

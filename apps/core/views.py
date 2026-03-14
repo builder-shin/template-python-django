@@ -1,13 +1,6 @@
-import importlib
-import json as _json
 import logging
 
-import django_filters
-from django.core.cache import cache
-from django.core.exceptions import FieldDoesNotExist, ImproperlyConfigured, ValidationError
-from django.db import connection, models, transaction
 from django.db.models import ProtectedError
-from django.http import HttpResponse, JsonResponse
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
@@ -15,49 +8,29 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_json_api.django_filters import DjangoFilterBackend
 from rest_framework_json_api.filters import OrderingFilter, QueryParameterValidationFilter
-from rest_framework_json_api.relations import ResourceRelatedField
 from rest_framework_json_api.views import ModelViewSet
 
 from apps.core.exceptions import JsonApiError, NotFound
 from apps.core.filters import AllowedIncludesFilter
-from apps.core.utils import singularize, to_pascal
+from apps.core.mixins import (
+    AutoPrefetchMixin,
+    CoCSerializerMixin,
+    LifecycleHookMixin,
+    UpsertMixin,
+)
 
 logger = logging.getLogger(__name__)
 
 
-def health_live(request):
-    return HttpResponse("OK", status=200)
+class ApiViewSet(
+    LifecycleHookMixin,
+    UpsertMixin,
+    AutoPrefetchMixin,
+    CoCSerializerMixin,
+    ModelViewSet,
+):
+    """Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.
 
-
-def health_ready(request):
-    errors = []
-    # DB check
-    try:
-        connection.ensure_connection()
-    except Exception as e:
-        logger.error("Health check DB failure: %s", e)
-        errors.append("DB: unavailable")
-    # Cache check
-    try:
-        cache.set("_health_check", "ok", 10)
-        if cache.get("_health_check") != "ok":
-            errors.append("Cache: unavailable")
-    except Exception as e:
-        logger.error("Health check cache failure: %s", e)
-        errors.append("Cache: unavailable")
-
-    if errors:
-        return JsonResponse(
-            {"status": "unavailable", "errors": errors},
-            status=503,
-        )
-    return HttpResponse("OK", status=200)
-
-
-class ApiViewSet(ModelViewSet):
-    """
-    Base ViewSet that includes authentication, standard filter backends,
-    and full CRUD lifecycle hooks.
     Equivalent to Rails ApiController + CrudActions concern.
     """
 
@@ -70,299 +43,6 @@ class ApiViewSet(ModelViewSet):
         SearchFilter,
         AllowedIncludesFilter,
     ]
-
-    @property
-    def allowed_includes(self):
-        """List of allowed include paths. Enforced by AllowedIncludesFilter.
-
-        NOTE: 반환값은 정적 리스트여야 합니다. 첫 호출 시 클래스 레벨에
-        캐싱되므로, 동적(런타임 의존) 값을 반환하면 안 됩니다.
-        """
-        return []
-
-    @property
-    def allowed_filters(self):
-        """Declarative filter specification. Keys are field names, values are
-        either a list of lookup expressions (e.g. ``["exact", "icontains"]``)
-        or a ``django_filters.Filter`` instance for custom filters.
-
-        The base ``filterset_class`` property dynamically generates a
-        ``django_filters.FilterSet`` from this dict.
-
-        NOTE: 반환값은 정적 dict여야 합니다. 첫 호출 시 클래스 레벨에
-        캐싱되므로, 동적(런타임 의존) 값을 반환하면 안 됩니다.
-        """
-        return {}
-
-    # ==================== CoC 자동 추론 ====================
-
-    @classmethod
-    def _get_app_label(cls):
-        """ViewSet 모듈 경로에서 앱 이름 추출."""
-        module = cls.__module__
-        parts = module.split(".")
-        if len(parts) >= 3 and parts[0] == "apps" and parts[1] != "core":
-            return parts[1]
-        return None
-
-    def get_serializer_class(self):
-        """명시적 serializer_class가 없으면 컨벤션 기반 추론."""
-        if "serializer_class" in self.__class__.__dict__:
-            klass = self.__class__.__dict__["serializer_class"]
-            return self._maybe_inject_included_serializers(klass)
-
-        cache_key = "_coc_serializer_class"
-        if hasattr(self.__class__, cache_key):
-            return getattr(self.__class__, cache_key)
-
-        app_label = self._get_app_label()
-        if not app_label:
-            raise ImproperlyConfigured(
-                f"{self.__class__.__name__}에 serializer_class가 지정되지 않았고, "
-                f"앱 경로에서 추론할 수 없습니다. serializer_class를 명시하세요."
-            )
-
-        singular = singularize(app_label)
-        class_name = f"{to_pascal(singular)}Serializer"
-        module_path = f"apps.{app_label}.serializers"
-
-        try:
-            module = importlib.import_module(module_path)
-            klass = getattr(module, class_name)
-        except (ImportError, AttributeError) as e:
-            raise ImproperlyConfigured(
-                f"{class_name}을 {module_path}에서 찾을 수 없습니다. serializer_class를 명시하세요."
-            ) from e
-
-        klass = self._maybe_inject_included_serializers(klass)
-        # NOTE: TOCTOU race between hasattr/setattr is benign — concurrent
-        # threads compute identical values, so the last writer wins harmlessly.
-        setattr(self.__class__, cache_key, klass)
-        return klass
-
-    def _maybe_inject_included_serializers(self, serializer_class):
-        """Serializer에 included_serializers가 없으면 allowed_includes에서 추론하여 주입."""
-        if getattr(serializer_class, "included_serializers", None):
-            return serializer_class
-
-        cache_key = "_coc_serializer_with_includes"
-        cached = getattr(self.__class__, cache_key, None)
-        if cached is not None:
-            return cached
-
-        inferred = self._infer_included_serializers(serializer_class)
-        if inferred:
-            klass = type(
-                f"{serializer_class.__name__}WithIncludes",
-                (serializer_class,),
-                {"included_serializers": inferred},
-            )
-        else:
-            klass = serializer_class
-
-        # Benign race: concurrent threads compute identical values.
-        setattr(self.__class__, cache_key, klass)
-        return klass
-
-    def _infer_included_serializers(self, serializer_cls=None):
-        """allowed_includes + 모델 introspection으로 included_serializers 추론."""
-        includes = self.allowed_includes
-        if not includes:
-            return {}
-
-        if serializer_cls is None:
-            # fallback: 이미 resolve된 serializer class를 우선 재사용
-            serializer_cls = self.__class__.__dict__.get("serializer_class") or getattr(
-                self.__class__, "_coc_serializer_class", None
-            )
-
-        if serializer_cls is None:
-            app_label = self._get_app_label()
-            if not app_label:
-                return {}
-            singular = singularize(app_label)
-            class_name = f"{to_pascal(singular)}Serializer"
-            module_path = f"apps.{app_label}.serializers"
-            try:
-                module = importlib.import_module(module_path)
-                serializer_cls = getattr(module, class_name)
-            except (ImportError, AttributeError):
-                return {}
-
-        model = getattr(getattr(serializer_cls, "Meta", None), "model", None)
-        if model is None:
-            return {}
-
-        result = {}
-        for include_name in includes:
-            try:
-                field = model._meta.get_field(include_name)
-            except FieldDoesNotExist:
-                logger.warning(
-                    "Field '%s' not found on %s",
-                    include_name,
-                    model.__name__,
-                )
-                continue
-
-            related_model = getattr(field, "related_model", None)
-            if related_model is None:
-                logger.warning(
-                    "Field '%s' on %s is not a relation",
-                    include_name,
-                    model.__name__,
-                )
-                continue
-
-            rel_app = related_model._meta.app_label
-            rel_name = related_model.__name__
-            result[include_name] = f"apps.{rel_app}.serializers.{rel_name}Serializer"
-        return result
-
-    @property
-    def filterset_class(self):
-        """allowed_filters dict에서 FilterSet을 동적 생성.
-
-        명시적 override: 클래스 body에서 _filterset_class = MyFilter 선언.
-        DRF 내부에서 None 할당을 시도하므로 setter에서 None은 무시됨.
-        """
-        if "_filterset_class" in self.__class__.__dict__:
-            return self.__class__.__dict__["_filterset_class"]
-
-        cache_key = "_coc_filterset_class"
-        if cache_key in self.__class__.__dict__:
-            return self.__class__.__dict__[cache_key]
-
-        filters = self.allowed_filters
-        if not filters:
-            setattr(self.__class__, cache_key, None)
-            return None
-
-        # Resolve model via CoC import (not get_queryset — works during schema generation)
-        app_label = self._get_app_label()
-        if not app_label:
-            setattr(self.__class__, cache_key, None)
-            return None
-
-        singular = singularize(app_label)
-        try:
-            models_module = importlib.import_module(f"apps.{app_label}.models")
-            model = getattr(models_module, to_pascal(singular))
-        except (ImportError, AttributeError):
-            logger.debug("apps.%s.models.%s를 찾을 수 없습니다. 필터 없이 동작합니다.", app_label, to_pascal(singular))
-            setattr(self.__class__, cache_key, None)
-            return None
-
-        attrs = {}
-        meta_fields = {}
-        for field_name, spec in filters.items():
-            if isinstance(spec, django_filters.Filter):
-                attrs[field_name] = spec
-            else:
-                meta_fields[field_name] = spec
-
-        meta_cls = type("Meta", (), {"model": model, "fields": meta_fields})
-        attrs["Meta"] = meta_cls
-
-        cls_name = f"{to_pascal(singular)}DynamicFilterSet"
-        klass = type(cls_name, (django_filters.FilterSet,), attrs)
-
-        # Benign race: concurrent threads compute identical values.
-        setattr(self.__class__, cache_key, klass)
-        return klass
-
-    @filterset_class.setter
-    def filterset_class(self, value):
-        """명시적 filterset_class 할당 지원.
-
-        클래스 레벨에 저장되므로 class body 선언용으로만 사용할 것.
-        DRF 내부에서 None을 할당하는 경우를 방어하기 위해 None은 무시한다.
-        """
-        if value is not None:
-            self.__class__._filterset_class = value
-
-    ordering = ["-created_at"]
-    select_related_extra: list[str] = []
-    prefetch_related_extra: list[str] = []
-
-    @staticmethod
-    def _is_forward_fk(model, name):
-        """Return True if *name* is a FK or OneToOne field on *model*."""
-        try:
-            field = model._meta.get_field(name)
-        except FieldDoesNotExist:
-            return False
-        return field.many_to_one or field.one_to_one
-
-    @staticmethod
-    def _add_prefetch(model, name, prefetch: list) -> None:
-        """Add a reverse FK / M2M relation to the prefetch list with nested select_related."""
-        try:
-            field = model._meta.get_field(name)
-        except FieldDoesNotExist:
-            return
-        if field.one_to_many or field.many_to_many:
-            related_model = field.related_model
-            related_fks = [
-                f.name
-                for f in related_model._meta.get_fields()
-                if hasattr(f, "related_model") and (f.many_to_one or f.one_to_one)
-            ]
-            if related_fks:
-                prefetch.append(models.Prefetch(name, queryset=related_model.objects.select_related(*related_fks)))
-            else:
-                prefetch.append(name)
-
-    def _collect_serializer_fk_fields(self, serializer_class, model, select: list) -> None:
-        """Auto-detect FK/OneToOne fields from serializer's ResourceRelatedField declarations."""
-        for field_name, field in serializer_class._declared_fields.items():
-            if not isinstance(field, ResourceRelatedField):
-                continue
-            if self._is_forward_fk(model, field_name) and field_name not in select:
-                select.append(field_name)
-
-    def _collect_include_fields(self, model, select: list, prefetch: list) -> None:
-        """Collect select_related/prefetch_related from allowed_includes."""
-        for name in self.allowed_includes:
-            if name in select:
-                continue
-            if self._is_forward_fk(model, name):
-                select.append(name)
-            else:
-                self._add_prefetch(model, name, prefetch)
-
-    def get_queryset(self):
-        """Build optimized queryset via CoC: auto select_related/prefetch_related.
-
-        1. Serializer의 ResourceRelatedField 중 FK/OneToOne인 것은 자동 select_related.
-        2. allowed_includes의 FK는 select_related, 역참조/M2M은 prefetch_related.
-        이 두 경로를 합산하여 N+1 쿼리를 자동 방지한다.
-        """
-        serializer_class = self.get_serializer_class()
-        model = serializer_class.Meta.model
-        qs = model.objects.all()
-
-        select = list(self.select_related_extra)
-        prefetch = list(self.prefetch_related_extra)
-
-        self._collect_serializer_fk_fields(serializer_class, model, select)
-        self._collect_include_fields(model, select, prefetch)
-
-        if select:
-            qs = qs.select_related(*select)
-        if prefetch:
-            qs = qs.prefetch_related(*prefetch)
-
-        if self.ordering:
-            valid_fields = {f.name for f in model._meta.get_fields()}
-            safe_ordering = [f for f in self.ordering if f.lstrip("-") in valid_fields]
-            if safe_ordering:
-                qs = qs.order_by(*safe_ordering)
-        return qs
-
-    def get_index_scope(self):
-        """list 전용 스코핑. 기본은 get_queryset() (mixin 체인 포함)."""
-        return self.get_queryset()
 
     # ==================== CRUD Actions ====================
 
@@ -431,132 +111,12 @@ class ApiViewSet(ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="new")
     def new(self, request, *args, **kwargs):
-        """
-        Instantiate a blank model and return its serialized form.
-        Equivalent to Rails CrudActions `new` action.
-        """
+        """Instantiate a blank model and return its serialized form."""
         model_class = self.get_serializer().Meta.model
         instance = model_class()
         self.new_after_init(instance)
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
-
-    def _parse_raw_body(self):
-        """Parse JSONAPI raw body once and cache."""
-        if not hasattr(self, "_cached_raw_body"):
-            try:
-                self._cached_raw_body = _json.loads(self.request._request.body)
-            except (ValueError, UnicodeDecodeError):
-                self._cached_raw_body = {}
-        return self._cached_raw_body
-
-    @action(detail=False, methods=["put"], url_path="upsert")
-    def upsert(self, request, *args, **kwargs):
-        find_params = self.upsert_find_params()
-        if not find_params:
-            raise JsonApiError("BadRequest", "upsert_find_params를 뷰셋에서 정의해야 합니다.", 400)
-
-        model_class = self.get_serializer().Meta.model
-        with transaction.atomic():
-            try:
-                instance = model_class.objects.select_for_update().get(**find_params)
-                created = False
-            except model_class.DoesNotExist:
-                instance = model_class(**find_params)
-                created = True
-
-            self.upsert_after_init(instance)
-
-            # Parse raw body to extract attributes, bypassing JSONAPI parser's id requirement
-            raw_body = self._parse_raw_body()
-            flat_data = raw_body.get("data", {}).get("attributes", {})
-
-            serializer = self.get_serializer(instance, data=flat_data, partial=True)
-            serializer.is_valid(raise_exception=True)
-
-            for attr, value in serializer.validated_data.items():
-                setattr(instance, attr, value)
-
-            self.upsert_after_assign(instance)
-
-            m2m_field_names = {f.name for f in instance.__class__._meta.many_to_many}
-            try:
-                instance.full_clean()
-                instance.save()
-                for attr, value in serializer.validated_data.items():
-                    if attr in m2m_field_names:
-                        getattr(instance, attr).set(value)
-                success = True
-            except ValidationError as e:
-                self.upsert_after_save(instance, False, created)
-                raise JsonApiError(
-                    "ValidationFailed",
-                    "; ".join(
-                        f"{field}: {', '.join(messages)}" if field != "__all__" else ", ".join(messages)
-                        for field, messages in e.message_dict.items()
-                    ),
-                    422,
-                ) from e
-            except Exception as err:
-                logger.exception("Unexpected error in upsert save for %s(pk=%s)", type(instance).__name__, instance.pk)
-                self.upsert_after_save(instance, False, created)
-                raise JsonApiError("SaveFailed", "리소스 저장에 실패했습니다.", 422) from err
-
-        self.upsert_after_save(instance, success, created)
-
-        output_serializer = self.get_serializer(instance)
-        http_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
-        return Response(output_serializer.data, status=http_status)
-
-    # ==================== Lifecycle Hooks ====================
-    # Hook 호출 순서:
-    #   create: create_after_init(할당 시점) -> save -> create_after_save
-    #     (create_after_init이 할당+초기화 역할을 겸하므로 assign hook 불필요)
-    #   update: update_after_init -> 속성 할당 -> update_after_assign -> save -> update_after_save
-    #   destroy: destroy_after_init -> delete -> destroy_after_save
-    #   upsert: upsert_after_init -> upsert_after_assign -> save -> upsert_after_save
-    #
-    # create/update hooks는 HookableSerializerMixin이 호출.
-    # destroy/show/new/upsert hooks는 ApiViewSet이 직접 호출.
-
-    def create_after_init(self, instance: models.Model) -> None:
-        pass
-
-    def create_after_save(self, instance: models.Model, success: bool) -> None:
-        pass
-
-    def update_after_init(self, instance: models.Model) -> None:
-        pass
-
-    def update_after_assign(self, instance: models.Model) -> None:
-        pass
-
-    def update_after_save(self, instance: models.Model, success: bool) -> None:
-        pass
-
-    def destroy_after_init(self, instance: models.Model) -> None:
-        pass
-
-    def destroy_after_save(self, instance: models.Model, success: bool) -> None:
-        pass
-
-    def show_after_init(self, instance: models.Model) -> None:
-        pass
-
-    def new_after_init(self, instance: models.Model) -> None:
-        pass
-
-    def upsert_find_params(self) -> dict | None:
-        return None
-
-    def upsert_after_init(self, instance: models.Model) -> None:
-        pass
-
-    def upsert_after_assign(self, instance: models.Model) -> None:
-        pass
-
-    def upsert_after_save(self, instance: models.Model, success: bool, created: bool) -> None:
-        pass
 
     # ==================== Overrides ====================
 
