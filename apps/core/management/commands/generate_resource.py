@@ -64,25 +64,30 @@ def _gen_apps_py(resource_name: str, plural_pascal: str) -> str:
     """)
 
 
+def _gen_models_imports(user_scoped: bool, soft_delete: bool) -> list[str]:
+    """모델 파일의 import 블록을 생성한다."""
+    lines = ["from django.db import models"]
+    if user_scoped:
+        lines.append("from django.conf import settings")
+    core_imports = (
+        "BaseModel, BaseQuerySet, SoftDeleteAllManager, SoftDeleteManager, SoftDeleteMixin"
+        if soft_delete
+        else "BaseModel, BaseQuerySet"
+    )
+    lines += ["", f"from apps.core.models import {core_imports}", "", ""]
+    return lines
+
+
 def _gen_models_py(
     resource_name: str,
     singular_pascal: str,
     fields: list[tuple[str, str]],
     user_scoped: bool,
+    soft_delete: bool = False,
 ) -> str:
     has_choices = any(ft == "IntegerChoices" for _, ft in fields)
 
-    lines = [
-        "from django.db import models",
-    ]
-    if user_scoped:
-        lines.append("from django.conf import settings")
-    lines += [
-        "",
-        "from apps.core.models import BaseModel, BaseQuerySet",
-        "",
-        "",
-    ]
+    lines = _gen_models_imports(user_scoped, soft_delete)
 
     # QuerySet 클래스
     lines.append(f"class {singular_pascal}QuerySet(BaseQuerySet):")
@@ -91,7 +96,8 @@ def _gen_models_py(
     lines.append("")
 
     # 모델 클래스
-    lines.append(f"class {singular_pascal}(BaseModel):")
+    base_classes = "SoftDeleteMixin, BaseModel" if soft_delete else "BaseModel"
+    lines.append(f"class {singular_pascal}({base_classes}):")
 
     # IntegerChoices 내부 클래스
     if has_choices:
@@ -114,8 +120,16 @@ def _gen_models_py(
             ' related_name="%(class)ss")'
         )
 
+    # soft_delete_cascade
+    if soft_delete:
+        lines.append("    soft_delete_cascade = {}")
+
     # objects 매니저
-    lines.append(f"    objects = {singular_pascal}QuerySet.as_manager()")
+    if soft_delete:
+        lines.append("    objects = SoftDeleteManager()")
+        lines.append("    all_objects = SoftDeleteAllManager()")
+    else:
+        lines.append(f"    objects = {singular_pascal}QuerySet.as_manager()")
     lines.append("")
 
     # Meta
@@ -494,11 +508,18 @@ class Command(BaseCommand):
             default="",
             help="모델 이름 직접 지정 (inflect 단수화 결과를 오버라이드)",
         )
+        parser.add_argument(
+            "--soft-delete",
+            action="store_true",
+            default=False,
+            help="SoftDeleteMixin 적용 (soft delete 기능 추가)",
+        )
 
     def handle(self, *args, **options):
         resource_name = options["resource_name"].strip()
         user_scoped = options["user_scoped"]
         no_tests = options["no_tests"]
+        soft_delete = options["soft_delete"]
         model_name_override = options["model_name"].strip()
 
         # 유효성 검사: snake_case 복수형
@@ -547,6 +568,7 @@ class Command(BaseCommand):
             singular_snake,
             fields,
             user_scoped,
+            soft_delete,
         )
 
         if not no_tests:
@@ -591,6 +613,7 @@ class Command(BaseCommand):
         singular_snake,
         fields,
         user_scoped,
+        soft_delete=False,
     ):
         """앱 디렉토리와 소스 파일들을 생성합니다."""
         os.makedirs(apps_dir, exist_ok=True)
@@ -600,7 +623,7 @@ class Command(BaseCommand):
         self._write_file(os.path.join(apps_dir, "apps.py"), _gen_apps_py(resource_name, plural_pascal))
         self._write_file(
             os.path.join(apps_dir, "models.py"),
-            _gen_models_py(resource_name, singular_pascal, fields, user_scoped),
+            _gen_models_py(resource_name, singular_pascal, fields, user_scoped, soft_delete=soft_delete),
         )
         self._write_file(
             os.path.join(apps_dir, "views.py"),

@@ -3,10 +3,10 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator, MinLengthValidator
 from django.db import models
 
-from apps.core.models import BaseModel
+from apps.core.models import HARD_CASCADE_SOFT_CHILDREN, SOFT_CASCADE, BaseModel, SoftDeleteMixin
 
 
-class Comment(BaseModel):
+class Comment(SoftDeleteMixin, BaseModel):
     post = models.ForeignKey(
         "posts.Post",
         on_delete=models.CASCADE,
@@ -27,6 +27,11 @@ class Comment(BaseModel):
         on_delete=models.CASCADE,
         related_name="replies",
     )
+
+    soft_delete_cascade = {
+        "post": SOFT_CASCADE,
+        "parent": HARD_CASCADE_SOFT_CHILDREN,
+    }
 
     class Meta(BaseModel.Meta):
         indexes = [

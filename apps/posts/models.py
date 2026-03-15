@@ -5,10 +5,10 @@ from django.db import models
 from django.db.models.functions import Lower
 from django.utils import timezone
 
-from apps.core.models import BaseModel
+from apps.core.models import BaseModel, SoftDeleteMixin
 
 
-class Post(BaseModel):
+class Post(SoftDeleteMixin, BaseModel):
     class Status(models.IntegerChoices):
         DRAFT = 0, "draft"
         PUBLISHED = 1, "published"
@@ -41,6 +41,7 @@ class Post(BaseModel):
                 Lower("title"),
                 "user",
                 name="unique_post_title_per_user",
+                condition=models.Q(deleted_at__isnull=True),
             ),
         ]
 

@@ -1060,6 +1060,63 @@
         ]
       }
     },
+    "/api/v1/comments/{id}/restore": {
+      "post": {
+        "description": "Soft-deleted \uc778\uc2a4\ud134\uc2a4\ub97c \ubcf5\uc6d0\ud55c\ub2e4.",
+        "operationId": "comments_restore_create",
+        "parameters": [
+          {
+            "description": "comment\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentSerializerWithIncludes"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
+        "tags": [
+          "comments"
+        ]
+      }
+    },
     "/api/v1/posts": {
       "get": {
         "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
@@ -1570,6 +1627,63 @@
         ]
       }
     },
+    "/api/v1/posts/{id}/restore": {
+      "post": {
+        "description": "Soft-deleted \uc778\uc2a4\ud134\uc2a4\ub97c \ubcf5\uc6d0\ud55c\ub2e4.",
+        "operationId": "posts_restore_create",
+        "parameters": [
+          {
+            "description": "post\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostSerializerWithIncludes"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PostSerializerWithIncludes"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PostSerializerWithIncludes"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostSerializerWithIncludes"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
+        "tags": [
+          "posts"
+        ]
+      }
+    },
     "/api/v1/users": {
       "get": {
         "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
@@ -1990,6 +2104,62 @@
       "put": {
         "description": "Base ViewSet combining CoC inference, auto-prefetch, upsert, and lifecycle hooks.\n\nEquivalent to Rails ApiController + CrudActions concern.",
         "operationId": "users_update",
+        "parameters": [
+          {
+            "description": "\uc0ac\uc6a9\uc790\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.api+json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.api+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWTAuthentication": []
+          }
+        ],
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/{id}/restore": {
+      "post": {
+        "description": "Soft-deleted \uc778\uc2a4\ud134\uc2a4\ub97c \ubcf5\uc6d0\ud55c\ub2e4.",
+        "operationId": "users_restore_create",
         "parameters": [
           {
             "description": "\uc0ac\uc6a9\uc790\uc744 \uc2dd\ubcc4\ud558\ub294 \uace0\uc720\ud55c \uc815\uc218 \uac12.",

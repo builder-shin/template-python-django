@@ -109,6 +109,38 @@ class ApiViewSet(
         self.destroy_after_save(instance, True)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(detail=True, methods=["post"], url_path="restore")
+    def restore(self, request, *args, **kwargs):
+        """Soft-deleted 인스턴스를 복원한다."""
+        model = self.get_serializer_class().Meta.model
+        if not hasattr(model, "all_objects"):
+            raise NotFound()
+
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        lookup_filter = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+
+        # get_index_scope() 우회 방지: 소유자 필터를 명시적으로 적용
+        owner_field = getattr(self, "owner_field", "user")
+        if not hasattr(model, owner_field):
+            from rest_framework.exceptions import PermissionDenied
+
+            raise PermissionDenied("이 리소스는 restore할 수 없습니다.")
+        if request.user.is_authenticated:
+            lookup_filter[owner_field] = request.user
+
+        try:
+            instance = model.all_objects.get(**lookup_filter)
+        except model.DoesNotExist as err:
+            raise NotFound() from err
+
+        if not getattr(instance, "is_deleted", False):
+            raise JsonApiError("AlreadyActive", "이미 활성 상태인 리소스입니다.", 409)
+
+        self.check_object_permissions(request, instance)
+        instance.restore()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=["get"], url_path="new")
     def new(self, request, *args, **kwargs):
         """Instantiate a blank model and return its serialized form."""
