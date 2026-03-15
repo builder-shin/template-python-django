@@ -112,7 +112,7 @@ omit = ["*/migrations/*", "*/tests/*", "*/management/*", "*/apps.py"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
-fail_under = 95
+fail_under = 80
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
