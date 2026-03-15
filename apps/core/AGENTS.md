@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-03-14 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-15 -->
 
 # core
 
@@ -10,7 +10,7 @@
 
 | File | Description |
 |------|-------------|
-| `views.py` | **ApiViewSet** — `LifecycleHookMixin + UpsertMixin + AutoPrefetchMixin + CoCSerializerMixin + ModelViewSet` 합성. CRUD 액션 + get_object(NotFound) + new 액션 |
+| `views.py` | **ApiViewSet** — `LifecycleHookMixin + UpsertMixin + AutoPrefetchMixin + CoCSerializerMixin + ModelViewSet` 합성. CRUD 액션 + get_object(NotFound) + new 액션 + **restore** 액션 (SoftDeleteMixin 모델용, `POST /{id}/restore`) |
 | `health.py` | **health_live** (HTTP 200 OK), **health_ready** (DB + Cache 체크, 503 on failure) — 독립 함수 뷰 |
 | `exceptions.py` | **JsonApiError**, **NotFound** 커스텀 예외 + `json_api_exception_handler` 통합 핸들러 (401/403/429 한국어 메시지) |
 | `filters.py` | **AllowedIncludesFilter** — JSON:API `?include=` 경로 화이트리스트 필터 백엔드. **TIMESTAMP_LOOKUPS** 상수 (`["exact", "gt", "gte", "lt", "lte"]`) |
@@ -31,7 +31,7 @@
 | `middleware/` | HTTP 미들웨어 — JWT 유저 추출 (see `middleware/AGENTS.md`) |
 | `management/` | Django 관리 명령어 (see `management/AGENTS.md`) |
 | `mixins/` | ViewSet 믹스인 — CoC 추론, Auto Prefetch, Lifecycle Hooks, Upsert, HookableSerializer (see `mixins/AGENTS.md`) |
-| `models/` | 공통 베이스 모델 (see `models/AGENTS.md`) |
+| `models/` | 공통 베이스 모델 + SoftDeleteMixin (see `models/AGENTS.md`) |
 
 ## For AI Agents
 
@@ -48,6 +48,8 @@
 - views.py 변경 시 `tests/core/test_coc_inference.py` + `tests/core/test_crud_actions.py` 실행
 - auth 변경 시 `tests/core/test_auth.py` 실행
 - health.py 변경 시 `tests/core/test_health.py` 실행
+- SoftDeleteMixin 변경 시 `tests/core/test_soft_delete.py` + `tests/core/test_soft_delete_api.py` 실행
+- generate_resource soft delete 변경 시 `tests/core/test_generate_resource_soft_delete.py` 실행
 
 ### Key Architecture: Mixin Composition
 ```

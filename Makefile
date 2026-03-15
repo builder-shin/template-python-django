@@ -42,11 +42,11 @@ makemigrations: ## 마이그레이션 파일 생성
 seed: ## 개발용 샘플 데이터 생성
 	uv run python manage.py seed
 
-generate: ## 새 리소스 생성 (예: make generate name=products fields="title:CharField")
+generate: ## 새 리소스 생성 (예: make generate name=products fields="title:CharField" user_scoped=1 soft_delete=1)
 ifndef name
 	$(error name 인자가 필요합니다. 예: make generate name=products fields="title:CharField")
 endif
-	uv run python manage.py generate_resource $(name) $(if $(fields),--fields $(fields),)
+	uv run python manage.py generate_resource $(name) $(if $(fields),--fields $(fields),) $(if $(user_scoped),--user-scoped,) $(if $(soft_delete),--soft-delete,)
 
 update-schema: ## API 스키마 스냅샷 갱신
 	mkdir -p tests/snapshots

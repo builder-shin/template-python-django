@@ -1,4 +1,4 @@
-<!-- Generated: 2026-02-28 | Updated: 2026-03-14 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-15 -->
 
 # template-python-django
 
@@ -42,7 +42,7 @@ Django REST Framework 기반 JSON:API 템플릿 프로젝트. Convention over Co
 - 한국어 에러 메시지 사용 (사용자 대면 문자열)
 - `trailing_slash=False` — URL 끝에 슬래시 없음
 - 인증: **JWT Bearer token** (자체 구현, `apps.core.auth`)
-- 새 리소스 추가: `make generate name=<복수형> fields="<name>:<Type>"`
+- 새 리소스 추가: `make generate name=<복수형> fields="<name>:<Type>"` (`--soft-delete` 옵션으로 SoftDeleteMixin 포함 가능)
 
 ### Testing Requirements
 - `pytest` 사용, 설정: `config.settings.test`
@@ -52,10 +52,12 @@ Django REST Framework 기반 JSON:API 템플릿 프로젝트. Convention over Co
 ### Common Patterns
 - **CoC 패턴**: ViewSet → serializer_class, queryset, filterset_class 자동 추론 (앱 경로 기반); filterset_class는 각 ViewSet의 allowed_filters dict에서 동적 생성
 - **BaseModel**: `created_at`, `updated_at` 타임스탬프, `save()` 시 `full_clean()` 자동 호출
+- **SoftDeleteMixin**: 선택적 soft delete. `deleted_at`, `deleted_by_cascade` 필드. `objects`(alive), `all_objects`(전체). FK별 cascade 정책(`SOFT_CASCADE`, `HARD_CASCADE_SOFT_CHILDREN`, `SOFT_CASCADE_HARD_CHILDREN`). 모델 상속 시 `SoftDeleteMixin`을 `BaseModel` 앞에 배치
 - **HookableSerializerMixin**: 모든 Serializer에 필수 — ViewSet lifecycle hooks 연결
 - **ApiViewSet**: 4개 Mixin 합성 (LifecycleHookMixin + UpsertMixin + AutoPrefetchMixin + CoCSerializerMixin + ModelViewSet)
 - **IsOwnerOrReadOnly**: `owner_field` 속성으로 소유권 비교 필드 설정 (기본: `"user_id"`, User 모델: `"id"`)
 - **URL 패턴**: `api/v1/<resource_name>` (trailing slash 없음)
+- **Restore API**: SoftDeleteMixin 모델에 대해 `POST /api/v1/<resource>/{id}/restore` 엔드포인트 자동 제공 (ApiViewSet에 내장)
 
 ### Architecture Overview
 ```

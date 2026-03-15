@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-02-28 | Updated: 2026-03-08 -->
+<!-- Generated: 2026-02-28 | Updated: 2026-03-15 -->
 
 # commands
 
@@ -11,7 +11,7 @@
 | File | Description |
 |------|-------------|
 | `__init__.py` | 패키지 초기화 |
-| `generate_resource.py` | **generate_resource** — 리소스 스캐폴딩 생성기. 복수형 snake_case 이름으로 모델, 뷰(allowed_filters dict 포함), 시리얼라이저, URL, 테스트 파일 자동 생성. `--user-scoped`, `--fields`, `--model-name`, `--no-tests` 옵션 지원. `config/settings/base.py`와 `config/urls.py`에 자동 등록 |
+| `generate_resource.py` | **generate_resource** — 리소스 스캐폴딩 생성기. 복수형 snake_case 이름으로 모델, 뷰(allowed_filters dict 포함), 시리얼라이저, URL, 테스트 파일 자동 생성. `--user-scoped`, `--fields`, `--model-name`, `--no-tests`, `--soft-delete` 옵션 지원. `config/settings/base.py`와 `config/urls.py`에 자동 등록. `--soft-delete` 사용 시 `SoftDeleteMixin` 상속 + cascade 정책 포함 |
 | `seed.py` | **seed** — 데이터베이스 시딩 명령어 |
 
 ## For AI Agents
@@ -21,6 +21,7 @@
 - 생성기 사용: `make generate name=products fields="name:CharField price:IntegerField"` (Make 명령어 우선 사용)
 - 직접 실행이 필요한 경우: `uv run python manage.py generate_resource products --fields "name:CharField price:IntegerField" --user-scoped`
 - 지원 필드 타입: CharField, TextField, IntegerField, BooleanField, DateTimeField, DateField, DecimalField, FloatField, IntegerChoices
+- `--soft-delete`: SoftDeleteMixin 상속 모델 생성, cascade 정책 포함, restore API 자동 사용 가능
 - 생성기가 자동으로 apps/ + tests/ 디렉토리에 파일 생성, settings + urls 등록
 
 ### generate_resource 생성 파일

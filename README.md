@@ -54,7 +54,7 @@ make dev      # 개발 서버 실행 (http://localhost:4000)
 | `make migrate` | 마이그레이션 실행 |
 | `make makemigrations` | 마이그레이션 파일 생성 |
 | `make seed` | 개발용 샘플 데이터 생성 |
-| `make generate` | 새 리소스 생성 (아래 참조) |
+| `make generate` | 새 리소스 생성 (아래 참조, `user_scoped=1`, `soft_delete=1` 옵션) |
 | `make clean` | 캐시, pyc, __pycache__ 정리 |
 | `make worker` | Celery 워커 실행 (비동기 태스크 테스트용) |
 | `make beat` | Celery Beat 스케줄러 실행 |
@@ -73,9 +73,10 @@ make dev      # 개발 서버 실행 (http://localhost:4000)
 make generate name=products fields="name:CharField price:IntegerField status:IntegerChoices"
 
 # user_id 자동 설정 (소유권 기반 접근 제어 포함)
-python manage.py generate_resource order_items \
-  --fields "name:CharField quantity:IntegerField" \
-  --user-scoped
+make generate name=order_items fields="name:CharField quantity:IntegerField" user_scoped=1
+
+# soft delete 포함 (SoftDeleteMixin + cascade 정책 + restore API)
+make generate name=articles fields="title:CharField content:TextField" soft_delete=1
 ```
 
 ### 지원 필드 타입
@@ -91,6 +92,15 @@ python manage.py generate_resource order_items \
 | `DecimalField` | `DecimalField` | `max_digits=10, decimal_places=2` |
 | `FloatField` | `FloatField` | `default=0.0` |
 | `IntegerChoices` | `IntegerField` + `Status` class | `choices=Status.choices, default=0` |
+
+### 생성 옵션
+
+| 옵션 | 설명 |
+|------|------|
+| `--user-scoped` | user FK 자동 추가, 소유권 기반 접근 제어 (IsOwnerOrReadOnly) |
+| `--soft-delete` | SoftDeleteMixin 상속, soft delete + restore API 자동 포함 |
+| `--no-tests` | 테스트 파일 생성 생략 |
+| `--model-name` | 모델 클래스명 직접 지정 (기본: 복수형→단수형→PascalCase 자동 추론) |
 
 ### 생성되는 파일
 
@@ -114,6 +124,47 @@ tests/<name>/
 생성 후 `config/settings/base.py`와 `config/urls.py`에 자동 등록됩니다.
 
 > **참고**: v1은 스칼라 필드만 지원합니다. ForeignKey 등 관계 필드는 수동으로 추가하세요 (참고: `apps/comments/`).
+
+## Soft Delete
+
+`SoftDeleteMixin`을 사용하면 논리적 삭제(soft delete)를 지원합니다:
+
+```python
+from apps.core.models import SoftDeleteMixin, BaseModel, SOFT_CASCADE
+
+class Article(SoftDeleteMixin, BaseModel):
+    title = models.CharField(max_length=255)
+
+    # FK별 cascade 정책 설정 (자식 모델에서 정의)
+    soft_delete_cascade = {
+        "article": SOFT_CASCADE,  # 부모 soft delete 시 자식도 soft delete
+    }
+```
+
+### Soft Delete 동작
+
+- `instance.delete()` — soft delete (`deleted_at` 설정)
+- `instance.delete(hard_delete=True)` — 물리 삭제
+- `instance.restore()` — 복원 (`deleted_at` 초기화)
+- `instance.is_deleted` — 삭제 여부 확인
+- `Model.objects.all()` — alive 레코드만 반환
+- `Model.all_objects.all()` — 삭제된 레코드 포함 전체 반환
+
+### Restore API
+
+SoftDeleteMixin을 사용하는 모델은 자동으로 restore 엔드포인트가 제공됩니다:
+
+```
+POST /api/v1/<resource>/{id}/restore
+```
+
+### Cascade 정책
+
+| 정책 | 부모 soft delete 시 | 부모 hard delete 시 | 부모 restore 시 |
+|------|---------------------|---------------------|-----------------|
+| `SOFT_CASCADE` | 자식 soft delete | Django CASCADE | 자식 restore |
+| `SOFT_CASCADE_HARD_CHILDREN` | 자식 물리 삭제 | Django CASCADE | - |
+| `HARD_CASCADE_SOFT_CHILDREN` | 아무것도 안 함 | 자식 soft delete + FK null | - |
 
 ## Docker
 
@@ -147,7 +198,7 @@ docker compose up
 │   │   ├── middleware/        # 미들웨어 (JWT user 추출)
 │   │   ├── mixins/            # ViewSet 믹스인 (CoC, AutoPrefetch, Lifecycle, Upsert, HookableSerializer)
 │   │   ├── management/        # 커스텀 관리 명령어 (seed, generate_resource)
-│   │   ├── models/            # BaseModel, BaseQuerySet
+│   │   ├── models/            # BaseModel, BaseQuerySet, SoftDeleteMixin
 │   │   ├── authentication.py  # JWT Bearer token 인증 백엔드
 │   │   ├── exceptions.py      # JSON:API 에러 핸들러
 │   │   ├── filters.py         # AllowedIncludesFilter, TIMESTAMP_LOOKUPS
